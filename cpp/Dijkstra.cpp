@@ -1,10 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <map>
-#include <iterator>
-#include <deque>
-#include <algorithm>
-#include <set>
 
 #include "Graph.h"
 
@@ -20,8 +16,6 @@ std::ostream& operator<< (std::ostream &out, std::vector<T> &vec) {
     out << "]";
     return out;
 }
-
-#define print(x) cout << x << endl
 
 // Map
 // A------B------C

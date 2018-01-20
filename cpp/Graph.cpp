@@ -4,54 +4,12 @@
 #include <map>
 #include <limits>
 #include <algorithm>
-#include <functional>
 #include <deque>
 #include <set>
 
 #include "Graph.h"
 
-#define print(x) cout << x << endl;
-
-using std::cout;
 using std::endl;
-
-template <class K, class V>
-std::ostream& operator<< (std::ostream &out, std::map<K,V> &map) {
-    for (auto pair : map) {
-        out << pair.first << "->[" << pair.second << "]" << endl;
-    }
-    return out;
-}
-
-template <class T>
-std::ostream& operator<< (std::ostream &out, std::deque<T> &deq) {
-    out << "[ ";
-    for (auto item : deq) {
-        out << item << " ";
-    }
-    out << "]";
-    return out;
-}
-
-template <class T>
-std::ostream& operator<< (std::ostream &out, std::vector<T> &vec) {
-    out << "[ ";
-    for (auto item : vec) {
-        out << item << " ";
-    }
-    out << "]";
-    return out;
-}
-
-template <class T>
-std::ostream& operator<< (std::ostream &out, std::set<T> &st) {
-    out << "{ ";
-    for (auto item : st) {
-        out << item << " ";
-    }
-    out << "}";
-    return out;
-}
 
 class Node {
     std::string m_name;
