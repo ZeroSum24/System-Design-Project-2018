@@ -11,15 +11,24 @@
 
 using std::endl;
 
+// Utility class used in Graph::route
 class Node {
+    // Name of the node
     std::string m_name;
+    // Cost to reach from the current node
     int m_cost = std::numeric_limits<int>::max();
+    // Previous vertex in the shortest path between this node and the start node
     std::string m_prev_vertex = "";
     
 public:
 
+    /* Though this does nothing it *must* exist or Graph::route will break
+     * because std::map is autovivificious and uses the default constructor for
+     * new values. The compiler won't generate one if another constructor
+     * already exists. */
     Node() {}
-    
+
+    // The real constructor
     Node(const std::string &name):
         m_name(name) {}
 
@@ -73,6 +82,8 @@ const int Edge::len(void) const {
     return m_len;
 }
 
+/* Convert the input vector of edges into a more useful nested map
+ * representation */
 Graph::Graph(const std::vector<Edge> &edges) {
     for (auto edge : edges) {
         m_graph[edge.left()][edge.right()] = edge.len();
@@ -94,11 +105,15 @@ std::ostream& operator<< (std::ostream &out, const Graph &graph) {
     return out;
 }
 
+// Algorithm Here
 std::vector<std::string> Graph::route(const std::string &start, const std::string &dest) const {
     auto edges = this->m_graph;
 
+    /* Stores the relavent information about each of the nodes, accessed by
+     * their name */
     std::map<std::string, Node> nodes;
     std::deque<std::string> unvisited;
+    // Fill both
     for (auto edge : edges) {
         std::string name = edge.first;
         Node node(name);
@@ -110,11 +125,13 @@ std::vector<std::string> Graph::route(const std::string &start, const std::strin
         unvisited.push_back(name);
     }
 
-    // Comparison function
+    /* Comparison function (Places the node with the lowest cost at the front of
+     * the list) */
     auto comp = [&nodes](std::string left, std::string right) {
         return nodes[left].cost() < nodes[right].cost();
     };
-    
+
+    // Sort the unvisited list
     std::sort(std::begin(unvisited), std::end(unvisited), comp);
 
     std::set<std::string> visited;
@@ -166,6 +183,8 @@ std::vector<std::string> Graph::route(const std::string &start, const std::strin
         node = nodes[node.prev_vertex()];
     }
     path.push_back(node.name());
+
+    // Path comes out in reverse, return the reversed list
     std::reverse(std::begin(path), std::end(path));
     return path;
 }
