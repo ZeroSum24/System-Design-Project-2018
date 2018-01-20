@@ -18,6 +18,7 @@ std::ostream& operator<< (std::ostream &out, std::vector<T> &vec) {
         out << item << " ";
     }
     out << "]";
+    return out;
 }
 
 #define print(x) cout << x << endl

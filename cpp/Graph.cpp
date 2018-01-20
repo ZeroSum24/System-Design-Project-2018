@@ -30,6 +30,7 @@ std::ostream& operator<< (std::ostream &out, std::deque<T> &deq) {
         out << item << " ";
     }
     out << "]";
+    return out;
 }
 
 template <class T>
@@ -39,6 +40,7 @@ std::ostream& operator<< (std::ostream &out, std::vector<T> &vec) {
         out << item << " ";
     }
     out << "]";
+    return out;
 }
 
 template <class T>
@@ -48,6 +50,7 @@ std::ostream& operator<< (std::ostream &out, std::set<T> &st) {
         out << item << " ";
     }
     out << "}";
+    return out;
 }
 
 class Node {
