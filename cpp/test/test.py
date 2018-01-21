@@ -3,6 +3,8 @@
 import unittest
 
 from sys import path
+# Add the current directory to the module load path to allow import to find
+# libgraph
 path.append('.')
 from libgraph import Edge, Graph
 

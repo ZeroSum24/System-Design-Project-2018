@@ -73,6 +73,7 @@ const int Edge::len(void) const {
     return m_len;
 }
 
+// Same as above, needed for Python wrapper
 Graph::Graph() {};
 
 /* Convert the input vector of edges into a more useful nested map

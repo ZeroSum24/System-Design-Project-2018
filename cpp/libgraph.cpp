@@ -4,6 +4,8 @@
 
 using namespace boost::python;
 
+/* Required to wrap Graph methods that use std::vector and convert too and from
+ * boost::python::list */
 class GraphWrapper {
     Graph graph;
 public:
@@ -16,6 +18,7 @@ public:
         this->graph = newGraph;
     }
 
+    // GraphWrapper also needs to provide << for str() to work
     friend std::ostream& operator<< (std::ostream& out, const GraphWrapper &graph) {
         return out << graph.graph;
     }
@@ -31,14 +34,22 @@ public:
 };
 
 BOOST_PYTHON_MODULE(libgraph) {
+    // Required for str() to work
     using self_ns::str;
     
-    class_<Edge>("Edge", init<std::string, std::string, int>())
+    class_<Edge>("Edge",
+                 /* Constructor argument types (Simple types are automatically
+                  * converted to their Python equivalents) */
+                 init<std::string, std::string, int>())
+        /* Wrap getters from C++ in python attributes (Setting these throws an
+         * exception) */
         .add_property("left", &Edge::left)
         .add_property("right", &Edge::right)
         .add_property("len", &Edge::len)
+        // __str__() method, uses <<
         .def(str(self));
 
+    // Need to use a wrapper class for type conversion, see above
     class_<GraphWrapper>("Graph", init<list&>())
         .def(str(self))
         .def("route", &GraphWrapper::route);
