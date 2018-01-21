@@ -61,17 +61,19 @@ std::ostream& operator<< (std::ostream &out, const Edge &edge) {
     return out;
 }
 
-const std::string& Edge::left(void) const {
+const std::string Edge::left(void) const {
     return m_left;
 }
 
-const std::string& Edge::right(void) const {
+const std::string Edge::right(void) const {
     return m_right;
 }
 
 const int Edge::len(void) const {
     return m_len;
 }
+
+Graph::Graph() {};
 
 /* Convert the input vector of edges into a more useful nested map
  * representation */
