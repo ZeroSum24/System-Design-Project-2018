@@ -16,7 +16,7 @@ SRCS := $(wildcard *.cpp)
 OBJS := $(SRCS:.cpp=.o)
 
 # Source files required for testing
-TEST_SRCS := $(wildcard ./test/*.cpp) $(SRCS)
+TEST_SRCS := $(wildcard ./test/*.cpp) $(filter-out libgraph.cpp,$(SRCS))
 # As above
 TEST_OBJS := $(TEST_SRCS:.cpp=.o)
 
@@ -47,7 +47,7 @@ clean:
 # Build and run the test executable
 .PHONY: test
 test: $(TEST)
-	$(TEST)
+	./$(TEST)
 
 $(TEST): $(TEST_OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_INCLUDES) -o $(TEST) $(TEST_OBJS)
