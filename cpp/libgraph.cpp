@@ -18,7 +18,7 @@ public:
         this->graph = newGraph;
     }
 
-    // GraphWrapper also needs to provide << for str() to work
+    // GraphWrapper also needs to provide << for repr() to work
     friend std::ostream& operator<< (std::ostream& out, const GraphWrapper &graph) {
         return out << graph.graph;
     }
@@ -34,9 +34,6 @@ public:
 };
 
 BOOST_PYTHON_MODULE(libgraph) {
-    // Required for str() to work
-    using self_ns::str;
-    
     class_<Edge>("Edge",
                  /* Constructor argument types (Simple types are automatically
                   * converted to their Python equivalents) */
@@ -46,11 +43,11 @@ BOOST_PYTHON_MODULE(libgraph) {
         .add_property("left", &Edge::left)
         .add_property("right", &Edge::right)
         .add_property("len", &Edge::len)
-        // __str__() method, uses <<
-        .def(str(self));
+        // __repr__() method, uses <<
+        .def(repr(self));
 
     // Need to use a wrapper class for type conversion, see above
     class_<GraphWrapper>("Graph", init<list&>())
-        .def(str(self))
+        .def(repr(self))
         .def("route", &GraphWrapper::route);
 }
