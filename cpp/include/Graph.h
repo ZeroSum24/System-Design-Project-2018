@@ -1,6 +1,15 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
+#include <limits>
+#include <algorithm>
+#include <deque>
+#include <set>
+
 class Edge {
     const std::string m_left;
     const std::string m_right;
