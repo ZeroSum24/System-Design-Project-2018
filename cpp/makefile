@@ -46,8 +46,9 @@ clean:
 
 # Build and run the test executable
 .PHONY: test
-test: $(TEST)
+test: $(TEST) $(MAIN)
 	./$(TEST)
+	python3 ./test/test.py
 
 $(TEST): $(TEST_OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_INCLUDES) -o $(TEST) $(TEST_OBJS)
