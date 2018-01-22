@@ -44,7 +44,7 @@ class GraphTest(unittest.TestCase):
     def test_slightly_more_complex_graph(self):
         edges = [ab, ac, bc, bd, ce, de]
         graph = Graph(edges)
-        
+
         expected = ['A', 'B', 'D']
         
         self.assertEqual(graph.route('A', 'D'), expected)

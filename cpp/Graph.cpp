@@ -20,7 +20,7 @@ public:
     Node() {}
 
     // The real constructor
-    Node(const std::string &name):
+    explicit Node(const std::string &name):
         m_name(name) {}
 
     friend std::ostream& operator<< (std::ostream &out, Node &node) {
