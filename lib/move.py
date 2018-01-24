@@ -1,20 +1,26 @@
 """Wrapper library for moving the ev3"""
 
-from time import sleep
 import threading
 from functools import wraps
 from thread_decorator import thread
+from enum import Enum
+
+Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
 
 class GenericMovement:
-    def __init__(self, motors):
-        # Probably should accept names and create motor objects here
-        self._motors = motors
 
+    # Motor objects by location on the chassis
+    _front = None
+    _back  = None
+    _left  = None
+    _right = None
+
+    '''
     # Override this
     def calc_expected_ticks(self, motion):
         pass
 
-    def _zero_odometer(self):
+    def _zero_ododmeter(self):
         # Odometer should start counting from 1
         pass
 
@@ -31,11 +37,11 @@ class GenericMovement:
         pass
     
     @thread
-    def __call__(self, motion):
+    def __call__(self, dist):
         # Reset the odometer
-        self._zero_odometer(motion)
+        self._zero_odometer()
         # Calculate how far to go
-        ticks = self.calc_expected_ticks(self, motion)
+        ticks = self.calc_expected_ticks(self, dist)
         ticks_traveled = 0
         # Keep moving until we reach the destination
         while ticks < ticks_traveled:
@@ -49,11 +55,10 @@ class GenericMovement:
                 if ticks_traveled >= ticks:
                     self._stop_all_motors()
                     break
+'''
 
 class AxisMovement(GenericMovement):
-    def calc_expected_ticks(self, dist):
-        # Convert distance into wheel ticks
-        pass
+    def __init__(self, direction)
 
 class RotationalMovement(GenericMovement):
     def calc_expected_ticks(self, deg):
