@@ -3,7 +3,7 @@
 from time import sleep
 import threading
 from functools import wraps
-from threaddecorator import thread
+from thread_decorator import thread
 
 class GenericMovement:
     def __init__(self, motors):
