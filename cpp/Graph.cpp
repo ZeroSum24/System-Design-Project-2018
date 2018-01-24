@@ -155,7 +155,17 @@ std::vector<std::string> Graph::route(const std::string &start, const std::strin
 
             // Calculate the cost to reach this node by this path (The current
             // cost to get this far + the distance still to travel)
-            int current_cost = current_node.cost() + dist;
+            
+            // Check for overflow as we're potentially dealing with one or both
+            // operands being INT_MAX
+            int current_cost = current_node.cost();
+            if ((dist > 0) && (current_cost > std::numeric_limits<int>::max() - dist)) {
+                // Will overflow, set the cost to INT_MAX
+                current_cost = std::numeric_limits<int>::max();
+            } else {
+                // Won't overflow, do the calculation
+                current_cost = current_node.cost() + dist;
+            }
 
             // If it's smaller than the stored cost update the route
             Node &end_node = nodes[end];
@@ -171,6 +181,9 @@ std::vector<std::string> Graph::route(const std::string &start, const std::strin
     
     // Collect the path by tracking back from the destination
     std::vector<std::string> path;
+    std::cout << nodes[dest] << endl;
+    std::cout << std::numeric_limits<int>::max() << endl;
+    return path;
     Node &node = nodes[dest];
     while (node.name() != start) {
         path.push_back(node.name());
