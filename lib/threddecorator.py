@@ -1,5 +1,8 @@
 """Decorator to push an arbitary callable onto a background thread"""
 
+import threading
+from functools import wraps
+
 class GenericThread(threading.Thread):
     """Generic thread object, runs the passed target with arguments"""
     def __init__(self, target, args):
@@ -14,5 +17,6 @@ def thread(func):
     @wraps(func)
     def wrapper(*args):
         thread = GenericThread(func, args)
-        return thread.start()
+        thread.start()
+        return thread
     return wrapper

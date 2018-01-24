@@ -29,7 +29,8 @@ class GenericMovement:
     def _stop_all_motors(self):
         # Stop everything
         pass
-        
+    
+    @thread
     def __call__(self, motion):
         # Reset the odometer
         self._zero_odometer(motion)
@@ -49,13 +50,11 @@ class GenericMovement:
                     self._stop_all_motors()
                     break
 
-@thread
 class AxisMovement(GenericMovement):
     def calc_expected_ticks(self, dist):
         # Convert distance into wheel ticks
         pass
 
-@thread
 class RotationalMovement(GenericMovement):
     def calc_expected_ticks(self, deg):
         # Convert degrees of rotation into wheel ticks
