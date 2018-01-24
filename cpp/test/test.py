@@ -46,7 +46,7 @@ class GraphTest(unittest.TestCase):
         graph = Graph(edges)
 
         expected = ['A', 'B', 'D']
-        
+
         self.assertEqual(graph.route('A', 'D'), expected)
 
     def test_no_route(self):
@@ -54,8 +54,8 @@ class GraphTest(unittest.TestCase):
         graph = Graph(edges)
 
         expected = []
-        
+
         self.assertEqual(graph.route("A", "E"), expected);
-        
+
 if __name__ == '__main__':
     unittest.main()
