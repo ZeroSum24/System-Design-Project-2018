@@ -181,10 +181,15 @@ std::vector<std::string> Graph::route(const std::string &start, const std::strin
     
     // Collect the path by tracking back from the destination
     std::vector<std::string> path;
-    std::cout << nodes[dest] << endl;
-    std::cout << std::numeric_limits<int>::max() << endl;
-    return path;
     Node &node = nodes[dest];
+
+    // If the cost attached to the destination node is INT_MAX then there was no
+    // path found from the start node, so return the empty path
+    if (node.cost() == std::numeric_limits<int>::max()) {
+        return path;
+    }
+    
+    // Otherwise fill the path
     while (node.name() != start) {
         path.push_back(node.name());
         node = nodes[node.prev_vertex()];

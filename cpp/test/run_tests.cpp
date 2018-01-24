@@ -52,4 +52,14 @@ TEST_CASE( "Simple Routing", "Graph::route" ) {
 
         REQUIRE( graph.route("A", "D") == expected );
     }
+
+    SECTION( "No route" ) {
+        vector<Edge> edges = { ab, de };
+        Graph graph(edges);
+
+        // Empty vector
+        vector<string> expected;
+
+        REQUIRE( graph.route("A", "E") == expected );
+    }
 }
