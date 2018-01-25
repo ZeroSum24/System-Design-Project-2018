@@ -18,43 +18,66 @@ TEST_CASE( "Simple Routing", "Graph::route" ) {
     Edge de("D", "E", 7);
 
     SECTION( "Graph with 1 edge" ) {
-        vector<Edge> edges = { ab };
+        vector<Edge> edges;
+        edges.push_back(ab);
         Graph graph(edges);
 
-        vector<string> expected = { "A", "B" };
+        vector<string> expected;
+        expected.push_back("A");
+        expected.push_back("B");
         
         REQUIRE( graph.route("A", "B") == expected );
     }
 
     SECTION( "Graph with useless route" ) {
-        vector<Edge> edges = { ab, ac };
+        vector<Edge> edges;
+        edges.push_back(ab);
+        edges.push_back(ac);
         Graph graph(edges);
 
-        vector<string> expected = { "A", "B" };
+        vector<string> expected;
+        expected.push_back("A");
+        expected.push_back("B");
 
         REQUIRE( graph.route("A", "B") == expected );
     }
 
     SECTION( "Graph with longer route" ) {
-        vector<Edge> edges = { ab, ac, bc };
+        vector<Edge> edges;
+        edges.push_back(ab);
+        edges.push_back(ac);
+        edges.push_back(bc);
         Graph graph(edges);
 
-        vector<string> expected = { "A", "B" };
+        vector<string> expected;
+        expected.push_back("A");
+        expected.push_back("B");
 
         REQUIRE( graph.route("A", "B") == expected );
     }
 
     SECTION( "Slightly more complex graph" ) {
-        vector<Edge> edges = { ab, ac, bc, bd, ce, de };
+        vector<Edge> edges;
+        edges.push_back(ab);
+        edges.push_back(ac);
+        edges.push_back(bc);
+        edges.push_back(bd);
+        edges.push_back(ce);
+        edges.push_back(de);
         Graph graph(edges);
 
-        vector<string> expected = { "A", "B", "D" };
+        vector<string> expected;
+        expected.push_back("A");
+        expected.push_back("B");
+        expected.push_back("D");
 
         REQUIRE( graph.route("A", "D") == expected );
     }
 
     SECTION( "No route" ) {
-        vector<Edge> edges = { ab, de };
+        vector<Edge> edges;
+        edges.push_back(ab);
+        edges.push_back(de);
         Graph graph(edges);
 
         // Empty vector

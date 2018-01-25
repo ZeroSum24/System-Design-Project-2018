@@ -2,7 +2,7 @@
 CC = g++
 # All warnings, c++14 features, produce position independent code (Required for
 # building a shared library)
-CFLAGS = -Wall -std=c++14 -fPIC
+CFLAGS = -Wall -std=c++11 -fPIC
 
 # Regular include directory and python3.5 development files
 INCLUDES = -I./include/ -I/usr/include/python3.5m
