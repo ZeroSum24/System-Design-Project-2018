@@ -4,6 +4,7 @@ import threading
 from functools import wraps
 from thread_decorator import thread
 from enum import Enum
+from collections import namedtuple
 
 WHEEL_CIRCUM = 1
 
@@ -12,23 +13,48 @@ Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
 class GenericMovement:
 
     # Motor objects by location on the chassis
-    front = None
-    back  = None
-    left  = None
-    right = None
+    motors = namedtuple('motors', 'front back left right')(
+        None, # Front
+        None, # Back
+        None, # Left
+        None  # Right
+    )
+
+    # TODO: Tune these to normalise the direction of the motors
+    scalers = namedtuple('scalers', 'front back left right')(
+        1, # Front
+        1, # Back
+        1, # Left
+        1  # Right
+    )
 
     def _stop_all_motors(self):
         # Stop everything
         pass
 
 class StraightLineMovement(GenericMovement):
+    """Move in a straight line for a specfic distance
 
+       Subclasses should define self.drive and self.rudder, self.drive should
+       contain the motors that will be used to move the robot, self.rudder
+       should contain the motors for course correction. Subclasses should also
+       override calc_expected_ticks and course_correction. Finally setting any
+       of the modifier parameters to -1 reverses the direction of the relavent
+       motor"""
+
+    modifiers = namedtuple('modifiers', 'front back left right')(
+        1,
+        1,
+        1,
+        1
+    )
+    
     ## Override These Methods ##
     def calc_expected_ticks(self, dist):
         pass
 
     def course_correction(self, sensors):
-        # Should be non-blocking, should use the motors in self.rudder
+        # Should be non-blocking, use the motors in self.rudder
         pass
     ## End Overrides ##
 
@@ -75,13 +101,16 @@ class StraightLineMovement(GenericMovement):
 class AxisMovement(StraightLineMovement):
     def __init__(self, direction):
         if direction is Directions.FORWARD or direction is Directions.BACKWARD:
-            self.drive = [self.left, self.right]
-            self.rudder = [self.front, self.back]
+            self.drive = ['left', 'right']
+            self.rudder = ['front', 'back']
         elif direction is Directions.LEFT or direction is Directions.RIGHT:
-            self.drive = [self.front, self.back]
-            self.rudder = [self.left, self.right]
+            self.drive = ['front', 'back']
+            self.rudder = ['left', 'right']
         else:
             raise ValueError('Incompatible Direction for AxisMovement: {!r}'.format(direction))
+        
+        if direction is Directions.BACKWARD or direction is Directions.LEFT:
+            self.modifier = -1
 
     def calc_expected_ticks(self, dist):
         # This underestimates the number of ticks needed e.g 5.9 ticks in
@@ -90,10 +119,12 @@ class AxisMovement(StraightLineMovement):
         # accurate, tests will have to confirm that however
         return dist // WHEEL_CIRCUM
 
-    def course_correction(self, sensors):
-        pass
+forward  = AxisMovement(Directions.FORWARD)
+backward = AxisMovement(Directions.BACKWARD)
+left     = AxisMovement(Directions.LEFT)
+right    = AxisMovement(Directions.RIGHT)
 
-class RotationalMovement(GenericMovement):
+'''class RotationalMovement(GenericMovement):
     def calc_expected_ticks(self, deg):
         # Convert degrees of rotation into wheel ticks
         pass
@@ -115,3 +146,4 @@ back_right = AxisMovement([])
 
 # Rotation
 rotate = RotationalMovement([])
+'''
