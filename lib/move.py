@@ -27,9 +27,18 @@ class GenericMovement:
                 motors.left  : -1,
                 motors.right : -1 }
 
+    def __init__(self):
+        self.modifiers = { self.motors.front : 1,
+                           self.motors.back  : 1,
+                           self.motors.left  : 1,
+                           self.motors.right : 1 }
+
+    def _run_motor(self, motor):
+        motor.run_timed(speed_sp=self.modifiers[motor]*self.scalers[motor]*500, time_sp=1000)
+
     def _stop_all_motors(self):
-        # Stop everything
-        pass
+        for motor in self.motors:
+            motor.reset()
 
 class StraightLineMovement(GenericMovement):
     """Move in a straight line for a specfic distance
@@ -40,8 +49,6 @@ class StraightLineMovement(GenericMovement):
        override calc_expected_ticks and course_correction. Finally setting any
        of the modifier parameters to -1 reverses the direction of the relavent
        motor"""
-
-    modifier = 1
     
     ## Override These Methods ##
     def calc_expected_ticks(self, dist):
@@ -63,7 +70,7 @@ class StraightLineMovement(GenericMovement):
     def _run_motors(self):
         # Run the motors in self.drive for 1 second, don't block
         for motor in self.drive:
-            motor.run_timed(speed_sp=self.modifier*self.scalers[motor]*500, time_sp=1000)
+            self._run_motor(motor)
 
     def _read_line_sensors(self):
         # Return a 2 tuple representing what the sensors can see
@@ -99,6 +106,7 @@ class StraightLineMovement(GenericMovement):
 
 class AxisMovement(StraightLineMovement):
     def __init__(self, direction):
+        StraightLineMovement.__init__(self)
         if direction is Directions.FORWARD or direction is Directions.BACKWARD:
             self.drive = [self.motors.left, self.motors.right]
             self.rudder = [self.motors.front, self.motors.back]
@@ -109,7 +117,8 @@ class AxisMovement(StraightLineMovement):
             raise ValueError('Incompatible Direction for AxisMovement: {!r}'.format(direction))
         
         if direction is Directions.BACKWARD or direction is Directions.LEFT:
-            self.modifier = -1
+            for motor in self.drive:
+                self.modifiers[motor] = -1
 
     def calc_expected_ticks(self, dist):
         # This underestimates the number of ticks needed e.g 5.9 ticks in
@@ -118,31 +127,29 @@ class AxisMovement(StraightLineMovement):
         # accurate, tests will have to confirm that however
         return dist // WHEEL_CIRCUM
 
+class DiagonalMovement(StraightLineMovement):
+    pass
+
+class Rotation(GenericMovement):
+    def __init__(self):
+        GenericMovement.__init__(self)
+    def __call__(self, direction):
+        for modifier in self.modifiers:
+            self.modifiers[modifier] = 1
+        if direction is Directions.RIGHT:
+            self.modifiers[self.motors.left] = -1
+            self.modifiers[self.motors.back] = -1
+        elif direction is Directions.LEFT:
+            self.modifiers[self.motors.right] = -1
+            self.modifiers[self.motors.front] = -1
+        else:
+            raise ValueError('Incompatible Direction for Rotation: {!r}'.format(direction))
+        for motor in self.motors:
+            self._run_motor(motor)
+
 forward  = AxisMovement(Directions.FORWARD)
 backward = AxisMovement(Directions.BACKWARD)
 left     = AxisMovement(Directions.LEFT)
 right    = AxisMovement(Directions.RIGHT)
 
-'''class RotationalMovement(GenericMovement):
-    def calc_expected_ticks(self, deg):
-        # Convert degrees of rotation into wheel ticks
-        pass
-
-# Add the relavent motors to these
-
-# Movement along axis
-forward = AxisMovement([])
-backward = AxisMovement([])
-left = AxisMovement([])
-right = AxisMovement([])
-
-# These may need a different class
-# Diagonals
-front_left = AxisMovement([])
-front_right = AxisMovement([])
-back_left = AxisMovement([])
-back_right = AxisMovement([])
-
-# Rotation
-rotate = RotationalMovement([])
-'''
+rotate   = Rotation()
