@@ -5,12 +5,19 @@ CC = g++
 CFLAGS = -Wall -std=c++11 -fPIC
 
 # Regular include directory and python3.5 development files
-INCLUDES = -I./include/ -I/usr/include/python3.5m
+INCLUDES = -I./include/
+# Include the relavent dev headers directory for the target platform
+# Vagrant machine
+ifeq ($(MAKECMDGOALS),all)
+INCLUDES += -I/usr/include/python3.5m
+endif
 # Test include directory
 TEST_INCLUDES = -I./test/include/
 
-# Link the boost shared library
+# Link the correct boost library version
+ifeq ($(MAKECMDGOALS),all)
 BOOST = -lboost_python-py35
+endif
 
 # Source files
 SRCS := $(wildcard *.cpp)
@@ -30,6 +37,12 @@ TEST = run_tests
 # Build everything (Run with make)
 .PHONY: all
 all: $(MAIN)
+
+.PHONY: dice
+dice:
+
+.PHONY: robot
+robot:
 
 $(MAIN): $(OBJS)
 	# $(OBJS) must appear before $(BOOST) in the command
