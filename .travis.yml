@@ -6,7 +6,7 @@ python:
 # Extra Dependencies
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y python3-dev libboost-python-dev
+  - sudo apt-get install -y python3.5-dev libboost-python-dev
 
 # This will run all python files in any subdirectory of the test directory with
 # test in their name
