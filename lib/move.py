@@ -5,10 +5,14 @@ from functools import wraps
 from thread_decorator import thread
 from enum import Enum
 from collections import namedtuple
+from os import path
 
 import ev3dev.ev3 as ev3
+from ev3dev.core import Motor
 
-WHEEL_CIRCUM = 1
+MOTOR_ROOT = '/sys/class/tacho-motor'
+
+WHEEL_CIRCUM = 20
 
 Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
 
@@ -16,29 +20,39 @@ class GenericMovement:
 
     # Motor objects by location on the chassis
     motors = namedtuple('motors', 'front back left right')(
-        ev3.LargeMotor('outC'), # Front
-        ev3.LargeMotor('outB'), # Back
-        ev3.LargeMotor('outA'), # Left
-        ev3.LargeMotor('outD')  # Right
+        ev3.LargeMotor('outD'), # Front
+        ev3.LargeMotor('outA'), # Back
+        ev3.LargeMotor('outB'), # Left
+        ev3.LargeMotor('outC')  # Right
     )
+
+    motor_files = { motors.front : path.join(MOTOR_ROOT, 'motor4', 'position'),
+                    motors.back : path.join(MOTOR_ROOT, 'motor3', 'position'),
+                    motors.left : path.join(MOTOR_ROOT, 'motor2', 'position'),
+                    motors.right : path.join(MOTOR_ROOT, 'motor1', 'position') }
 
     scalers = { motors.front : -1,
                 motors.back  :  1,
                 motors.left  : -1,
                 motors.right : -1 }
 
+    modifiers = { motors.front : 1,
+                  motors.back  : 1,
+                  motors.left  : 1,
+                  motors.right : 1 }
+
     def __init__(self):
-        self.modifiers = { self.motors.front : 1,
-                           self.motors.back  : 1,
-                           self.motors.left  : 1,
-                           self.motors.right : 1 }
+        for motor in self.motors:
+            motor.run_timed(speed_sp=1, time_sp=1)
+            motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
+            motor.reset()
 
     def _run_motor(self, motor):
-        motor.run_timed(speed_sp=self.modifiers[motor]*self.scalers[motor]*500, time_sp=1000)
+        motor.run_forever(speed_sp=self.modifiers[motor]*self.scalers[motor]*500)
 
     def _stop_all_motors(self):
         for motor in self.motors:
-            motor.reset()
+            motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
 
 class StraightLineMovement(GenericMovement):
     """Move in a straight line for a specfic distance
@@ -57,15 +71,21 @@ class StraightLineMovement(GenericMovement):
     def course_correction(self, sensors):
         # Should be non-blocking, use the motors in self.rudder
         pass
+
+    def parse_odometer(self, readings):
+        pass
     ## End Overrides ##
 
-    def _zero_ododmeter(self):
-        # Odometer should start counting from 1
-        pass
+    def _zero_odometer(self):
+        for motor in self.drive:
+            motor.reset()
+
+    def _read_odometer_base(self, motor):
+        with open(self.motor_files[motor]) as file:
+            return int(file.readline())
 
     def _read_odometer(self):
-        # Read the current value of the odometer
-        pass
+        return tuple(map(self._read_odometer_base, self.drive))
 
     def _run_motors(self):
         # Run the motors in self.drive for 1 second, don't block
@@ -78,7 +98,16 @@ class StraightLineMovement(GenericMovement):
 
     @thread
     def __call__(self, dist):
+        self._zero_odometer()
+        ticks = self.calc_expected_ticks(dist)
+        traveled = 0
         self._run_motors()
+        while traveled < ticks:
+            while any(map(lambda m: m.state == ["running"], self.motors)):
+                traveled = self.parse_odometer(self._read_odometer())
+                if traveled >= ticks:
+                    self._stop_all_motors()
+                    break
 # Course correction and distance measuring stuff
 '''
         # Reset the odometer
@@ -125,7 +154,10 @@ class AxisMovement(StraightLineMovement):
         # reality will give 5 with this. Coupled with the control loop's
         # tendency to overshoot however I think this could be reasonably
         # accurate, tests will have to confirm that however
-        return dist // WHEEL_CIRCUM
+        return (360 * dist) // WHEEL_CIRCUM
+
+    def parse_odometer(self, readings):
+        return min(readings)
 
 class DiagonalMovement(StraightLineMovement):
     pass
