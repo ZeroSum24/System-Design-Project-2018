@@ -11,11 +11,17 @@ INCLUDES = -I./include/
 ifeq ($(MAKECMDGOALS),all)
 INCLUDES += -I/usr/include/python3.5m
 endif
+ifeq ($(MAKECMDGOALS),test)
+INCLUDES += -I/usr/include/python3.5m
+endif
 # Test include directory
 TEST_INCLUDES = -I./test/include/
 
 # Link the correct boost library version
 ifeq ($(MAKECMDGOALS),all)
+BOOST = -lboost_python-py35
+endif
+ifeq ($(MAKECMDGOALS),test)
 BOOST = -lboost_python-py35
 endif
 

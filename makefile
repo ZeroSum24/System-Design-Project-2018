@@ -32,7 +32,7 @@ vagrant:
 test: $(PY_TEST_FILES)
 
 # Run all tests including compiled tests
-# Additionally run the tests defined in the cpp makefile for the TravisCI Docker Image
+# Additionally run the tests defined in the cpp makefile for the TravisCI Docker Image (At the moment this is the same build process as vagrant with added tests)
 .PHONY: test-all
 test-all: test cpp
 	$(MAKE) -C $(CPP_DIR) test
