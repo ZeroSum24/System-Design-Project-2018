@@ -6,6 +6,8 @@ from thread_decorator import thread
 from enum import Enum
 from collections import namedtuple
 
+import ev3dev.ev3 as ev3
+
 WHEEL_CIRCUM = 1
 
 Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
@@ -14,18 +16,18 @@ class GenericMovement:
 
     # Motor objects by location on the chassis
     motors = namedtuple('motors', 'front back left right')(
-        None, # Front
-        None, # Back
-        None, # Left
-        None  # Right
+        ev3.LargeMotor('outC'), # Front
+        ev3.LargeMotor('outB'), # Back
+        ev3.LargeMotor('outA'), # Left
+        ev3.LargeMotor('outD')  # Right
     )
 
     # TODO: Tune these to normalise the direction of the motors
     scalers = namedtuple('scalers', 'front back left right')(
-        1, # Front
+        -1, # Front
         1, # Back
-        1, # Left
-        1  # Right
+        -1, # Left
+        -1  # Right
     )
 
     def _stop_all_motors(self):
@@ -87,7 +89,7 @@ class StraightLineMovement(GenericMovement):
             # Run the motors for a bit
             self._run_motors()
             # Poll while any motor is running
-            while any(map(lamda m: m.state == ["running"], self._motors)):
+            while any(map(lambda m: m.state == ["running"], self._motors)):
                 # Calculate how far we've gone
                 ticks_traveled = self._read_odometer()
                 # If we made it stop
