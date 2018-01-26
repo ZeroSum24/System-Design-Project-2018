@@ -22,13 +22,10 @@ class GenericMovement:
         ev3.LargeMotor('outD')  # Right
     )
 
-    # TODO: Tune these to normalise the direction of the motors
-    scalers = namedtuple('scalers', 'front back left right')(
-        -1, # Front
-        1, # Back
-        -1, # Left
-        -1  # Right
-    )
+    scalers = { motors.front : -1,
+                motors.back  :  1,
+                motors.left  : -1,
+                motors.right : -1 }
 
     def _stop_all_motors(self):
         # Stop everything
@@ -44,12 +41,7 @@ class StraightLineMovement(GenericMovement):
        of the modifier parameters to -1 reverses the direction of the relavent
        motor"""
 
-    modifiers = namedtuple('modifiers', 'front back left right')(
-        1,
-        1,
-        1,
-        1
-    )
+    modifier = 1
     
     ## Override These Methods ##
     def calc_expected_ticks(self, dist):
@@ -70,7 +62,8 @@ class StraightLineMovement(GenericMovement):
 
     def _run_motors(self):
         # Run the motors in self.drive for 1 second, don't block
-        pass
+        for motor in self.drive:
+            motor.run_timed(speed_sp=self.modifier*self.scalers[motor]*500, time_sp=1000)
 
     def _read_line_sensors(self):
         # Return a 2 tuple representing what the sensors can see
@@ -78,6 +71,9 @@ class StraightLineMovement(GenericMovement):
 
     @thread
     def __call__(self, dist):
+        self._run_motors()
+# Course correction and distance measuring stuff
+'''
         # Reset the odometer
         self._zero_odometer()
         # Calculate how far to go
@@ -99,15 +95,16 @@ class StraightLineMovement(GenericMovement):
                 # Apply any course corrections
                 sensor_output = self._read_line_sensors()
                 self.course_correction(sensor_output)
+'''
 
 class AxisMovement(StraightLineMovement):
     def __init__(self, direction):
         if direction is Directions.FORWARD or direction is Directions.BACKWARD:
-            self.drive = ['left', 'right']
-            self.rudder = ['front', 'back']
+            self.drive = [self.motors.left, self.motors.right]
+            self.rudder = [self.motors.front, self.motors.back]
         elif direction is Directions.LEFT or direction is Directions.RIGHT:
-            self.drive = ['front', 'back']
-            self.rudder = ['left', 'right']
+            self.drive = [self.motors.front, self.motors.back]
+            self.rudder = [self.motors.left, self.motors.right]
         else:
             raise ValueError('Incompatible Direction for AxisMovement: {!r}'.format(direction))
         
