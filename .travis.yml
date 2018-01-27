@@ -3,6 +3,10 @@ language: python
 python:
   - "3.5"
 
+sudo: required
+services:
+  - docker
+
 # This will run all python files in any subdirectory of the test directory with
 # test in their name
-script: make test
+script: pwd
