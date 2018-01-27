@@ -1,7 +1,5 @@
 """Wrapper library for moving the ev3"""
 
-import threading
-from functools import wraps
 from thread_decorator import thread
 from enum import Enum
 from collections import namedtuple
@@ -63,7 +61,7 @@ class StraightLineMovement(GenericMovement):
        override calc_expected_ticks and course_correction. Finally setting any
        of the modifier parameters to -1 reverses the direction of the relavent
        motor"""
-    
+
     ## Override These Methods ##
     def calc_expected_ticks(self, dist):
         pass
