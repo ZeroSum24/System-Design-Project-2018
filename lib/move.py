@@ -6,6 +6,7 @@ from collections import namedtuple
 from os import path
 import os
 from double_map import DoubleMap
+import catcher
 
 # Squash the exceptions resulting from running the code outside of the ev3
 try:
