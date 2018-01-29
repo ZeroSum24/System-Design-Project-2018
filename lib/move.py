@@ -4,6 +4,8 @@ from thread_decorator import thread
 from enum import Enum
 from collections import namedtuple
 from os import path
+import os
+from double_map import DoubleMap
 
 import ev3dev.ev3 as ev3
 from ev3dev.core import Motor
@@ -16,34 +18,48 @@ Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
 
 class GenericMovement:
 
+    # Mapping between motor names and addresses in the ev3
+    _motor_mapping = DoubleMap({'front': 'outD',
+                                'back' : 'outA',
+                                'left' : 'outB',
+                                'right': 'outC'})
+    
     # Motor objects by location on the chassis
     motors = namedtuple('motors', 'front back left right')(
-        ev3.LargeMotor('outD'), # Front
-        ev3.LargeMotor('outA'), # Back
-        ev3.LargeMotor('outB'), # Left
-        ev3.LargeMotor('outC')  # Right
+        ev3.LargeMotor(_motor_mapping['front']), # Front
+        ev3.LargeMotor(_motor_mapping['back']), # Back
+        ev3.LargeMotor(_motor_mapping['left']), # Left
+        ev3.LargeMotor(_motor_mapping['right'])  # Right
     )
 
-    motor_files = { motors.front : path.join(MOTOR_ROOT, 'motor4', 'position'),
-                    motors.back : path.join(MOTOR_ROOT, 'motor3', 'position'),
-                    motors.left : path.join(MOTOR_ROOT, 'motor2', 'position'),
-                    motors.right : path.join(MOTOR_ROOT, 'motor1', 'position') }
+    # Normalises the direction of each motor (Left to right axis drives forward,
+    # front to back axis drives right)
+    scalers = {motors.front : -1,
+               motors.back  :  1,
+               motors.left  : -1,
+               motors.right : -1}
 
-    scalers = { motors.front : -1,
-                motors.back  :  1,
-                motors.left  : -1,
-                motors.right : -1 }
-
-    modifiers = { motors.front : 1,
-                  motors.back  : 1,
-                  motors.left  : 1,
-                  motors.right : 1 }
+    modifiers = {motors.front : 1,
+                 motors.back  : 1,
+                 motors.left  : 1,
+                 motors.right : 1}
 
     def __init__(self):
+        # Seems to fix the position bug
         for motor in self.motors:
             motor.run_timed(speed_sp=1, time_sp=1)
             motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
             motor.reset()
+
+        # Autodiscover the mapping between each motor and the file that holds
+        # it's position information
+        motor_dirs = os.listdir(MOTOR_ROOT)
+        for motor in motor_dirs:
+            # The address file contains the real name of the motor (out*)
+            with open(path.join(MOTOR_ROOT, motor, 'address')) as file:
+                name = file.readline()
+            # Add to the correct mapping
+            self.pos_files[self.motors[self._motor_mapping[name]]] = path.join(MOTOR_ROOT, motor, 'position')
 
     def _run_motor(self, motor):
         motor.run_forever(speed_sp=self.modifiers[motor]*self.scalers[motor]*500)
@@ -79,7 +95,7 @@ class StraightLineMovement(GenericMovement):
             motor.reset()
 
     def _read_odometer_base(self, motor):
-        with open(self.motor_files[motor]) as file:
+        with open(self.pos_files[motor]) as file:
             return int(file.readline())
 
     def _read_odometer(self):
