@@ -13,23 +13,23 @@ try:
     import ev3dev.ev3 as ev3
     from ev3dev.core import Motor
 except ModuleNotFoundError:
-    class placeholder:
+    class _PlaceHolder:
         # Whenever an attribute is requested return another placeholder
         def __getattr__(self, attr):
-            return placeholder()
+            return _PlaceHolder()
         # When called accept any arguments and return another placeholder
         def __call__(self, *args, **kwargs):
-            return placeholder()
-    ev3 = placeholder()
-    Motor = placeholder()
+            return _PlaceHolder()
+    ev3 = _PlaceHolder()
+    Motor = _PlaceHolder()
 
-MOTOR_ROOT = '/sys/class/tacho-motor'
+_MOTOR_ROOT = '/sys/class/tacho-motor'
 
-WHEEL_CIRCUM = 20
+_WHEEL_CIRCUM = 20
 
 Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
 
-class GenericMovement:
+class _GenericMovement:
 
     # Mapping between motor names and addresses in the ev3
     _motor_mapping = DoubleMap({'front': 'outD',
@@ -68,16 +68,16 @@ class GenericMovement:
         # Autodiscover the mapping between each motor and the file that holds
         # it's position information
         try:
-            motor_dirs = os.listdir(MOTOR_ROOT)
+            motor_dirs = os.listdir(_MOTOR_ROOT)
         except FileNotFoundError:
             pass
         else:
             for motor in motor_dirs:
                 # The address file contains the real name of the motor (out*)
-                with open(path.join(MOTOR_ROOT, motor, 'address')) as file:
+                with open(path.join(_MOTOR_ROOT, motor, 'address')) as file:
                     name = file.readline()
                     # Add to the correct mapping
-                    self.pos_files[self.motors[self._motor_mapping[name]]] = path.join(MOTOR_ROOT, motor, 'position')
+                    self.pos_files[self.motors[self._motor_mapping[name]]] = path.join(_MOTOR_ROOT, motor, 'position')
 
     def _run_motor(self, motor):
         motor.run_forever(speed_sp=self.modifiers[motor]*self.scalers[motor]*500)
@@ -86,7 +86,7 @@ class GenericMovement:
         for motor in self.motors:
             motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
 
-class StraightLineMovement(GenericMovement):
+class _StraightLineMovement(_GenericMovement):
     """Move in a straight line for a specfic distance
 
        Subclasses should define self.drive and self.rudder, self.drive should
@@ -166,9 +166,9 @@ class StraightLineMovement(GenericMovement):
                 self.course_correction(sensor_output)
 '''
 
-class AxisMovement(StraightLineMovement):
+class _AxisMovement(_StraightLineMovement):
     def __init__(self, direction):
-        StraightLineMovement.__init__(self)
+        _StraightLineMovement.__init__(self)
         if direction is Directions.FORWARD or direction is Directions.BACKWARD:
             self.drive = [self.motors.left, self.motors.right]
             self.rudder = [self.motors.front, self.motors.back]
@@ -187,18 +187,16 @@ class AxisMovement(StraightLineMovement):
         # reality will give 5 with this. Coupled with the control loop's
         # tendency to overshoot however I think this could be reasonably
         # accurate, tests will have to confirm that however
-        return (360 * dist) // WHEEL_CIRCUM
+        return (360 * dist) // _WHEEL_CIRCUM
 
     def parse_odometer(self, readings):
         return min(readings)
 
-class DiagonalMovement(StraightLineMovement):
+class _DiagonalMovement(_StraightLineMovement):
     pass
 
-class Rotation(GenericMovement):
+class _Rotation(_GenericMovement):
     """This is currently rotate forever, it will be changed"""
-    def __init__(self):
-        GenericMovement.__init__(self)
     def __call__(self, direction):
         for modifier in self.modifiers:
             self.modifiers[modifier] = 1
@@ -212,13 +210,10 @@ class Rotation(GenericMovement):
             raise ValueError('Incompatible Direction for Rotation: {!r}'.format(direction))
         for motor in self.motors:
             self._run_motor(motor)
-
-
-Directions = Directions
     
-forward  = AxisMovement(Directions.FORWARD)
-backward = AxisMovement(Directions.BACKWARD)
-left     = AxisMovement(Directions.LEFT)
-right    = AxisMovement(Directions.RIGHT)
+forward  = _AxisMovement(Directions.FORWARD)
+backward = _AxisMovement(Directions.BACKWARD)
+left     = _AxisMovement(Directions.LEFT)
+right    = _AxisMovement(Directions.RIGHT)
 
-rotate   = Rotation()
+rotate   = _Rotation()
