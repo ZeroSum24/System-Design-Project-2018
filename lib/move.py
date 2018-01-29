@@ -146,30 +146,6 @@ class _StraightLineMovement(_GenericMovement):
                     if traveled >= ticks:
                         self._stop_all_motors()
                         break
-# Course correction and distance measuring stuff
-'''
-        # Reset the odometer
-        self._zero_odometer()
-        # Calculate how far to go
-        ticks = self.calc_expected_ticks(self, dist)
-        ticks_traveled = 0
-        # Keep moving until we reach the destination
-        # Will tend to overshoot by strictly less than 2 rotations
-        while ticks < ticks_traveled:
-            # Run the motors for a bit
-            self._run_motors()
-            # Poll while any motor is running
-            while any(map(lambda m: m.state == ["running"], self._motors)):
-                # Calculate how far we've gone
-                ticks_traveled = self._read_odometer()
-                # If we made it stop
-                if ticks_traveled >= ticks:
-                    self._stop_all_motors()
-                    break
-                # Apply any course corrections
-                sensor_output = self._read_line_sensors()
-                self.course_correction(sensor_output)
-'''
 
 class _AxisMovement(_StraightLineMovement):
     def __init__(self, direction):
@@ -182,7 +158,7 @@ class _AxisMovement(_StraightLineMovement):
             self.rudder = [self.motors.left, self.motors.right]
         else:
             raise ValueError('Incompatible Direction for AxisMovement: {!r}'.format(direction))
-        
+
         if direction is Directions.BACKWARD or direction is Directions.LEFT:
             for motor in self.drive:
                 self.modifiers[motor] = -1
