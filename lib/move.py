@@ -1,5 +1,6 @@
 """Wrapper library for moving the ev3"""
 
+from sys import modules
 from thread_decorator import thread
 from enum import Enum
 from collections import namedtuple
@@ -7,8 +8,20 @@ from os import path
 import os
 from double_map import DoubleMap
 
-import ev3dev.ev3 as ev3
-from ev3dev.core import Motor
+# Squash the exceptions resulting from running the code outside of the ev3
+try:
+    import ev3dev.ev3 as ev3
+    from ev3dev.core import Motor
+except ModuleNotFoundError:
+    class placeholder:
+        # Whenever an attribute is requested return another placeholder
+        def __getattr__(self, attr):
+            return placeholder()
+        # When called accept any arguments and return another placeholder
+        def __call__(self, *args, **kwargs):
+            return placeholder()
+    ev3 = placeholder()
+    Motor = placeholder()
 
 MOTOR_ROOT = '/sys/class/tacho-motor'
 
@@ -54,13 +67,17 @@ class GenericMovement:
 
         # Autodiscover the mapping between each motor and the file that holds
         # it's position information
-        motor_dirs = os.listdir(MOTOR_ROOT)
-        for motor in motor_dirs:
-            # The address file contains the real name of the motor (out*)
-            with open(path.join(MOTOR_ROOT, motor, 'address')) as file:
-                name = file.readline()
-            # Add to the correct mapping
-            self.pos_files[self.motors[self._motor_mapping[name]]] = path.join(MOTOR_ROOT, motor, 'position')
+        try:
+            motor_dirs = os.listdir(MOTOR_ROOT)
+        except FileNotFoundError:
+            pass
+        else:
+            for motor in motor_dirs:
+                # The address file contains the real name of the motor (out*)
+                with open(path.join(MOTOR_ROOT, motor, 'address')) as file:
+                    name = file.readline()
+                    # Add to the correct mapping
+                    self.pos_files[self.motors[self._motor_mapping[name]]] = path.join(MOTOR_ROOT, motor, 'position')
 
     def _run_motor(self, motor):
         motor.run_forever(speed_sp=self.modifiers[motor]*self.scalers[motor]*500)
@@ -196,6 +213,9 @@ class Rotation(GenericMovement):
         for motor in self.motors:
             self._run_motor(motor)
 
+
+Directions = Directions
+    
 forward  = AxisMovement(Directions.FORWARD)
 backward = AxisMovement(Directions.BACKWARD)
 left     = AxisMovement(Directions.LEFT)
