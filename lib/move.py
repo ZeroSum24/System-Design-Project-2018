@@ -1,6 +1,5 @@
 """Wrapper library for moving the ev3"""
 
-from sys import modules
 from thread_decorator import thread
 from enum import Enum
 from collections import namedtuple
@@ -38,7 +37,7 @@ class _GenericMovement:
                                 'back' : 'outA',
                                 'left' : 'outB',
                                 'right': 'outC'})
-    
+
     # Motor objects by location on the chassis
     motors = namedtuple('motors', 'front back left right')(
         ev3.LargeMotor(_motor_mapping['front']), # Front
