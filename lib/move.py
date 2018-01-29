@@ -12,6 +12,7 @@ from double_map import DoubleMap
 try:
     import ev3dev.ev3 as ev3
     from ev3dev.core import Motor
+    _HAVE_EV3 = True
 except ModuleNotFoundError:
     class _PlaceHolder:
         # Whenever an attribute is requested return another placeholder
@@ -22,6 +23,7 @@ except ModuleNotFoundError:
             return _PlaceHolder()
     ev3 = _PlaceHolder()
     Motor = _PlaceHolder()
+    _HAVE_EV3 = False
 
 _MOTOR_ROOT = '/sys/class/tacho-motor'
 
@@ -131,16 +133,19 @@ class _StraightLineMovement(_GenericMovement):
 
     @thread
     def __call__(self, dist):
-        self._zero_odometer()
-        ticks = self.calc_expected_ticks(dist)
-        traveled = 0
-        self._run_motors()
-        while traveled < ticks:
-            while any(map(lambda m: m.state == ["running"], self.motors)):
-                traveled = self.parse_odometer(self._read_odometer())
-                if traveled >= ticks:
-                    self._stop_all_motors()
-                    break
+        # Only attempt to run the real motor routine if the ev3 module is
+        # present
+        if _HAVE_EV3:
+            self._zero_odometer()
+            ticks = self.calc_expected_ticks(dist)
+            traveled = 0
+            self._run_motors()
+            while traveled < ticks:
+                while any(map(lambda m: m.state == ["running"], self.motors)):
+                    traveled = self.parse_odometer(self._read_odometer())
+                    if traveled >= ticks:
+                        self._stop_all_motors()
+                        break
 # Course correction and distance measuring stuff
 '''
         # Reset the odometer
