@@ -39,6 +39,7 @@ class GenericMovement:
                motors.left  : -1,
                motors.right : -1}
 
+    # Can be set by subclasses to selectivly scale motor speed and direction
     modifiers = {motors.front : 1,
                  motors.back  : 1,
                  motors.left  : 1,
@@ -75,8 +76,7 @@ class StraightLineMovement(GenericMovement):
        contain the motors that will be used to move the robot, self.rudder
        should contain the motors for course correction. Subclasses should also
        override calc_expected_ticks and course_correction. Finally setting any
-       of the modifier parameters to -1 reverses the direction of the relavent
-       motor"""
+       of the modifier can be used to scale the each motor's speed and direction"""
 
     ## Override These Methods ##
     def calc_expected_ticks(self, dist):
@@ -95,14 +95,16 @@ class StraightLineMovement(GenericMovement):
             motor.reset()
 
     def _read_odometer_base(self, motor):
+        """Read the odometer on one motor"""
         with open(self.pos_files[motor]) as file:
             return int(file.readline())
 
     def _read_odometer(self):
+        """Read the odometer on all the motors"""
         return tuple(map(self._read_odometer_base, self.drive))
 
     def _run_motors(self):
-        # Run the motors in self.drive for 1 second, don't block
+        """Run all the drive motors"""
         for motor in self.drive:
             self._run_motor(motor)
 
@@ -177,6 +179,7 @@ class DiagonalMovement(StraightLineMovement):
     pass
 
 class Rotation(GenericMovement):
+    """This is currently rotate forever, it will be changed"""
     def __init__(self):
         GenericMovement.__init__(self)
     def __call__(self, direction):
