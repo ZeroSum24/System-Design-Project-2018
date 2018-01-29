@@ -191,7 +191,7 @@ class _Rotation(_GenericMovement):
             raise ValueError('Incompatible Direction for Rotation: {!r}'.format(direction))
         for motor in self.motors:
             self._run_motor(motor)
-    
+
 forward  = _AxisMovement(Directions.FORWARD)
 backward = _AxisMovement(Directions.BACKWARD)
 left     = _AxisMovement(Directions.LEFT)
