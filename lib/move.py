@@ -27,7 +27,8 @@ except ModuleNotFoundError:
 
 _MOTOR_ROOT = '/sys/class/tacho-motor'
 
-_WHEEL_CIRCUM = 20
+_WHEEL_CIRCUM = 20.106193
+_WHEEL_ROT_TO_BASE_ROT = 3.74999999751
 
 Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
 
