@@ -79,17 +79,59 @@ class _GenericMovement:
                     # Add to the correct mapping
                     self._pos_files[getattr(self.motors, self._motor_mapping[name])] = path.join(_MOTOR_ROOT, motor, 'position')
 
-    def _run_motor(self, motor):
+    def _run_motor(self, motor, speed):
 	# Zero the motor's odometer
         motor.reset()
         # Fixes the odometer reading bug
         motor.run_timed(speed_sp=500, time_sp=500)
         # Preempts the previous command
-        motor.run_forever(speed_sp=self.modifiers[motor]*self.scalers[motor]*500)
+        motor.run_forever(speed_sp=self.modifiers[motor]*self.scalers[motor]*speed)
 
     def _stop_all_motors(self):
         for motor in self.motors:
             motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
+
+    ## Override These Methods ##
+    def calc_expected_ticks(self, dist):
+        pass
+
+    def parse_odometer(self, readings):
+        pass
+    ## End Overrides ##
+
+    def _read_odometer_base(self, motor):
+        """Read the odometer on one motor"""
+        with open(self._pos_files[motor]) as file:
+            return abs(int(file.readline()))
+
+    def _read_odometer(self):
+        """Read the odometer on all the motors"""
+        return tuple(map(self._read_odometer_base, self.drive))
+
+    def _run_motors(self, speed):
+        """Run all the drive motors"""
+        for motor in self.drive:
+            self._run_motor(motor, speed)
+
+    def _read_line_sensors(self):
+        # Return a 2 tuple representing what the sensors can see
+        pass
+
+    @thread
+    def __call__(self, dist, speed=400):
+        # Only attempt to run the real motor routine if the ev3 module is
+        # present
+        if _HAVE_EV3:
+            ticks = self.calc_expected_ticks(dist)
+            print(ticks)
+            traveled = 0
+            self._run_motors(speed)
+            while traveled < ticks:
+                while any(map(lambda m: m.state == ["running"], self.motors)):
+                    traveled = self.parse_odometer(self._read_odometer())
+                    if traveled >= ticks:
+                        self._stop_all_motors()
+                        break
 
 class _StraightLineMovement(_GenericMovement):
     """Move in a straight line for a specfic distance
@@ -101,55 +143,10 @@ class _StraightLineMovement(_GenericMovement):
        of the modifier can be used to scale the each motor's speed and direction"""
 
     ## Override These Methods ##
-    def calc_expected_ticks(self, dist):
-        pass
-
     def course_correction(self, sensors):
         # Should be non-blocking, use the motors in self.rudder
         pass
-
-    def parse_odometer(self, readings):
-        pass
     ## End Overrides ##
-
-    def _zero_odometer(self):
-        for motor in self.drive:
-            motor.reset()
-
-    def _read_odometer_base(self, motor):
-        """Read the odometer on one motor"""
-        with open(self._pos_files[motor]) as file:
-            return abs(int(file.readline()))
-
-    def _read_odometer(self):
-        """Read the odometer on all the motors"""
-        return tuple(map(self._read_odometer_base, self.drive))
-
-    def _run_motors(self):
-        """Run all the drive motors"""
-        for motor in self.drive:
-            self._run_motor(motor)
-
-    def _read_line_sensors(self):
-        # Return a 2 tuple representing what the sensors can see
-        pass
-
-    @thread
-    def __call__(self, dist):
-        # Only attempt to run the real motor routine if the ev3 module is
-        # present
-        if _HAVE_EV3:
-            self._zero_odometer()
-            ticks = self.calc_expected_ticks(dist)
-            print(ticks)
-            traveled = 0
-            self._run_motors()
-            while traveled < ticks:
-                while any(map(lambda m: m.state == ["running"], self.motors)):
-                    traveled = self.parse_odometer(self._read_odometer())
-                    if traveled >= ticks:
-                        self._stop_all_motors()
-                        break
 
 class _AxisMovement(_StraightLineMovement):
     def __init__(self, direction):
@@ -182,23 +179,28 @@ class _DiagonalMovement(_StraightLineMovement):
 
 class _Rotation(_GenericMovement):
     """This is currently rotate forever, it will be changed"""
-    def __call__(self, direction):
-        for modifier in self.modifiers:
-            self.modifiers[modifier] = 1
+    def __init__(self, direction):
+        _GenericMovement.__init__(self)
         if direction is Directions.RIGHT:
-            self.modifiers[self.motors.left] = -1
+            self.modifiers[self.motors.right] = -1
             self.modifiers[self.motors.back] = -1
         elif direction is Directions.LEFT:
-            self.modifiers[self.motors.right] = -1
+            self.modifiers[self.motors.left] = -1
             self.modifiers[self.motors.front] = -1
         else:
             raise ValueError('Incompatible Direction for Rotation: {!r}'.format(direction))
-        for motor in self.motors:
-            self._run_motor(motor)
+        self.drive = self.motors
+
+    def calc_expected_ticks(self, angle):
+        return int(angle * _BASE_ROT_TO_WHEEL_ROT)
+
+    def parse_odometer(self, readings):
+        return min(readings)
 
 forward  = _AxisMovement(Directions.FORWARD)
 backward = _AxisMovement(Directions.BACKWARD)
 left     = _AxisMovement(Directions.LEFT)
 right    = _AxisMovement(Directions.RIGHT)
 
-rotate   = _Rotation()
+rotatel   = _Rotation(Directions.LEFT)
+rotater   = _Rotation(Directions.RIGHT)
