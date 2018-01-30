@@ -8,6 +8,8 @@ import os
 from double_map import DoubleMap
 import catcher
 from math import pi
+from sensor import read_color, sonar_poll
+from colors import Colors
 
 # Squash the exceptions resulting from running the code outside of the ev3
 try:
@@ -97,6 +99,10 @@ class _GenericMovement:
 
     def parse_odometer(self, readings):
         pass
+
+    def course_correction(self):
+        # Should be non-blocking, use the motors in self.rudder
+        pass
     ## End Overrides ##
 
     def _read_odometer_base(self, motor):
@@ -114,24 +120,25 @@ class _GenericMovement:
             self._run_motor(motor, speed)
 
     def _read_line_sensors(self):
-        # Return a 2 tuple representing what the sensors can see
-        pass
+        return map(lambda x: x is Colors.BLACK, read_color())
 
     @thread
-    def __call__(self, dist, speed=400):
+    def __call__(self, dist, speed=200):
         # Only attempt to run the real motor routine if the ev3 module is
         # present
         if _HAVE_EV3:
             ticks = self.calc_expected_ticks(dist)
-            print(ticks)
             traveled = 0
             self._run_motors(speed)
             while traveled < ticks:
-                while any(map(lambda m: m.state == ["running"], self.motors)):
-                    traveled = self.parse_odometer(self._read_odometer())
-                    if traveled >= ticks:
-                        self._stop_all_motors()
-                        break
+                if sonar_poll() < 7:
+                    self._stop_all_motors()
+                    break
+                self.course_correction()
+                traveled = self.parse_odometer(self._read_odometer())
+                if traveled >= ticks:
+                    self._stop_all_motors()
+                    break
 
 class _StraightLineMovement(_GenericMovement):
     """Move in a straight line for a specfic distance
@@ -141,12 +148,6 @@ class _StraightLineMovement(_GenericMovement):
        should contain the motors for course correction. Subclasses should also
        override calc_expected_ticks and course_correction. Finally setting any
        of the modifier can be used to scale the each motor's speed and direction"""
-
-    ## Override These Methods ##
-    def course_correction(self, sensors):
-        # Should be non-blocking, use the motors in self.rudder
-        pass
-    ## End Overrides ##
 
 class _AxisMovement(_StraightLineMovement):
     def __init__(self, direction):
@@ -173,6 +174,15 @@ class _AxisMovement(_StraightLineMovement):
 
     def parse_odometer(self, readings):
         return min(readings)
+
+    def course_correction(self):
+        left, right = self._read_line_sensors()
+        if left:
+           self.motors.front.run_timed(speed_sp=self.scalers[self.motors.front]*-200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
+           self.motors.back.run_timed(speed_sp=self.scalers[self.motors.back]*200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
+        elif right:
+           self.motors.front.run_timed(speed_sp=self.scalers[self.motors.front]*200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
+           self.motors.back.run_timed(speed_sp=self.scalers[self.motors.back]*-200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
 
 class _DiagonalMovement(_StraightLineMovement):
     pass
