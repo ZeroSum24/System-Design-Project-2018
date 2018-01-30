@@ -54,18 +54,18 @@ class _GenericMovement:
                motors.left  : -1,
                motors.right : -1}
 
-    # Can be set by subclasses to selectivly scale motor speed and direction
-    modifiers = {motors.front : 1,
-                 motors.back  : 1,
-                 motors.left  : 1,
-                 motors.right : 1}
-
     def __init__(self):
         # Seems to fix the position bug
         for motor in self.motors:
             motor.run_timed(speed_sp=1, time_sp=1)
             motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
             motor.reset()
+
+        # Can be set by subclasses to selectivly scale motor speed and direction
+        self.modifiers = {self.motors.front : 1,
+                        self.motors.back  : 1,
+                        self.motors.left  : 1,
+                        self.motors.right : 1}
 
         # Autodiscover the mapping between each motor and the file that holds
         # it's position information
