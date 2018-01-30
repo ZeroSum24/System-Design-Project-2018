@@ -7,6 +7,7 @@ from os import path
 import os
 from double_map import DoubleMap
 import catcher
+from math import pi
 
 # Squash the exceptions resulting from running the code outside of the ev3
 try:
@@ -28,11 +29,13 @@ except ModuleNotFoundError:
 _MOTOR_ROOT = '/sys/class/tacho-motor'
 
 _WHEEL_CIRCUM = 20.106193
-_WHEEL_ROT_TO_BASE_ROT = 3.74999999751
+_BASE_ROT_TO_WHEEL_ROT = (24 * pi) / _WHEEL_CIRCUM
 
 Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
 
 class _GenericMovement:
+
+    _pos_files = {}
 
     # Mapping between motor names and addresses in the ev3
     _motor_mapping = DoubleMap({'front': 'outD',
@@ -56,17 +59,11 @@ class _GenericMovement:
                motors.right : -1}
 
     def __init__(self):
-        # Seems to fix the position bug
-        for motor in self.motors:
-            motor.run_timed(speed_sp=1, time_sp=1)
-            motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
-            motor.reset()
-
         # Can be set by subclasses to selectivly scale motor speed and direction
         self.modifiers = {self.motors.front : 1,
-                        self.motors.back  : 1,
-                        self.motors.left  : 1,
-                        self.motors.right : 1}
+                          self.motors.back  : 1,
+                          self.motors.left  : 1,
+                          self.motors.right : 1}
 
         # Autodiscover the mapping between each motor and the file that holds
         # it's position information
@@ -78,11 +75,16 @@ class _GenericMovement:
             for motor in motor_dirs:
                 # The address file contains the real name of the motor (out*)
                 with open(path.join(_MOTOR_ROOT, motor, 'address')) as file:
-                    name = file.readline()
+                    name = file.readline().rstrip()
                     # Add to the correct mapping
-                    self.pos_files[self.motors[self._motor_mapping[name]]] = path.join(_MOTOR_ROOT, motor, 'position')
+                    self._pos_files[getattr(self.motors, self._motor_mapping[name])] = path.join(_MOTOR_ROOT, motor, 'position')
 
     def _run_motor(self, motor):
+	# Zero the motor's odometer
+        motor.reset()
+        # Fixes the odometer reading bug
+        motor.run_timed(speed_sp=500, time_sp=500)
+        # Preempts the previous command
         motor.run_forever(speed_sp=self.modifiers[motor]*self.scalers[motor]*500)
 
     def _stop_all_motors(self):
@@ -116,8 +118,8 @@ class _StraightLineMovement(_GenericMovement):
 
     def _read_odometer_base(self, motor):
         """Read the odometer on one motor"""
-        with open(self.pos_files[motor]) as file:
-            return int(file.readline())
+        with open(self._pos_files[motor]) as file:
+            return abs(int(file.readline()))
 
     def _read_odometer(self):
         """Read the odometer on all the motors"""
@@ -139,6 +141,7 @@ class _StraightLineMovement(_GenericMovement):
         if _HAVE_EV3:
             self._zero_odometer()
             ticks = self.calc_expected_ticks(dist)
+            print(ticks)
             traveled = 0
             self._run_motors()
             while traveled < ticks:
