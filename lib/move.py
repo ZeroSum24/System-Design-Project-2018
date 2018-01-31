@@ -1,180 +1,142 @@
 """Wrapper library for moving the ev3"""
 
-from thread_decorator import thread
-from enum import Enum
-from collections import namedtuple
-from os import path
-import os
+import Directions
+import Colors
+import imp
 from double_map import DoubleMap
-import catcher
+import os
 from math import pi
-from sensor import read_color, sonar_poll
-from colors import Colors
+from sensors import read_color, sonar_poll
 
-# Squash the exceptions resulting from running the code outside of the ev3
-try:
-    import ev3dev.ev3 as ev3
-    from ev3dev.core import Motor
-    _HAVE_EV3 = True
-except ModuleNotFoundError:
-    class _PlaceHolder:
-        # Whenever an attribute is requested return another placeholder
-        def __getattr__(self, attr):
-            return _PlaceHolder()
-        # When called accept any arguments and return another placeholder
-        def __call__(self, *args, **kwargs):
-            return _PlaceHolder()
-    ev3 = _PlaceHolder()
-    Motor = _PlaceHolder()
-    _HAVE_EV3 = False
-
-_MOTOR_ROOT = '/sys/class/tacho-motor'
+##### Config #####
 
 _WHEEL_CIRCUM = 20.106193
 _BASE_ROT_TO_WHEEL_ROT = (24 * pi) / _WHEEL_CIRCUM
+_MOTOR_ROOT = '/sys/class/tacho-motor'
+_DEFAULT_RUN_SPEED = 200
 
-Directions = Enum('Directions', 'FORWARD BACKWARD LEFT RIGHT')
+# Normalises the direction of each motor (Left to right axis drives forward,
+# front to back axis drives right)
+_SCALERS = {MOTORS.front : -1,
+ `          MOTORS.back  :  1,
+            MOTORS.left  : -1,
+            MOTORS.right : -1}
 
-class _GenericMovement:
+### End Config ###
 
-    _pos_files = {}
+##### Setup #####
 
-    # Mapping between motor names and addresses in the ev3
-    _motor_mapping = DoubleMap({'front': 'outD',
-                                'back' : 'outA',
-                                'left' : 'outB',
-                                'right': 'outC'})
+_ODOMETERS = {}
 
-    # Motor objects by location on the chassis
-    motors = namedtuple('motors', 'front back left right')(
-        ev3.LargeMotor(_motor_mapping['front']), # Front
-        ev3.LargeMotor(_motor_mapping['back']), # Back
-        ev3.LargeMotor(_motor_mapping['left']), # Left
-        ev3.LargeMotor(_motor_mapping['right'])  # Right
-    )
+# Mapping between motor names and addresses in the ev3 (Read from config file
+with open('../config/motors.conf') as f:
+    _PORTMAP = DoubleMap(imp.load_source('data', '', f).port_map)
 
-    # Normalises the direction of each motor (Left to right axis drives forward,
-    # front to back axis drives right)
-    scalers = {motors.front : -1,
-               motors.back  :  1,
-               motors.left  : -1,
-               motors.right : -1}
+MOTORS = namedtuple('motors', 'front back left right')(
+    ev3.LargeMotor(_PORTMAP['front']), # Front
+    ev3.LargeMotor(_PORTMAP['back']),  # Back
+    ev3.LargeMotor(_PORTMAP['left']),  # Left
+    ev3.LargeMotor(_PORTMAP['right'])  # Right
+)
 
-    def __init__(self):
-        # Can be set by subclasses to selectivly scale motor speed and direction
-        self.modifiers = {self.motors.front : 1,
-                          self.motors.back  : 1,
-                          self.motors.left  : 1,
-                          self.motors.right : 1}
+# Autodiscover the mapping between each motor and the file that holds it's
+# position information (Not stable across boots)
+for motor in os.listdir(root):
+    # The address file contains the real name of the motor (out*)
+    with open(path.join(_MOTOR_ROOT, motor, 'address')) as file:
+        name = file.readline().rstrip()
+        _ODOMETERS[getattr(MOTORS, _PORTMAP[name])] = path.join(_MOTOR_ROOT, motor, 'position')
 
-        # Autodiscover the mapping between each motor and the file that holds
-        # it's position information
-        try:
-            motor_dirs = os.listdir(_MOTOR_ROOT)
-        except FileNotFoundError:
-            pass
-        else:
-            for motor in motor_dirs:
-                # The address file contains the real name of the motor (out*)
-                with open(path.join(_MOTOR_ROOT, motor, 'address')) as file:
-                    name = file.readline().rstrip()
-                    # Add to the correct mapping
-                    self._pos_files[getattr(self.motors, self._motor_mapping[name])] = path.join(_MOTOR_ROOT, motor, 'position')
+del _MOTOR_ROOT
+del _PORTMAP
 
-    def _run_motor(self, motor, speed):
+### End Setup ###
+
+def _read_odometer(motor):
+        """Read the odometer on one motor"""
+        with open(self._pos_files[motor]) as file:
+            return abs(int(file.readline()))
+
+def _default_odometry(readings):
+    return min(readings)
+
+def _detect_color(color=Colors.Black):
+    return map(lambda x: x is color, read_color())
+
+def _get_motor_params(direction, motors=MOTORS):
+    if direction is Directions.FORWARD:
+        return ((motors.left, motors.right), False)
+    elif direction is Directions.BACKWARD:
+        return ((motors.left, motors.right), True)
+    elif direction is Directions.RIGHT:
+        return ((motors.forward, motors.backward), False)
+    elif direction is Directions.LEFT:
+        return ((motors.forward, motors.backward), True)
+    elif direction is Directions.ROT_RIGHT:
+        return (motors, False)
+    elif direction is Directions.ROT_LEFT:
+        return (motors, True)
+    else:
+        raise ValueError('Unknown Direction: {}'.format(direction))
+
+def _straight_line_odometry(dist):
+    return (360 * dist) // _WHEEL_CIRCUM
+
+def _rotation_odometry(angle):
+    return int(angle * _BASE_ROT_TO_WHEEL_ROT)
+
+def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=_SCALERS):
 	# Zero the motor's odometer
         motor.reset()
         # Fixes the odometer reading bug
         motor.run_timed(speed_sp=500, time_sp=500)
         # Preempts the previous command
-        motor.run_forever(speed_sp=self.modifiers[motor]*self.scalers[motor]*speed)
+        motor.run_forever(speed_sp=scalers[motor]*speed)
 
-    def _stop_all_motors(self):
-        for motor in self.motors:
-            motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
+def stop_motors(motors=MOTORS):
+    for motor in motors:
+        motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
 
-    ## Override These Methods ##
-    def calc_expected_ticks(self, dist):
-        pass
+def _base_move(dist, motors, speed=200, distance=None odometry=None, correction=None):
 
-    def parse_odometer(self, readings):
-        pass
+    if distance is None:
+        distance = lambda x: 0
+    if odometry is None:
+        odometry = _default_odometry
+    if correction is None:
+        correction = lambda x: None
 
-    def course_correction(self):
-        # Should be non-blocking, use the motors in self.rudder
-        pass
-    ## End Overrides ##
+    ticks = distance(dist)
+    traveled = 0
+    for motor in motors:
+        run_motor(motor, speed=speed)
+    while traveled < ticks:
+        if sonar_poll() < 7:
+            stop_motors()
+            break
+        correction()
+        odometer_readings = tuple(map(_read_odometer, motors))
+        traveled = odometry(odometer_readings)
+        if traveled >= ticks:
+            stop_motors()
+            break
 
-    def _read_odometer_base(self, motor):
-        """Read the odometer on one motor"""
-        with open(self._pos_files[motor]) as file:
-            return abs(int(file.readline()))
+def forward(dist, correction=True):
+    pass
 
-    def _read_odometer(self):
-        """Read the odometer on all the motors"""
-        return tuple(map(self._read_odometer_base, self.drive))
+def backward(dist):
+    pass
 
-    def _run_motors(self, speed):
-        """Run all the drive motors"""
-        for motor in self.drive:
-            self._run_motor(motor, speed)
+def left(dist):
+    pass
 
-    def _read_line_sensors(self):
-        return map(lambda x: x is Colors.BLACK, read_color())
+def right(dist):
+    pass
 
-    @thread
-    def __call__(self, dist, speed=200):
-        # Only attempt to run the real motor routine if the ev3 module is
-        # present
-        if _HAVE_EV3:
-            ticks = self.calc_expected_ticks(dist)
-            traveled = 0
-            self._run_motors(speed)
-            while traveled < ticks:
-                if sonar_poll() < 7:
-                    self._stop_all_motors()
-                    break
-                self.course_correction()
-                traveled = self.parse_odometer(self._read_odometer())
-                if traveled >= ticks:
-                    self._stop_all_motors()
-                    break
+def rotate(angle, direction=Directions.LEFT):
+    pass
 
-class _StraightLineMovement(_GenericMovement):
-    """Move in a straight line for a specfic distance
-
-       Subclasses should define self.drive and self.rudder, self.drive should
-       contain the motors that will be used to move the robot, self.rudder
-       should contain the motors for course correction. Subclasses should also
-       override calc_expected_ticks and course_correction. Finally setting any
-       of the modifier can be used to scale the each motor's speed and direction"""
-
-class _AxisMovement(_StraightLineMovement):
-    def __init__(self, direction):
-        _StraightLineMovement.__init__(self)
-        if direction is Directions.FORWARD or direction is Directions.BACKWARD:
-            self.drive = [self.motors.left, self.motors.right]
-            self.rudder = [self.motors.front, self.motors.back]
-        elif direction is Directions.LEFT or direction is Directions.RIGHT:
-            self.drive = [self.motors.front, self.motors.back]
-            self.rudder = [self.motors.left, self.motors.right]
-        else:
-            raise ValueError('Incompatible Direction for AxisMovement: {!r}'.format(direction))
-
-        if direction is Directions.BACKWARD or direction is Directions.LEFT:
-            for motor in self.drive:
-                self.modifiers[motor] = -1
-
-    def calc_expected_ticks(self, dist):
-        # This underestimates the number of ticks needed e.g 5.9 ticks in
-        # reality will give 5 with this. Coupled with the control loop's
-        # tendency to overshoot however I think this could be reasonably
-        # accurate, tests will have to confirm that however
-        return (360 * dist) // _WHEEL_CIRCUM
-
-    def parse_odometer(self, readings):
-        return min(readings)
-
+'''
     def course_correction(self):
         left, right = self._read_line_sensors()
         if left:
@@ -183,9 +145,6 @@ class _AxisMovement(_StraightLineMovement):
         elif right:
            self.motors.front.run_timed(speed_sp=self.scalers[self.motors.front]*200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
            self.motors.back.run_timed(speed_sp=self.scalers[self.motors.back]*-200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
-
-class _DiagonalMovement(_StraightLineMovement):
-    pass
 
 class _Rotation(_GenericMovement):
     """This is currently rotate forever, it will be changed"""
@@ -200,17 +159,4 @@ class _Rotation(_GenericMovement):
         else:
             raise ValueError('Incompatible Direction for Rotation: {!r}'.format(direction))
         self.drive = self.motors
-
-    def calc_expected_ticks(self, angle):
-        return int(angle * _BASE_ROT_TO_WHEEL_ROT)
-
-    def parse_odometer(self, readings):
-        return min(readings)
-
-forward  = _AxisMovement(Directions.FORWARD)
-backward = _AxisMovement(Directions.BACKWARD)
-left     = _AxisMovement(Directions.LEFT)
-right    = _AxisMovement(Directions.RIGHT)
-
-rotatel   = _Rotation(Directions.LEFT)
-rotater   = _Rotation(Directions.RIGHT)
+'''
