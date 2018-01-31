@@ -1,33 +1,34 @@
 """Wrapper library for moving the ev3"""
 
+import imp
+import os
+from os import path
+from math import pi
+from collections import namedtuple
+from functools import partial
+
 import ev3dev.ev3 as ev3
+from ev3dev.ev3 import Motor
+
 import Directions
 import Colors
-import imp
 from double_map import DoubleMap
-import os
-from math import pi
 from sensors import read_color, sonar_poll
-from collections import namedtuple
-from os import path
-from ev3dev.ev3 import Motor
 from thread_decorator import thread
-from functools import partial
 
 ##### Setup #####
 
-_WHEEL_CIRCUM = 20.106193
-_BASE_ROT_TO_WHEEL_ROT = (24 * pi) / _WHEEL_CIRCUM
-_MOTOR_ROOT = '/sys/class/tacho-motor'
-_DEFAULT_RUN_SPEED = 200
-_DEFAULT_TURN_SPEED = 200
-_DEFAULT_TURN_TIME = 100
+# Read config file
+with open('move.conf') as f:
+    _CONFIG = imp.load_source('config', '', f)
 
-_ODOMETERS = {}
+_WHEEL_CIRCUM = _CONFIG.wheel_diameter * pi
+_BASE_ROT_TO_WHEEL_ROT = (_CONFIG.robot_diameter * pi) / _WHEEL_CIRCUM
+_DEFAULT_RUN_SPEED = _CONFIG.default_run_speed
+_DEFAULT_TURN_SPEED = _CONFIG.default_turn_speed
+_DEFAULT_TURN_TIME = _CONFIG.default_turn_time
 
-# Mapping between motor names and addresses in the ev3 (Read from config file
-with open('motors.conf') as f:
-    _PORTMAP = DoubleMap(imp.load_source('data', '', f).port_map)
+_PORTMAP = DoubleMap(_CONFIG.port_map)
 
 MOTORS = namedtuple('motors', 'front back left right')(
     ev3.LargeMotor(_PORTMAP['front']), # Front
@@ -38,33 +39,34 @@ MOTORS = namedtuple('motors', 'front back left right')(
 
 # Normalises the direction of each motor (Left to right axis drives forward,
 # front to back axis drives right)
-_SCALERS = {MOTORS.front : -1,
-            MOTORS.back  :  1,
-            MOTORS.left  : -1,
-            MOTORS.right : -1}
+_SCALERS = {MOTORS.front : _CONFIG.scalers['front'],
+            MOTORS.back  : _CONFIG.scalers['back'],
+            MOTORS.left  : _CONFIG.scalers['left'],
+            MOTORS.right : _CONFIG.scalers['right']}
 
 _DEFAULT_MULTIPLIER = {MOTORS.front : 1,
                        MOTORS.back  : 1,
                        MOTORS.left  : 1,
                        MOTORS.right : 1}
 
-# Autodiscover the mapping between each motor and the file that holds it's
-# position information (Not stable across boots)
-for motor in os.listdir(_MOTOR_ROOT):
-    # The address file contains the real name of the motor (out*)
-    with open(path.join(_MOTOR_ROOT, motor, 'address')) as file:
-        name = file.readline().rstrip()
-        _ODOMETERS[getattr(MOTORS, _PORTMAP[name])] = path.join(_MOTOR_ROOT, motor, 'position')
-
-del _MOTOR_ROOT
-del _PORTMAP
+def _get_odometers(root, portmap):
+    """Autodiscover the mapping between each motor and the file that holds it's
+       position information (Not stable across boots)"""
+    odometers = {}
+    for motor in os.listdir(root):
+        # The address file contains the real name of the motor (out*)
+        with open(path.join(root, motor, 'address')) as file:
+            name = file.readline().rstrip()
+            odometers[getattr(MOTORS, portmap[name])] = path.join(root, motor, 'position')
+    return odometers
+_ODOMETERS = _get_odometers(_CONFIG.motor_root, _PORTMAP)
 
 ### End Setup ###
 
 def _read_odometer(motor):
-        """Read the odometer on one motor"""
-        with open(_ODOMETERS[motor]) as file:
-            return abs(int(file.readline()))
+    """Read the odometer on one motor"""
+    with open(_ODOMETERS[motor]) as file:
+        return abs(int(file.readline()))
 
 def _default_odometry(readings):
     return min(readings)
@@ -86,9 +88,6 @@ def _get_motor_params(direction, motors=MOTORS):
                          motors.back  : -1,
                          motors.left  :  1,
                          motors.right : -1})
-        elif direction is Directions.LEFT:
-            self.modifiers[self.motors.left] = -1
-            self.modifiers[self.motors.front] = -1
     elif direction is Directions.ROT_LEFT:
         return (motors, {motors.front : -1,
                          motors.back  :  1,
@@ -103,30 +102,45 @@ def _straight_line_odometry(dist):
 def _rotation_odometry(angle):
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
-def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=_SCALERS):
-	# Zero the motor's odometer
-        motor.reset()
-        # Fixes the odometer reading bug
-        motor.run_timed(speed_sp=500, time_sp=500)
-        # Preempts the previous command
-        motor.run_forever(speed_sp=scalers[motor]*speed)
+def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
 
-def _course_correction(front=MOTORS.front, back=MOTORS.back, scalers=_SCALERS):
+    if scalers is None:
+        scalers = _SCALERS
+
+    # Zero the motor's odometer
+    motor.reset()
+    # Fixes the odometer reading bug
+    motor.run_timed(speed_sp=500, time_sp=500)
+    # Preempts the previous command
+    motor.run_forever(speed_sp=scalers[motor]*speed)
+
+def _course_correction(front=MOTORS.front, back=MOTORS.back, scalers=None):
+
+    if scalers is None:
+        scalers = _SCALERS
+
     left, right = _detect_color()
     if left:
-       front.run_timed(speed_sp=scalers[front]*-1*_DEFAULT_TURN_SPEED, time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
-       back.run_timed(speed_sp=scalers[back]*_DEFAULT_TURN_SPEED, time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
+        front.run_timed(speed_sp=scalers[front]*-1*_DEFAULT_TURN_SPEED,
+                        time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
+        back.run_timed(speed_sp=scalers[back]*_DEFAULT_TURN_SPEED,
+                       time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
     elif right:
-       front.run_timed(speed_sp=scalers[front]*_DEFAULT_TURN_SPEED, time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
-       back.run_timed(speed_sp=scalers[back]*-1*_DEFAULT_TURN_SPEED, time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
+        front.run_timed(speed_sp=scalers[front]*_DEFAULT_TURN_SPEED,
+                        time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
+        back.run_timed(speed_sp=scalers[back]*-1*_DEFAULT_TURN_SPEED,
+                       time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
 
 def stop_motors(motors=MOTORS):
     for motor in motors:
         motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
 
 @thread
-def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=_DEFAULT_MULTIPLER, distance=None, odometry=None, correction=None):
+def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
+               distance=None, odometry=None, correction=None):
 
+    if multiplier is None:
+        multiplier = _DEFAULT_MULTIPLIER
     if distance is None:
         return
     if odometry is None:
@@ -160,7 +174,7 @@ def _generic_axis(dist, direction, correction=False):
             multiplier[motor] = -1
         func = partial(func, multiplier=multiplier)
     return func()
-    
+
 def forward(dist, correction=True):
     return _generic_axis(dist, Directions.FORWARD, correction=correction)
 
