@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block body %}
+  <h2>submit loading</h2>
+  {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+  <form action="{{ url_for('mail_delivery') }}" method=post>
+    <dl>
+      <dt>slot1:
+      <dd><input type=text name=slot1>
+      <dt>slot2:
+      <dd><input type=text name=slot2>
+      <dt>slot3:
+      <dd><input type=text name=slot3>
+      <dt>slot4:
+      <dd><input type=text name=slot4>
+      <dt>slot5:
+      <dd><input type=text name=slot5>
+      <dd><input type=submit value=submit>
+    </dl>
+  </form>
+{% endblock %}

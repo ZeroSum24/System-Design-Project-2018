@@ -1,0 +1,10 @@
+forms need a form action for the button to work
+
+need to 'extend' more things
+need to switch to blueprints
+
+WHAT CAN OTHER PEOPLE DO
+
+-sort out the bluetooth library so theres a nice api
+-do more html
+-do the database (switch to sqlalchemy)
