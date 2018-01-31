@@ -41,6 +41,11 @@ _SCALERS = {MOTORS.front : -1,
             MOTORS.left  : -1,
             MOTORS.right : -1}
 
+_DEFAULT_MULTIPLIER = {MOTORS.front : 1,
+                       MOTORS.back  : 1,
+                       MOTORS.left  : 1,
+                       MOTORS.right : 1}
+
 # Autodiscover the mapping between each motor and the file that holds it's
 # position information (Not stable across boots)
 for motor in os.listdir(_MOTOR_ROOT):
@@ -75,9 +80,18 @@ def _get_motor_params(direction, motors=MOTORS):
     elif direction is Directions.LEFT:
         return ((motors.forward, motors.backward), True)
     elif direction is Directions.ROT_RIGHT:
-        return (motors, False)
+        return (motors, {motors.front :  1,
+                         motors.back  : -1,
+                         motors.left  :  1,
+                         motors.right : -1})
+        elif direction is Directions.LEFT:
+            self.modifiers[self.motors.left] = -1
+            self.modifiers[self.motors.front] = -1
     elif direction is Directions.ROT_LEFT:
-        return (motors, True)
+        return (motors, {motors.front : -1,
+                         motors.back  :  1,
+                         motors.left  : -1,
+                         motors.right :  1})
     else:
         raise ValueError('Unknown Direction: {}'.format(direction))
 
@@ -109,7 +123,7 @@ def stop_motors(motors=MOTORS):
         motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
 
 @thread
-def _base_move(dist, motors, speed=200, distance=None, odometry=None, correction=None):
+def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=_DEFAULT_MULTIPLER, distance=None, odometry=None, correction=None):
 
     if distance is None:
         return
@@ -121,7 +135,7 @@ def _base_move(dist, motors, speed=200, distance=None, odometry=None, correction
     ticks = distance(dist)
     traveled = 0
     for motor in motors:
-        run_motor(motor, speed=speed)
+        run_motor(motor, speed=multiplier[motor]*speed)
     while traveled < ticks:
         if sonar_poll() < 7:
             stop_motors()
@@ -133,37 +147,30 @@ def _base_move(dist, motors, speed=200, distance=None, odometry=None, correction
             stop_motors()
             break
 
-def forward(dist, correction=True):
-    basic = partial(_base_move, dist, (MOTORS.left, MOTORS.right), distance=_straight_line_odometry)
+def _generic_axis(dist, direction, correction=False):
+    motors, should_reverse = _get_motor_params(direction)
+    func = partial(_base_move, dist, motors, distance=_straight_line_odometry)
     if correction:
-        return basic(correction=_course_correction)
-    else:
-        return basic()
+        func = partial(func, correction=_course_correction)
+    if should_reverse:
+        multiplier = dict(_DEFAULT_MULTIPLIER)
+        for motor in motors:
+            multiplier[motor] = -1
+        func = partial(func, multiplier=multiplier)
+    return func()
+    
+def forward(dist, correction=True):
+    return _generic_axis(dist, Directions.FORWARD, correction=correction)
 
 def backward(dist):
-    pass
+    return _generic_axis(dist, Directions.BACKWARD)
 
 def left(dist):
-    pass
+    return _generic_axis(dist, Directions.LEFT)
 
 def right(dist):
-    pass
+    return _generic_axis(dist, Directions.RIGHT)
 
-def rotate(angle, direction=Directions.LEFT):
-    pass
-
-'''
-class _Rotation(_GenericMovement):
-    """This is currently rotate forever, it will be changed"""
-    def __init__(self, direction):
-        _GenericMovement.__init__(self)
-        if direction is Directions.RIGHT:
-            self.modifiers[self.motors.right] = -1
-            self.modifiers[self.motors.back] = -1
-        elif direction is Directions.LEFT:
-            self.modifiers[self.motors.left] = -1
-            self.modifiers[self.motors.front] = -1
-        else:
-            raise ValueError('Incompatible Direction for Rotation: {!r}'.format(direction))
-        self.drive = self.motors
-'''
+def rotate(angle, direction=Directions.ROT_LEFT):
+    motors, multiplier = _get_motor_params(direction)
+    _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
