@@ -2,7 +2,7 @@
 
 from ev3dev.ev3 import *
 from time import sleep
-from colors import Colors
+import Colors
 
 left = ColorSensor('in2')
 right = ColorSensor('in4')
