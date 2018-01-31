@@ -20,6 +20,8 @@ _WHEEL_CIRCUM = 20.106193
 _BASE_ROT_TO_WHEEL_ROT = (24 * pi) / _WHEEL_CIRCUM
 _MOTOR_ROOT = '/sys/class/tacho-motor'
 _DEFAULT_RUN_SPEED = 200
+_DEFAULT_TURN_SPEED = 200
+_DEFAULT_TURN_TIME = 100
 
 _ODOMETERS = {}
 
@@ -112,11 +114,11 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=_SCALERS):
 def _course_correction(front=MOTORS.front, back=MOTORS.back, scalers=_SCALERS):
     left, right = _detect_color()
     if left:
-       front.run_timed(speed_sp=scalers[front]*-200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
-       back.run_timed(speed_sp=scalers[back]*200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
+       front.run_timed(speed_sp=scalers[front]*-1*_DEFAULT_TURN_SPEED, time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
+       back.run_timed(speed_sp=scalers[back]*_DEFAULT_TURN_SPEED, time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
     elif right:
-       front.run_timed(speed_sp=scalers[front]*200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
-       back.run_timed(speed_sp=scalers[back]*-200, time_sp=100, stop_action=Motor.STOP_ACTION_BRAKE)
+       front.run_timed(speed_sp=scalers[front]*_DEFAULT_TURN_SPEED, time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
+       back.run_timed(speed_sp=scalers[back]*-1*_DEFAULT_TURN_SPEED, time_sp=_DEFAULT_TURN_TIME, stop_action=Motor.STOP_ACTION_BRAKE)
 
 def stop_motors(motors=MOTORS):
     for motor in motors:
