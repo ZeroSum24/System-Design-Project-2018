@@ -80,9 +80,9 @@ def _get_motor_params(direction, motors=MOTORS):
     elif direction is Directions.BACKWARD:
         return ((motors.left, motors.right), True)
     elif direction is Directions.RIGHT:
-        return ((motors.forward, motors.backward), False)
+        return ((motors.front, motors.back), False)
     elif direction is Directions.LEFT:
-        return ((motors.forward, motors.backward), True)
+        return ((motors.front, motors.back), True)
     elif direction is Directions.ROT_RIGHT:
         return (motors, {motors.front :  1,
                          motors.back  : -1,

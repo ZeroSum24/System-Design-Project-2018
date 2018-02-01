@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import move
+import Directions
 
-move.forward(50, correction=False).join()
-move.backward(50).join()
-move.left(50).join()
-move.right(50).join()
+#move.forward(50).join()
 
-#move.rotater(360, 50)
+move.rotate(360, Directions.ROT_LEFT)
