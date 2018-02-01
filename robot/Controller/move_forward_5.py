@@ -2,6 +2,6 @@
 import move
 import Directions
 
-#move.forward(50).join()
+move.forward(500).join()
 
-move.rotate(360, Directions.ROT_LEFT)
+#move.rotate(360, Directions.ROT_LEFT)
