@@ -6,7 +6,7 @@ right = ColorSensor('in4')
 ultra_sonic = UltrasonicSensor('in1')
 if not left.connected:
     raise AssertionError('Left sensor not connected')
-if not right.connected
+if not right.connected:
     raise AssertionError('Right sensor not connected')
 left.mode = 'COL-COLOR'
 right.mode = 'COL-COLOR'
