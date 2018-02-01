@@ -1,14 +1,13 @@
-#! /usr/bin/env python3
-
 from ev3dev.ev3 import *
-from time import sleep
 import Colors
 
 left = ColorSensor('in2')
 right = ColorSensor('in4')
 ultra_sonic = UltrasonicSensor('in1')
-assert left.connected, 'Left sensor not connected'
-assert right.connected, 'Right sensor not connected'
+if not left.connected:
+    raise AssertionError('Left sensor not connected')
+if not right.connected
+    raise AssertionError('Right sensor not connected')
 left.mode = 'COL-COLOR'
 right.mode = 'COL-COLOR'
 
