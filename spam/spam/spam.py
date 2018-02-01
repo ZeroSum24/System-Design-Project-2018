@@ -13,7 +13,7 @@ app.config.from_object(__name__) # load config from this file , spam.py
 app.config.update(dict(
     DATABASE=os.path.join(app.root_path, 'spam.db'),
     SECRET_KEY='development key',
-    USERNAME='admin',
+    EMAIL='admin@admin.com',
     PASSWORD='default'
 ))
 app.config.from_envvar('SPAM_SETTINGS', silent=True)
@@ -50,42 +50,51 @@ def close_db(error):
     if hasattr(g, 'sqlite_db'):
         g.sqlite_db.close()
 
-#TODO: match these up with index.html
-@app.route('/', methods=['GET', 'POST'])
-def mail_delivery():
-    error = None
-    if request.method == 'POST':
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', 8888))
-        #template expecting list
-        submit = ["ff","mv","mgsd"]
-            #TODO:this wont work anymore
-            #submit = [request.form['slot1'], request.form['slot2'], request.form['slot3'], request.form['slot4'], request.form['slot5']]
-        s.send(', '.join(submit).encode())
-        return render_template('echo_submit.html', submit=submit)
-    #else
-    return render_template('index.html', error=error)
 
-@app.route('/login', methods=['GET', 'POST'])
+
+@app.route('/', methods=['GET', 'POST'])
 def login():
     error = None
     if request.method == 'POST':
-        if request.form['username'] != app.config['USERNAME']:
-            error = 'Invalid username'
-        elif request.form['password'] != app.config['PASSWORD']:
+        if request.form['inputEmail'] != app.config['EMAIL']:
+            error = 'Invalid email'
+        elif request.form['inputPassword'] != app.config['PASSWORD']:
             error = 'Invalid password'
         else:
             session['logged_in'] = True
             flash('You were logged in')
-            return redirect(url_for('show_entries'))
+            return redirect(url_for('mail_delivery'))
     #else
-    return render_template('index.html', error=error)
+    return render_template('login.html', error=error)
 
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     flash('You were logged out')
-    return redirect(url_for('mail_delivery'))
+    return redirect(url_for('login'))
+
+#TODO: match these up with index.html
+@app.route('/view', methods=['GET', 'POST'])
+def mail_delivery():
+    error = None
+    if request.method == 'POST':
+        #flash('You were logged in')
+        #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #s.connect(('localhost', 8888))
+        #template expecting list
+        submit = ["ff","mv","mgsd"]
+            #TODO:this wont work anymore
+            #submit = [request.form['slot1'], request.form['slot2'], request.form['slot3'], request.form['slot4'], request.form['slot5']]
+        #s.send(', '.join(submit).encode())
+        return render_template('echo_submit.html', submit=submit)
+    #else
+    return render_template('recipients.html', error=error)
+
+@app.route('/report')
+def report():
+    return render_template('report.html')
+
+
 
 #TODO: need database editing thingymijig
         #technically extension, but hey, once I get the db working it'll be fine

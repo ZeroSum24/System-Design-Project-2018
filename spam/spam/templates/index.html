@@ -13,12 +13,13 @@
 
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #647687;">
-    <a class="navbar-brand" href="#"><img src="/img/logo.png" width="89" height="30" alt=""></a>
+    <a class="navbar-brand" href="#"><img src="img/logo.png" width="89" height="30" alt=""></a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <!--TODO: get routes and html for these -->
-    <!--TODO: database things -->
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <!--TODO: get routes and html for these -->
+  <!--TODO: database things -->
+  <!--TODO: refine these -->
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item active">
@@ -34,7 +35,11 @@
           <a class="nav-link" href="#">Help</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">Logout</a>
+          {% if not session.logged_in %}
+            <a class="nav-link" href="{{ url_for('login') }}">log in</a>
+          {% else %}
+            <a class="nav-link" href="{{ url_for('logout') }}">log out</a>
+          {% endif %}
         </li>
 
       </ul>
@@ -48,82 +53,7 @@
     </div>
   </nav>
 
-  <div class="jumbotron">
-
-    <h1>Mail Delivery</h1>
-
-    <!--TODO: get the desk options from a database and
-        {% for entry in submit %}
-          <option>{{ entry }}<option>
-        {% else %}
-        <li><em>Unbelievable.  No entries here so far</em>
-        {% endfor %}
-      -->
-    <form action="{{ url_for('mail_delivery') }}" method=post>
-      <div class="form-group row">
-        <label for="inputSlot1" class="col-sm-2 col-form-label">Slot 1</label>
-        <div class="col-sm-10">
-          <select class="form-control">
-          <option>Select a desk</option>
-          <option>Desk 1</option>
-          <option>Desk 2</option>
-          <option>Desk 3</option>
-
-        </select> </div>
-      </div>
-      <div class="form-group row">
-        <label for="inputSlot2" class="col-sm-2 col-form-label">Slot 2</label>
-        <div class="col-sm-10">
-          <select class="form-control">
-          <option>Select a desk</option>
-          <option>Desk 1</option>
-          <option>Desk 2</option>
-          <option>Desk 3</option>
-
-        </select> </div>
-      </div>
-      <div class="form-group row">
-        <label for="inputSlot3" class="col-sm-2 col-form-label">Slot 3</label>
-        <div class="col-sm-10">
-          <select class="form-control">
-          <option>Select a desk</option>
-          <option>Desk 1</option>
-          <option>Desk 2</option>
-          <option>Desk 3</option>
-
-        </select> </div>
-      </div>
-      <div class="form-group row">
-        <label for="inputSlot4" class="col-sm-2 col-form-label">Slot 4</label>
-        <div class="col-sm-10">
-          <select class="form-control">
-          <option>Select a desk</option>
-          <option>Desk 1</option>
-          <option>Desk 2</option>
-          <option>Desk 3</option>
-
-        </select> </div>
-      </div>
-      <div class="form-group row">
-        <label for="inputSlot5" class="col-sm-2 col-form-label">Parcel</label>
-        <div class="col-sm-10">
-          <select class="form-control">
-          <option>Select a desk</option>
-          <option>Desk 1</option>
-          <option>Desk 2</option>
-          <option>Desk 3</option>
-
-        </select> </div>
-      </div>
-
-      <div class="form-group row">
-        <div class="col-sm-10">
-          <!--TODO: match this up with flask buttons actions-->
-          <input type="submit" class="btn btn-primary" value="submit">
-        </div>
-      </div>
-    </form>
-  </div>
+  {% block body %}{% endblock %}
 
   <div class="jumbotron">
     <h1>Emergency Commands</h1>
@@ -146,22 +76,29 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <!--TODO: match this up with flask buttons actions-->
                 <button type="button" class="btn btn-danger">Stop Now!</button>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!--TODO: make these have the nice things above and match this up with flask buttons actions-->
+
+      </div>
       <div style= "padding-right:10px;">
         <button type="submit" class="btn btn-warning">Callback</button>
       </div>
       <div>
         <button type="submit" class="btn btn-success">Continue</button>
       </div>
+      <div style= "padding-left:10px;">
+        <button type="submit" class="btn btn-info">Reset</button>
+      </div>
     </div>
+
+    <!--TODO: remove the flashed message-->
+    {% for message in get_flashed_messages() %}
+      <div class=flash>{{ message }}</div>
+    {% endfor %}
 
 
     <!-- Optional JavaScript -->
