@@ -17,7 +17,7 @@ class EchoService(rpyc.Service):
 
     def internal_echo(self, val):
         print(val)
-        
+
 if __name__ == '__main__':
     server = ThreadedServer(EchoService, port=8888)
     server.start()
