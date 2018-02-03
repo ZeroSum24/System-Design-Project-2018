@@ -48,7 +48,7 @@ def find_color_manual():
     print("GREEN1: " + str(cs1.value(1)))
     print("GREEN2: " + str(cs2.value(1)))
     print("")
-    print("BLUE1: " + str(cs1.value(2)))    
+    print("BLUE1: " + str(cs1.value(2)))
     print("BLUE2: " + str(cs2.value(2)))
     print("")
     print("")
@@ -81,4 +81,3 @@ def find_color_auto():
 find_color_auto()
 #find_color_manual()
 '''
-
