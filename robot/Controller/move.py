@@ -13,6 +13,7 @@ from ev3dev.ev3 import Motor
 
 import Directions
 import Colors
+import Turning
 from double_map import DoubleMap
 from sensors import read_color, sonar_poll
 from thread_decorator import thread
@@ -115,24 +116,27 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
     # Preempts the previous command
     motor.run_forever(speed_sp=scalers[motor]*speed)
 
-def _course_correction(correctionFlag, front=MOTORS.front, back=MOTORS.back, scalers=None):
+def _course_correction(correctionFlag, front=MOTORS.front, back=MOTORS.back,
+                        lefty=MOTORS.left, righty=MOTORS.right, scalers=None):
 
     if scalers is None:
         scalers = _SCALERS
 
     left, right = _detect_color()
 
-    if correctionFlag == 1: # its turning right
+    if correctionFlag == Turning.RIGHT: # its turning right
         if not right:
             stop_motors([front, back])
-            return 0 # indicate correction exit
+            run_motor(lefty, _DEFAULT_RUN_SPEED)
+            return Turning.NONE # indicate correction exit
         else:
             return correctionFlag # still turning
 
-    elif correctionFlag == 2: # its turning left
+    elif correctionFlag == Turning.LEFT: # its turning left
         if not left:
             stop_motors([front, back])
-            return 0 # indicate correction exit
+            run_motor(righty, _DEFAULT_RUN_SPEED)
+            return Turning.NONE # indicate correction exit
         else:
             return correctionFlag # still turning
 
@@ -140,13 +144,15 @@ def _course_correction(correctionFlag, front=MOTORS.front, back=MOTORS.back, sca
         if right:
             run_motor(front, _DEFAULT_TURN_SPEED)
             run_motor(back, -1*_DEFAULT_TURN_SPEED)
+            stop_motors([lefty])
             time.sleep(_DEFAULT_TURN_TIME/1000)
-            return 2 # indicate turning left
+            return Turning.RIGHT # indicate turning right
         elif left:
             run_motor(front, -1*_DEFAULT_TURN_SPEED)
             run_motor(back, _DEFAULT_TURN_SPEED)
+            stop_motors([righty])
             time.sleep(_DEFAULT_TURN_TIME/1000)
-            return 1 # indicate turning right
+            return Turning.LEFT # indicate turning left
 
 
 def stop_motors(motors=MOTORS):
@@ -168,7 +174,7 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
 
     ticks = distance(dist)
     traveled = 0
-    correctionFlag = 0
+    correctionFlag = Turning.NONE
     for motor in motors:
         run_motor(motor, speed=multiplier[motor]*speed)
     while traveled < ticks:
