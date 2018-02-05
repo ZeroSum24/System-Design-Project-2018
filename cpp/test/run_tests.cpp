@@ -1,3 +1,6 @@
+// Contains a bunch of macros which generate tests designed to test
+// the pathfinder graphs. {C++ version}
+
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Contains a number of unit tests for the pathfinder graphs. {Python version}
+
 import unittest
 
 from sys import path

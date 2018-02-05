@@ -1,3 +1,8 @@
+# MAKEFILE is skeleton code for builing and managing the entire
+# test-suite for the robot. It allows tests in both python and c++ to
+# be used. (Can also manage tests on the arduino.)
+
+
 # Name of the python interpreter
 PYTHON = python3
 # Directory where the tests can be found

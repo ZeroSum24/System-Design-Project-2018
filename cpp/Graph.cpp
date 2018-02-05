@@ -1,3 +1,6 @@
+//Actual pathfinder code including Dijkstra's algorithm commented
+//below.  See Graph.h (inside include) for the classes of this code
+
 #include "Graph.h"
 
 using std::endl;

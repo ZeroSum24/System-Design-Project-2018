@@ -1,3 +1,5 @@
+//Wrappers for the Pathfinder code convertion to python
+
 #include <iostream>
 #include <boost/python.hpp>
 #include "Graph.h"
@@ -9,7 +11,7 @@ using namespace boost::python;
 class GraphWrapper {
     Graph graph;
 public:
-    explicit GraphWrapper(list& lst) {
+    explicit GraphWrapper(list &lst) {
         std::vector<Edge> converted;
         for (int i = 0; i < len(lst); i++) {
             converted.push_back(extract<Edge>(lst[i]));

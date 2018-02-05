@@ -1,3 +1,6 @@
+// In order to be used as an importable module, the header files need to be 
+// held in a managing file. This is that files
+
 #ifndef GRAPH_H
 #define GRAPH_H
 

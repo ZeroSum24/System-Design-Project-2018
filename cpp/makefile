@@ -1,3 +1,5 @@
+# Builds and tests specifically the pathfinder c++ code.
+
 # C++ compiler
 CC = g++
 # All warnings, c++14 features, produce position independent code (Required for
