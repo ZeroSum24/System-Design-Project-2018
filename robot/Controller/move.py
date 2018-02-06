@@ -1,5 +1,8 @@
 """Wrapper library for moving the ev3"""
 
+# pylint: disable=import-error, no-member, redefined-outer-name, too-many-arguments
+# pylint: disable=no-else-return
+
 import imp
 import os
 from os import path
@@ -105,7 +108,18 @@ def _rotation_odometry(angle):
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
 def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
+    """Run the specified motor forever
 
+    Required Arguments:
+    motor -- A LargeMotor object representing the motor to run
+
+    Optional Arguments:
+    speed -- Speed to run the motor at
+    scalers -- Dict containing scalers to influence the motor's speed,
+               intended for dependency injection
+    """
+
+    # Mutable structures shouldn't be passed as default arguments
     if scalers is None:
         scalers = _SCALERS
 
@@ -116,36 +130,51 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
     # Preempts the previous command
     motor.run_forever(speed_sp=scalers[motor]*speed)
 
-def _course_correction(correctionFlag, front=MOTORS.front, back=MOTORS.back,
-                        lefty=MOTORS.left, righty=MOTORS.right, scalers=None):
+def _course_correction(correction_flag, motors=MOTORS, scalers=None):
 
     if scalers is None:
         scalers = _SCALERS
 
+    turning_motors = (motors.left, motors.right)
+
     left, right = _detect_color()
 
-    if correctionFlag == Turning.RIGHT: # its turning right
+    # If we are turning right
+    if correction_flag == Turning.RIGHT:
+        # And we can't see the line in the right sensor
         if not right:
-            stop_motors([front, back])
-            run_motor(lefty, _DEFAULT_RUN_SPEED)
-            return Turning.NONE # indicate correction exit
+            # Stop running the turning motors
+            stop_motors(turning_motors)
+            # And start running the stopped wheel
+            run_motor(motors.left, _DEFAULT_RUN_SPEED)
+            return Turning.NONE # Stopped turning
         else:
-            return correctionFlag # still turning
+            return correction_flag # Still turning
 
-    elif correctionFlag == Turning.LEFT: # its turning left
+    # If we are turning left
+    elif correction_flag == Turning.LEFT:
+        # And we can't see the line in the left sensor
         if not left:
-            stop_motors([front, back])
-            run_motor(righty, _DEFAULT_RUN_SPEED)
-            return Turning.NONE # indicate correction exit
+            # Stop running the turning motors
+            stop_motors(turning_motors)
+            # And start running the stopped wheel
+            run_motor(motors.right, _DEFAULT_RUN_SPEED)
+            return Turning.NONE # Stopped turning
         else:
-            return correctionFlag # still turning
+            return correction_flag # Still turning
 
-    else: # not turning
+    # We are not turning
+    else:
+        # We can see the line in the right sensor
         if right:
-            run_motor(front, _DEFAULT_TURN_SPEED)
-            run_motor(back, -1*_DEFAULT_TURN_SPEED)
+            # Run the front motor left and the back motor right
+            run_motor(motors.front, _DEFAULT_TURN_SPEED)
+            run_motor(motors.back, -1*_DEFAULT_TURN_SPEED)
+            # Stop the left motor
             stop_motors([lefty])
-            time.sleep(_DEFAULT_TURN_TIME/1000)
+            # Allows the kernel to shedule other threads if required for sensor
+            # input
+            time.sleep(0)
             return Turning.RIGHT # indicate turning right
         elif left:
             run_motor(front, -1*_DEFAULT_TURN_SPEED)
