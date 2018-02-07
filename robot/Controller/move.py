@@ -31,7 +31,6 @@ _WHEEL_CIRCUM = _CONFIG.wheel_diameter * pi
 _BASE_ROT_TO_WHEEL_ROT = (_CONFIG.robot_diameter * pi) / _WHEEL_CIRCUM
 _DEFAULT_RUN_SPEED = _CONFIG.default_run_speed
 _DEFAULT_TURN_SPEED = _CONFIG.default_turn_speed
-_DEFAULT_TURN_TIME = _CONFIG.default_turn_time
 
 _PORTMAP = DoubleMap(_CONFIG.port_map)
 
@@ -74,12 +73,27 @@ def _read_odometer(motor):
         return abs(int(file.readline()))
 
 def _default_odometry(readings):
+    """By default the actuall distance traveled is conservativly estimated as
+       the minimum of all supplied readings"""
     return min(readings)
 
 def _detect_color(color=Colors.BLACK):
     return map(lambda x: x is color, read_color())
 
 def _get_motor_params(direction, motors=MOTORS):
+    """Centeralises the access of the relavent parameters for each kind of 
+       motion. There's likly a better way of doing this.
+
+    Reqired Arguments:
+    direction -- A member of the Directions Enum, identifies the kind of motion
+
+    Optional Arguments:
+    motors -- The motors to return, for dependency injection
+    """
+
+    # Forward, Backward, Left and Right recive a tuple containing the motors
+    # they should use to drive and a boolean indicating whether the default
+    # direction should be reversed
     if direction is Directions.FORWARD:
         return ((motors.left, motors.right), False)
     elif direction is Directions.BACKWARD:
@@ -88,6 +102,10 @@ def _get_motor_params(direction, motors=MOTORS):
         return ((motors.front, motors.back), False)
     elif direction is Directions.LEFT:
         return ((motors.front, motors.back), True)
+
+    # The rotations always receive all the motors (TODO: there is no point in
+    # doing this) and a dict using the same format as _DEFAULT_MULTIPLER
+    # indicating which motors should be reversed
     elif direction is Directions.ROT_RIGHT:
         return (motors, {motors.front :  1,
                          motors.back  : -1,
@@ -98,10 +116,14 @@ def _get_motor_params(direction, motors=MOTORS):
                          motors.back  :  1,
                          motors.left  : -1,
                          motors.right :  1})
+    # Die noisily if a direction was missed
     else:
         raise ValueError('Unknown Direction: {}'.format(direction))
 
 def _straight_line_odometry(dist):
+    # The distance covered by one degree of rotation of a wheel is
+    # _WHEEL_CIRCUM // 360. Thus the total number of degrees of rotation is
+    # dist // (_WHEEL_CIRCUM // 360) == (360 * dist) // _WHEEL_CIRCUM
     return (360 * dist) // _WHEEL_CIRCUM
 
 def _rotation_odometry(angle):
@@ -132,9 +154,11 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
 
 def _course_correction(correction_flag, motors=MOTORS, scalers=None):
 
+    # Mutable structures shouldn't be passed as default arguments
     if scalers is None:
         scalers = _SCALERS
 
+    # For clarity below
     turning_motors = (motors.left, motors.right)
 
     left, right = _detect_color()
@@ -171,17 +195,17 @@ def _course_correction(correction_flag, motors=MOTORS, scalers=None):
             run_motor(motors.front, _DEFAULT_TURN_SPEED)
             run_motor(motors.back, -1*_DEFAULT_TURN_SPEED)
             # Stop the left motor
-            stop_motors([lefty])
+            stop_motors([motors.left])
             # Allows the kernel to shedule other threads if required for sensor
             # input
             time.sleep(0)
-            return Turning.RIGHT # indicate turning right
+            return Turning.RIGHT # Start turning right
         elif left:
-            run_motor(front, -1*_DEFAULT_TURN_SPEED)
-            run_motor(back, _DEFAULT_TURN_SPEED)
-            stop_motors([righty])
-            time.sleep(_DEFAULT_TURN_TIME/1000)
-            return Turning.LEFT # indicate turning left
+            run_motor(motors.front, -1*_DEFAULT_TURN_SPEED)
+            run_motor(motors.back, _DEFAULT_TURN_SPEED)
+            stop_motors([motors.right])
+            time.sleep(0)
+            return Turning.LEFT # Start turning left
 
 
 def stop_motors(motors=MOTORS):
@@ -203,14 +227,14 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
 
     ticks = distance(dist)
     traveled = 0
-    correctionFlag = Turning.NONE
+    correction_flag = Turning.NONE
     for motor in motors:
         run_motor(motor, speed=multiplier[motor]*speed)
     while traveled < ticks:
         if sonar_poll() < 7:
             stop_motors()
             break
-        correctionFlag = correction(correctionFlag)
+        correction_flag = correction(correction_flag)
         odometer_readings = tuple(map(_read_odometer, motors))
         traveled = odometry(odometer_readings)
         if traveled >= ticks:
