@@ -1,4 +1,5 @@
 MANIFEST.in
+README.txt
 spam/__init__.py
 spam/schema.sql
 spam/spam.py
@@ -7,3 +8,10 @@ spam.egg-info/SOURCES.txt
 spam.egg-info/dependency_links.txt
 spam.egg-info/requires.txt
 spam.egg-info/top_level.txt
+spam/static/style.css
+spam/static/img/logo.png
+spam/templates/echo_submit.html
+spam/templates/index.html
+spam/templates/login.html
+spam/templates/recipients.html
+spam/templates/report.html
