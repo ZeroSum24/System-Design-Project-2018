@@ -1,31 +1,20 @@
 # Builds and tests specifically the pathfinder c++ code.
 
+# Unfortunatly make has no logical or so this mess has to be used to set various
+# environment variables of the build system depending on the target.
+
 # C++ compiler
 CC = g++
-# All warnings, c++14 features, produce position independent code (Required for
+
+# All warnings, c++11 features, produce position independent code (Required for
 # building a shared library)
 CFLAGS = -Wall -std=c++11 -fPIC
 
-# Regular include directory and python3.5 development files
-INCLUDES = -I./include/
-# Include the relavent dev headers directory for the target platform
-# Vagrant machine
-ifeq ($(MAKECMDGOALS),all)
-INCLUDES += -I/usr/include/python3.5m
-endif
-ifeq ($(MAKECMDGOALS),test)
-INCLUDES += -I/usr/include/python3.5m
-endif
+# Regular include directory
+INCLUDES = -I./include/ -I/usr/include/python3.5m/
+
 # Test include directory
 TEST_INCLUDES = -I./test/include/
-
-# Link the correct boost library version
-ifeq ($(MAKECMDGOALS),all)
-BOOST = -lboost_python-py35
-endif
-ifeq ($(MAKECMDGOALS),test)
-BOOST = -lboost_python-py35
-endif
 
 # Source files
 SRCS := $(wildcard *.cpp)
@@ -45,16 +34,13 @@ TEST = run_tests
 # Build everything (Run with make)
 .PHONY: all
 all: $(MAIN)
-
-.PHONY: dice
-dice:
+	cp $(MAIN) ../robot/Controller/$(MAIN)
 
 .PHONY: robot
-robot:
+robot: $(MAIN)
 
 $(MAIN): $(OBJS)
-	# $(OBJS) must appear before $(BOOST) in the command
-	$(CC) -shared $(CFLAGS) $(OBJS) $(INCLUDES) $(BOOST) -o $(MAIN)
+	$(CC) -shared $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS)
 
 # Rule for converting .cpp files into .o
 .cpp.o:
@@ -66,6 +52,7 @@ clean:
 	$(RM) $(OBJS)
 	$(RM) $(TEST_OBJS)
 	$(RM) $(MAIN)
+	$(RM) ../robot/Controller/$(MAIN)
 	$(RM) $(TEST)
 
 # Build and run the test executable and python tests

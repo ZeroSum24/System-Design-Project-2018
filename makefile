@@ -2,7 +2,6 @@
 # test-suite for the robot. It allows tests in both python and c++ to
 # be used. (Can also manage tests on the arduino.)
 
-
 # Name of the python interpreter
 PYTHON = python3
 # Directory where the tests can be found
@@ -15,20 +14,15 @@ CPP_DIR = ./cpp
 
 ## Build Targets ##
 
-# Build for dice machine
-.PHONY: dice
-dice:
-	$(MAKE) -C $(CPP_DIR) dice
+# Build for Ubuntu 16.04
+.PHONY: ubuntu
+ubuntu:
+	$(MAKE) -C $(CPP_DIR) all
 
-# Build for robot
+# Build for robot (Debian Jessie arm64)
 .PHONY: robot
 robot:
 	$(MAKE) -C $(CPP_DIR) robot
-
-# Build for vagrant vm
-.PHONY: vagrant
-vagrant:
-	$(MAKE) -C $(CPP_DIR) all
 
 ## Test Targets ##
 
@@ -36,8 +30,8 @@ vagrant:
 .PHONY: test
 test: $(PY_TEST_FILES)
 
-# Run all tests including compiled tests
-# Additionally run the tests defined in the cpp makefile for the TravisCI Docker Image (At the moment this is the same build process as vagrant with added tests)
+# Run all tests including compiled tests. Additionally run the tests defined in
+# the cpp makefile for the TravisCI Docker Image
 .PHONY: test-all
 test-all: test cpp
 	$(MAKE) -C $(CPP_DIR) test

@@ -52,6 +52,9 @@ public:
     }
 };
 
+// As above, needed for the python wrapper
+Edge::Edge() {}
+
 Edge::Edge(const std::string &left, const std::string &right, int len):
         m_left(left), m_right(right), m_len(len) {}
 
@@ -60,7 +63,7 @@ std::ostream& operator<< (std::ostream &out, const Edge &edge) {
     for (int i = 0; i < edge.m_len; i++) {
         out << "-";
     }
-    out << ">" << edge.m_right << endl;
+    out << ">" << edge.m_right;
     return out;
 }
 
@@ -75,9 +78,6 @@ const std::string Edge::right(void) const {
 const int Edge::len(void) const {
     return m_len;
 }
-
-// Same as above, needed for Python wrapper
-Graph::Graph() {};
 
 /* Convert the input vector of edges into a more useful nested map
  * representation */
