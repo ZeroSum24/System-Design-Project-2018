@@ -17,8 +17,10 @@ def read_color():
 def sonar_poll():
     return ultra_sonic.distance_centimeters
 
+
 def read_reflect():
     return left.value()
+
 
 # Original code
 '''

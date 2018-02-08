@@ -19,6 +19,18 @@ from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
 from thread_decorator import thread
 
+class MotorDisconnectedError(Exception):
+    pass
+
+class SonarDisconnectedError(Exception):
+    pass
+
+class ReflectivityDisconnectedError(Exception):
+    pass
+
+class ColorDisconnectedError(Exception):
+    pass
+
 ##### Setup #####
 
 # Read config file
@@ -114,8 +126,13 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
     #motor.reset()
     # Fixes the odometer reading bug
     #motor.run_timed(speed_sp=500, time_sp=500)
-    # Preempts the previous command
-    motor.run_forever(speed_sp=scalers[motor]*speed)
+    # Preempts the previou
+    # s command
+    try:
+        motor.run_forever(speed_sp=scalers[motor]*speed)
+    except:
+        stop_motors()
+        #raise MotorDisconnectedError('Motor disconnected')
 
 
 
@@ -133,7 +150,12 @@ def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, 
     global _last_error
     global _integral
 
-    ref_read = read_reflect()
+    try:
+        ref_read = read_reflect()
+    except:
+        stop_motors()
+        raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
+
     error = _TARGET - (100 * (ref_read - _MINREF) / (_MAXREF - _MINREF))
     derivative = error - _last_error
     _last_error = error
@@ -144,6 +166,7 @@ def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, 
         run_motor(motor, speed)
     time.sleep(0.01) # Aprox 100 Hz
     return
+
 
 def _steering(course, speed):
     if course >= 0:
@@ -190,7 +213,7 @@ def omega_to_axis(vel_left, vel_right):
     return result
 
 def delta(vel_left, vel_right): # change is x coordinate is how far the front wheel
-                                # must move perpendicular tothe direction of travel (cm)
+                                # must move perpendicular to the direction of travel (cm)
     return IC_dist(vel_left, vel_right) - omega_to_axis(vel_left, vel_right)
 
 def delta_deg(vel_left, vel_right): # converting distance to the number of degrees the wheel must move through in a second
@@ -200,8 +223,16 @@ def delta_deg(vel_left, vel_right): # converting distance to the number of degre
         return 0
 
 def stop_motors(motors=MOTORS):
+    dead_motor = motors.back # disconnected motor is the back motor by default
+    bool_dead = False
     for motor in motors:
-        motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
+        try:
+            motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
+        except:
+            bool_dead = True
+            dead_motor = motor
+    if bool_dead:
+        raise MotorDisconnectedError("Motor " + str(dead_motor) + " disconnected")
 
 @thread
 def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
@@ -218,21 +249,24 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
     ticks = distance(dist)
     traveled = 0
     for motor in motors:
-        try:
-            run_motor(motor, speed=multiplier[motor]*speed)
-        except:
-            print("Motor not connected")
-    while traveled < ticks:
-        if sonar_poll() < 12:
-            stop_motors()
-            break
-        btn.process()
-        correction()
-        odometer_readings = tuple(map(_read_odometer, motors))
-        traveled = odometry(odometer_readings)
-        if traveled >= ticks:
-            stop_motors()
-            break
+        run_motor(motor, speed=multiplier[motor]*speed)
+        while traveled < ticks:
+            try:
+                if sonar_poll() < 12:
+                    stop_motors()
+                    break
+            except:
+                stop_motors()
+                raise SonarDisconnectedError('Sonar disconnected')
+                break
+            btn.process()
+            correction()
+            odometer_readings = tuple(map(_read_odometer, motors))
+            traveled = odometry(odometer_readings)
+            if traveled >= ticks:
+                stop_motors()
+                break
+
 
 def changeP(state):
     global _KP
@@ -276,6 +310,7 @@ def forward(dist, correction=True):
 def rotate(angle, direction=Directions.ROT_LEFT):
     motors, multiplier = _get_motor_params(direction)
     _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
+
 
 btn = ev3.Button()
 btn.on_left = changeP
