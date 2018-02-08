@@ -8,7 +8,7 @@ if not left.connected:
     raise AssertionError('Left sensor not connected')
 if not right.connected:
     raise AssertionError('Right sensor not connected')
-left.mode = 'COL-COLOR'
+left.mode = 'COL-REFLECT'
 right.mode = 'COL-COLOR'
 
 def read_color():
@@ -16,6 +16,9 @@ def read_color():
 
 def sonar_poll():
     return ultra_sonic.distance_centimeters
+
+def read_reflect():
+    return left.value()
 
 # Original code
 '''
