@@ -23,17 +23,30 @@ from thread_decorator import thread
 
 ##### Setup #####
 
-# Read config file
+# Read config file (In python modules are just objects, the basic import syntax
+# just parses a file as the definition of a module and places the resulting
+# object in the global namespace. imp has hooks to allow user level access to
+# the standard import machinery, load_source interprets the given file as python
+# code and returns the resulting module object). The with statement is a context
+# manager, in the case of files the filehandle created by open is assigned to
+# the variable specified after as for the duration of the block, the filehandle
+# is gaurenteed to be closed when execution exits the block regardless of how
+# that happens. TODO: imp is deprecated in favor of importlib apparently
 with open('move.conf') as f:
     _CONFIG = imp.load_source('config', '', f)
 
+# Assign parameters from the config file to global constants
 _WHEEL_CIRCUM = _CONFIG.wheel_diameter * pi
 _BASE_ROT_TO_WHEEL_ROT = (_CONFIG.robot_diameter * pi) / _WHEEL_CIRCUM
 _DEFAULT_RUN_SPEED = _CONFIG.default_run_speed
 _DEFAULT_TURN_SPEED = _CONFIG.default_turn_speed
 
+# Bi-directional map linking human readable motor names to their ports in the
+# brick
 _PORTMAP = DoubleMap(_CONFIG.port_map)
 
+# Named tuples are light weight immutable objects that respond to dot notation,
+# the names of the attributes are given in the second string of the constructor
 MOTORS = namedtuple('motors', 'front back left right')(
     ev3.LargeMotor(_PORTMAP['front']), # Front
     ev3.LargeMotor(_PORTMAP['back']),  # Back
@@ -55,12 +68,16 @@ _DEFAULT_MULTIPLIER = {MOTORS.front : 1,
 
 def _get_odometers(root, portmap):
     """Autodiscover the mapping between each motor and the file that holds it's
-       position information (Not stable across boots)"""
+       position information (Not stable across boots)."""
     odometers = {}
     for motor in os.listdir(root):
         # The address file contains the real name of the motor (out*)
         with open(path.join(root, motor, 'address')) as file:
+            # Read one line from the file (There should only be 1 line) and
+            # strip off trailing whitespace
             name = file.readline().rstrip()
+            # Map each motor to the relavent file (getattr allows the addressing
+            # of objects by string rather than dot notation)
             odometers[getattr(MOTORS, portmap[name])] = path.join(root, motor, 'position')
     return odometers
 _ODOMETERS = _get_odometers(_CONFIG.motor_root, _PORTMAP)
@@ -68,27 +85,33 @@ _ODOMETERS = _get_odometers(_CONFIG.motor_root, _PORTMAP)
 ### End Setup ###
 
 def _read_odometer(motor):
-    """Read the odometer on one motor"""
+    """Read the odometer on one motor."""
     with open(_ODOMETERS[motor]) as file:
+        # abs as actual direction of rotation is irrelevent
         return abs(int(file.readline()))
 
 def _default_odometry(readings):
-    """By default the actuall distance traveled is conservativly estimated as
-       the minimum of all supplied readings"""
+    """By default the actual distance traveled is conservativly estimated as
+       the minimum of all supplied readings."""
     return min(readings)
 
 def _detect_color(color=Colors.BLACK):
-    return map(lambda x: x is color, read_color())
+    # Map returns a generator which lazily computes its values, they can't be
+    # indexed and can only be consumed once, subsequent attempts result in an
+    # exception. As read_color is stateful the tuple constructor it used to
+    # instantly consume the generator into a tuple preserving the values for
+    # safer use later
+    return tuple(map(lambda x: x is color, read_color()))
 
 def _get_motor_params(direction, motors=MOTORS):
     """Centeralises the access of the relavent parameters for each kind of 
        motion. There's likly a better way of doing this.
 
     Reqired Arguments:
-    direction -- A member of the Directions Enum, identifies the kind of motion
+    direction -- A member of the Directions Enum, identifies the kind of motion.
 
     Optional Arguments:
-    motors -- The motors to return, for dependency injection
+    motors -- The motors to return, for dependency injection.
     """
 
     # Forward, Backward, Left and Right recive a tuple containing the motors
@@ -127,21 +150,30 @@ def _straight_line_odometry(dist):
     return (360 * dist) // _WHEEL_CIRCUM
 
 def _rotation_odometry(angle):
+    # To convert between the angle the base should move through to the angle the
+    # wheel should move through we multiply by the ratio of the two
+    # circumferences and floor to int
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
 def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
-    """Run the specified motor forever
+    """Run the specified motor forever.
 
     Required Arguments:
-    motor -- A LargeMotor object representing the motor to run
+    motor -- A LargeMotor object representing the motor to run.
 
     Optional Arguments:
-    speed -- Speed to run the motor at
+    speed -- Speed to run the motor at.
     scalers -- Dict containing scalers to influence the motor's speed,
-               intended for dependency injection
+               intended for dependency injection.
     """
 
-    # Mutable structures shouldn't be passed as default arguments
+    # Mutable structures shouldn't be passed as default arguments. Python
+    # evaluates default arguments at definition time not call time so the
+    # objects passed as default arguments are always the same across function
+    # calls. With mutable structures if the function modifies the argument while
+    # using the default further calls of the same function will recive the
+    # modified structure. The None trick forces assignment of default arguments
+    # at call time
     if scalers is None:
         scalers = _SCALERS
 
@@ -153,8 +185,18 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
     motor.run_forever(speed_sp=scalers[motor]*speed)
 
 def _course_correction(correction_flag, motors=MOTORS, scalers=None):
+    """Default course correction routine
 
-    # Mutable structures shouldn't be passed as default arguments
+    Required Arguments:
+    correction_flag -- A member of the Turning enum, indicates which direction
+                       if any the robot is currently turning.
+
+    Optional Arguments:
+    motors -- The motors available for use, intended for dependency injection.
+    scalers -- Dict containing scalers to influence the motor's speed, intended
+               for dependency injection.
+    """
+
     if scalers is None:
         scalers = _SCALERS
 
@@ -169,7 +211,8 @@ def _course_correction(correction_flag, motors=MOTORS, scalers=None):
         if not right:
             # Stop running the turning motors
             stop_motors(turning_motors)
-            # And start running the stopped wheel
+            # And start running the stopped wheel TODO: Resets the odometer in
+            # that wheel
             run_motor(motors.left, _DEFAULT_RUN_SPEED)
             return Turning.NONE # Stopped turning
         else:
@@ -181,7 +224,8 @@ def _course_correction(correction_flag, motors=MOTORS, scalers=None):
         if not left:
             # Stop running the turning motors
             stop_motors(turning_motors)
-            # And start running the stopped wheel
+            # And start running the stopped wheel TODO: Resets the odometer in
+            # that wheel
             run_motor(motors.right, _DEFAULT_RUN_SPEED)
             return Turning.NONE # Stopped turning
         else:
@@ -191,7 +235,7 @@ def _course_correction(correction_flag, motors=MOTORS, scalers=None):
     else:
         # We can see the line in the right sensor
         if right:
-            # Run the front motor left and the back motor right
+            # Run the front motor right and the back motor left
             run_motor(motors.front, _DEFAULT_TURN_SPEED)
             run_motor(motors.back, -1*_DEFAULT_TURN_SPEED)
             # Stop the left motor
@@ -201,20 +245,38 @@ def _course_correction(correction_flag, motors=MOTORS, scalers=None):
             time.sleep(0)
             return Turning.RIGHT # Start turning right
         elif left:
+            # Run the front motor left and the back motor right
             run_motor(motors.front, -1*_DEFAULT_TURN_SPEED)
             run_motor(motors.back, _DEFAULT_TURN_SPEED)
+            # Stop the right motor
             stop_motors([motors.right])
+            # Allows the kernel to shedule other threads if required for sensor
+            # input
             time.sleep(0)
             return Turning.LEFT # Start turning left
 
-
 def stop_motors(motors=MOTORS):
+    """Stop specified motors.
+
+    Optional Arguments:
+    motors -- The motors to stop, defaults to all of them.
+    """
+
     for motor in motors:
         motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
 
+# Force the function onto a background thread, function now returns the thread
+# it is running on
 @thread
 def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                distance=None, odometry=None, correction=None):
+    """Base controll loop for moving, behavior is managed by arguments and 
+    customised by the movement functions below
+
+    Required Arguments:
+    dist -- The 'distance' that should be traveled, meaning of distance is 
+            determined by the distance argument
+    motors -- The motors that should be used for this motion"""
 
     if multiplier is None:
         multiplier = _DEFAULT_MULTIPLIER
