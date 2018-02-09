@@ -59,7 +59,7 @@ clean:
 .PHONY: test
 test: $(TEST) $(MAIN)
 	./$(TEST)
-	python3 ./test/test.py
+	python3 ./test/graph_test.py
 
 $(TEST): $(TEST_OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_INCLUDES) -o $(TEST) $(TEST_OBJS)

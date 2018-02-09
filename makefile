@@ -33,7 +33,7 @@ test: $(PY_TEST_FILES)
 # Run all tests including compiled tests. Additionally run the tests defined in
 # the cpp makefile for the TravisCI Docker Image
 .PHONY: test-all
-test-all: test cpp
+test-all: test
 	$(MAKE) -C $(CPP_DIR) test
 
 ## Helpers ##

@@ -52,7 +52,7 @@ class Graph:
     def __init__(self, edges):
         raw_pointers = tuple(map(lambda x: x._internal, edges))
         c_arr = (c_void_p * len(edges))(*raw_pointers)
-        self._internal = Graph._new(c_arr)
+        self._internal = Graph._new(c_arr, len(edges))
 
     def __del__(self):
         Graph._del(self._internal)

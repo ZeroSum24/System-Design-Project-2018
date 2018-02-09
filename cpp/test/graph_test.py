@@ -5,10 +5,11 @@
 import unittest
 
 from sys import path
-# Add the current directory to the module load path to allow import to find
-# libgraph
-path.append('.')
-from libgraph import Edge, Graph
+from os.path import abspath
+# The file runs in the cpp directiory, from there this is a relative path to the
+# Controller directiory where the graph module is located
+path.append('../robot/Controller')
+from graph import Edge, Graph
 
 ab = Edge("A", "B", 5)
 ac = Edge("A", "C", 5)

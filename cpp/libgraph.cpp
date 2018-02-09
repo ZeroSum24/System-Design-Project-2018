@@ -15,6 +15,9 @@
 
 #include "Graph.h"
 
+#include <iostream>
+#define print(x) std::cout << x << std::endl
+
 /* C interfaces for the two exposed C++ objects. Each object is converted into a
  * new and delete function and one function per exposed method. The new function
  * should return a pointer to the object created, every other method should
@@ -60,9 +63,9 @@ extern "C" {
 
     /* Graph */
 
-    Graph* Graph_new(Edge** edges, int n_edges) {
+    Graph* Graph_new(Edge** edges, size_t n_edges) {
         std::vector<Edge> edges_v;
-        for (int i = 0; i < n_edges; i++) {
+        for (size_t i = 0; i < n_edges; i++) {
             edges_v.push_back(*(edges[i]));
         }
         return new(std::nothrow) Graph(edges_v);
