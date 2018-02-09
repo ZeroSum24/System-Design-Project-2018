@@ -211,9 +211,8 @@ def _course_correction(correction_flag, motors=MOTORS, scalers=None):
         if not right:
             # Stop running the turning motors
             stop_motors(turning_motors)
-            # And start running the stopped wheel TODO: Resets the odometer in
-            # that wheel
-            run_motor(motors.left, _DEFAULT_RUN_SPEED)
+            # And start running the stopped wheel
+            run_motor(motors.left, _DEFAULT_RUN_SPEED, reset=False)
             return Turning.NONE # Stopped turning
         else:
             return correction_flag # Still turning
@@ -224,9 +223,8 @@ def _course_correction(correction_flag, motors=MOTORS, scalers=None):
         if not left:
             # Stop running the turning motors
             stop_motors(turning_motors)
-            # And start running the stopped wheel TODO: Resets the odometer in
-            # that wheel
-            run_motor(motors.right, _DEFAULT_RUN_SPEED)
+            # And start running the stopped wheel
+            run_motor(motors.right, _DEFAULT_RUN_SPEED, reset=False)
             return Turning.NONE # Stopped turning
         else:
             return correction_flag # Still turning
@@ -288,10 +286,10 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                 identity function
     odometry -- Strategy for unifying individual odometer readings into a single
                 number. It will be passes a tuple containing the reading for
-                each motor.
+                each motor.d
     correction -- Course correction routine. It will be passed a member of the
                   Turning Enum indicating the direction the robot is currently
-                  turning. It should return a member of Turning.
+                  turning. It should also return a member of Turning.
     """
 
     if multiplier is None:
@@ -370,7 +368,7 @@ def _generic_axis(dist, direction, correction=False):
 # The only interesting thing here is forward has course correction on by default
 # but can have it turned off by setting it's correction argument to false, the
 # rest don't provide a means to turn course correction on. Also every function
-# here must return the result of calling the lower level move function inorder
+# here must return the result of calling the lower level move function in order
 # to pass the thread object up to where it is needed
 def forward(dist, correction=True):
     """Move forward.
