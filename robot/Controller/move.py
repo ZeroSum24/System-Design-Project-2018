@@ -129,13 +129,13 @@ def _get_motor_params(direction, motors=MOTORS):
     elif direction is Directions.ROT_RIGHT:
         return (motors, {motors.front :  1,
                          motors.back  : -1,
-                         motors.left  :  1,
-                         motors.right : -1})
+                         motors.left  : -1,
+                         motors.right :  1})
     elif direction is Directions.ROT_LEFT:
         return (motors, {motors.front : -1,
                          motors.back  :  1,
-                         motors.left  : -1,
-                         motors.right :  1})
+                         motors.left  :  1,
+                         motors.right : -1})
     # Die noisily if a direction was missed
     else:
         raise ValueError('Unknown Direction: {}'.format(direction))
