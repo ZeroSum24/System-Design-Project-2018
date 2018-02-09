@@ -152,7 +152,7 @@ def _rotation_odometry(angle):
     # circumferences and floor to int
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
-def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
+def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
     """Run the specified motor forever.
 
     Required Arguments:
@@ -162,6 +162,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
     speed -- Speed to run the motor at.
     scalers -- Dict containing scalers to influence the motor's speed,
                intended for dependency injection.
+    reset -- If False, don't reset the motor's odometer on restart
     """
 
     # Mutable structures shouldn't be passed as default arguments. Python
@@ -174,10 +175,12 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
     if scalers is None:
         scalers = _SCALERS
 
-    # Zero the motor's odometer
-    motor.reset()
-    # Fixes the odometer reading bug
-    motor.run_timed(speed_sp=500, time_sp=500)
+    if correct:
+        # Zero the motor's odometer
+        motor.reset()
+        # Fixes the odometer reading bug
+        motor.run_timed(speed_sp=500, time_sp=500)
+    
     # Preempts the previous command
     motor.run_forever(speed_sp=scalers[motor]*speed)
 
