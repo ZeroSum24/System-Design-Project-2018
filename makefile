@@ -19,7 +19,7 @@ CPP_DIR = ./cpp
 ubuntu:
 	$(MAKE) -C $(CPP_DIR) all
 
-# Build for robot (Debian Jessie arm64)
+# Build for robot (Debian Jessie armel)
 .PHONY: robot
 robot:
 	$(MAKE) -C $(CPP_DIR) robot
@@ -30,8 +30,8 @@ robot:
 .PHONY: test
 test: $(PY_TEST_FILES)
 
-# Run all tests including compiled tests. Additionally run the tests defined in
-# the cpp makefile for the TravisCI Docker Image
+# Additionally run the tests defined in the cpp makefile for the TravisCI Docker
+# Image
 .PHONY: test-all
 test-all: test
 	$(MAKE) -C $(CPP_DIR) test
