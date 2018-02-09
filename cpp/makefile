@@ -29,7 +29,7 @@ ifdef build_standard
 CC = g++
 endif
 ifdef build_robot
-CC = #TODO
+CC = arm-linux-gnueabi-g++
 endif
 
 # All warnings, c++11 features, produce position independent code (Required for
@@ -43,7 +43,7 @@ ifdef build_standard
 INCLUDES += -I/usr/include/python3.5m/
 endif
 ifdef build_robot
-#TODO
+INCLUDES += -I/usr/include/python3.4m/
 endif
 
 # Test include directory
@@ -67,13 +67,13 @@ TEST = run_tests
 # Build everything (Run with make)
 .PHONY: all
 all: $(MAIN)
-	cp $(MAIN) ../robot/Controller/$(MAIN)
 
 .PHONY: robot
 robot: $(MAIN)
 
 $(MAIN): $(OBJS)
 	$(CC) -shared $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS)
+	cp $(MAIN) ../robot/Controller/$(MAIN)
 
 # Rule for converting .cpp files into .o
 .cpp.o:
