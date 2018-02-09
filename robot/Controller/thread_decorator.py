@@ -21,7 +21,10 @@ def thread(func):
     # Prevents the decorator from corrupting the wrapped function's metadata
     @wraps(func)
     def wrapper(*args, **kwargs):
+        # Create a new thread to run the function
         thread = GenericThread(func, args, kwargs)
+        # Run it
         thread.start()
+        # Return it
         return thread
     return wrapper

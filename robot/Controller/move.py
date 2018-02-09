@@ -1,8 +1,5 @@
 """Wrapper library for moving the ev3"""
 
-# pylint: disable=import-error, no-member, redefined-outer-name, too-many-arguments
-# pylint: disable=no-else-return
-
 import imp
 import os
 from os import path
@@ -98,14 +95,14 @@ def _default_odometry(readings):
 def _detect_color(color=Colors.BLACK):
     # Map returns a generator which lazily computes its values, they can't be
     # indexed and can only be consumed once, subsequent attempts result in an
-    # exception. As read_color is stateful the tuple constructor it used to
+    # exception. As read_color is stateful the tuple constructor is used to
     # instantly consume the generator into a tuple preserving the values for
     # safer use later
     return tuple(map(lambda x: x is color, read_color()))
 
 def _get_motor_params(direction, motors=MOTORS):
-    """Centeralises the access of the relavent parameters for each kind of 
-       motion. There's likly a better way of doing this.
+    """Centeralises the access of the relavent parameters for each kind of
+       motion. There's likely a better way of doing this.
 
     Reqired Arguments:
     direction -- A member of the Directions Enum, identifies the kind of motion.
@@ -171,7 +168,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
     # evaluates default arguments at definition time not call time so the
     # objects passed as default arguments are always the same across function
     # calls. With mutable structures if the function modifies the argument while
-    # using the default further calls of the same function will recive the
+    # using the default further calls of the same function will receive the
     # modified structure. The None trick forces assignment of default arguments
     # at call time
     if scalers is None:
@@ -270,63 +267,157 @@ def stop_motors(motors=MOTORS):
 @thread
 def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                distance=None, odometry=None, correction=None):
-    """Base controll loop for moving, behavior is managed by arguments and 
+    """Base controll loop for moving, behavior is managed by arguments and
     customised by the movement functions below
 
     Required Arguments:
-    dist -- The 'distance' that should be traveled, meaning of distance is 
+    dist -- The 'distance' that should be traveled, meaning of distance is
             determined by the distance argument
-    motors -- The motors that should be used for this motion"""
+    motors -- The motors that should be used for this motion
+
+    Optional Arguments:
+    speed -- The base speed of the motors
+    multiplier -- A dict contiaining 1 or -1 for each motor, used to affect the
+                  direction of each motor individually
+    distance -- The distance measure to use, it should be a function that
+                accepts the distance to travel and returns the number of degrees
+                the drive wheels should move through. It defaults to the
+                identity function
+    odometry -- Strategy for unifying individual odometer readings into a single
+                number. It will be passes a tuple containing the reading for
+                each motor.
+    correction -- Course correction routine. It will be passed a member of the
+                  Turning Enum indicating the direction the robot is currently
+                  turning. It should return a member of Turning.
+    """
 
     if multiplier is None:
         multiplier = _DEFAULT_MULTIPLIER
     if distance is None:
-        return
+        distance = lambda x: x
     if odometry is None:
         odometry = _default_odometry
     if correction is None:
-        correction = lambda: None
+        correction = lambda x: Turning.NONE
 
+    # Calculate distance to travel in degrees of rotation
     ticks = distance(dist)
     traveled = 0
     correction_flag = Turning.NONE
+    # Start all the motors at the correct speed and direction
     for motor in motors:
         run_motor(motor, speed=multiplier[motor]*speed)
+    # While we haven't reached the distance yet
     while traveled < ticks:
+        # If the sonar picks up anything stop TODO: Magic number
         if sonar_poll() < 7:
             stop_motors()
             break
+        # Attempt course correction
         correction_flag = correction(correction_flag)
+        # Produce a tuple of odometer readings
         odometer_readings = tuple(map(_read_odometer, motors))
+        # Parse them
         traveled = odometry(odometer_readings)
+        # Stop if we have travelled too far
         if traveled >= ticks:
             stop_motors()
             break
 
 def _generic_axis(dist, direction, correction=False):
+    # TODO: Check incomming direction enum, correction can only be true when
+    # direction is FORWARD
+    """Specialization of _base_move for axis motions (forward, backward, left
+    and right)
+
+    Required Arguments:
+    dist -- Distance in cm to move
+    direction -- Member of the Directions Enum, indicates which direction to
+                 move (Note: ROT_* members are invalid but this is never
+                 checked)
+
+    Optional Arguments:
+    correction -- If true apply course correction to this motion, defaults to
+                  false (Note: due to the placement of the sensors this is only
+                  applicable to forward motion, this is also never checked)
+    """
+
+    # Get the relavent parameters
     motors, should_reverse = _get_motor_params(direction)
+
+    # Partially apply some of the arguments of _base_move now we know them
     func = partial(_base_move, dist, motors, distance=_straight_line_odometry)
+
+    # If we need course correction add that too
     if correction:
         func = partial(func, correction=_course_correction)
+
+    # If we need to reverse motors make a copy of the _DEFAULT_MULTIPLIER dict,
+    # change the relavant values and add that (dict constructor does a shallow
+    # copy but as ints are immutable this is ok and cheaper than a full copy)
     if should_reverse:
         multiplier = dict(_DEFAULT_MULTIPLIER)
         for motor in motors:
             multiplier[motor] = -1
         func = partial(func, multiplier=multiplier)
+    # Return the result of calling the function (Does the requested motion and
+    # returns a thread object back to the caller)
     return func()
 
+# The only interesting thing here is forward has course correction on by default
+# but can have it turned off by setting it's correction argument to false, the
+# rest don't provide a means to turn course correction on. Also every function
+# here must return the result of calling the lower level move function inorder
+# to pass the thread object up to where it is needed
 def forward(dist, correction=True):
+    """Move forward.
+
+    Required Arguments:
+    dist -- distance to move in cm
+
+    Optional Arguments:
+    correction -- Set to False to disable course correction
+    """
+
     return _generic_axis(dist, Directions.FORWARD, correction=correction)
 
 def backward(dist):
+    """Move backward.
+
+    Required Arguments:
+    dist -- distance to move in cm
+    """
     return _generic_axis(dist, Directions.BACKWARD)
 
 def left(dist):
+    """Move left.
+
+    Required Arguments:
+    dist -- distance to move in cm
+    """
     return _generic_axis(dist, Directions.LEFT)
 
 def right(dist):
+    """Move right.
+
+    Required Arguments:
+    dist -- distance to move in cm
+    """
     return _generic_axis(dist, Directions.RIGHT)
 
+# Direction of rotation defaults to left but can be set, this one calls directly
+# into _base_move
 def rotate(angle, direction=Directions.ROT_LEFT):
+    """Rotate inplace.
+
+    Required Arguments:
+    angle -- Angle to rotate through, in degrees
+
+    Optional Arguments:
+    direction -- Member of the Directions Enum, the direction to rotate it
+                 defaults to ROT_LEFT. ROT_RIGHT is also applicable, no
+                 other members are and this is never checked
+    """
+
     motors, multiplier = _get_motor_params(direction)
     _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
