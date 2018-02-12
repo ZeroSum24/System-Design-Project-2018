@@ -20,6 +20,8 @@ from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
 from thread_decorator import thread
 
+EXCEPTIONS = (OSError, FileNotFoundError)
+
 ##### Setup #####
 
 # Read config file
@@ -220,7 +222,7 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
     for motor in motors:
         try:
             run_motor(motor, speed=multiplier[motor]*speed)
-        except:
+        except EXCEPTIONS:
             print("Motor not connected")
     while traveled < ticks:
         delta_time = time.time() - previous_time
