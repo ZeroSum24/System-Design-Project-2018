@@ -1,22 +1,38 @@
+#!/usr/bin/env python3
 """Wrapper library for moving the ev3"""
 
 import imp
 import os
 from os import path
-from math import pi
+from math import pi, sin, cos
 from collections import namedtuple
 from functools import partial
 import time
 
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor
+from ev3dev.auto import *
 
 import Directions
 import Colors
-import Turning
 from double_map import DoubleMap
-from sensors import read_color, sonar_poll
+from sensors import read_color, sonar_poll, read_reflect
 from thread_decorator import thread
+
+# Known exceptions produced when motors or sensors disconnect
+EXCEPTIONS = (OSError, FileNotFoundError)
+
+class MotorDisconnectedError(Exception):
+    pass
+
+class SonarDisconnectedError(Exception):
+    pass
+
+class ReflectivityDisconnectedError(Exception):
+    pass
+
+class ColorDisconnectedError(Exception):
+    pass
 
 ##### Setup #####
 
@@ -115,11 +131,11 @@ def _get_motor_params(direction, motors=MOTORS):
     # they should use to drive and a boolean indicating whether the default
     # direction should be reversed
     if direction is Directions.FORWARD:
-        return ((motors.left, motors.right), False)
+        return (motors.left, motors.right), False
     elif direction is Directions.BACKWARD:
-        return ((motors.left, motors.right), True)
+        return (motors.left, motors.right), True
     elif direction is Directions.RIGHT:
-        return ((motors.front, motors.back), False)
+        return (motors.front, motors.back), False
     elif direction is Directions.LEFT:
         return ((motors.front, motors.back), True)
 
@@ -174,17 +190,29 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
     # at call time
     if scalers is None:
         scalers = _SCALERS
+    try:    
+        if correct:
+            # Zero the motor's odometer
+            motor.reset()
+            # Fixes the odometer reading bug
+            motor.run_timed(speed_sp=500, time_sp=500)
 
-    if correct:
-        # Zero the motor's odometer
-        motor.reset()
-        # Fixes the odometer reading bug
-        motor.run_timed(speed_sp=500, time_sp=500)
+        # Preempts the previous command
+        motor.run_forever(speed_sp=scalers[motor]*speed)
+    except EXCEPTIONS:
+        stop_motors()
+        #raise MotorDisconnectedError('Motor disconnected')
+        
+_last_error = 0
+_integral = 0
+_MAXREF = 54
+_MINREF = 20
+_TARGET = 37
+_KP = 1.55
+_KD = 0.09
+_KI = 0.02
 
-    # Preempts the previous command
-    motor.run_forever(speed_sp=scalers[motor]*speed)
-
-def _course_correction(correction_flag, motors=MOTORS, scalers=None):
+def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, righty=MOTORS.right):
     """Default course correction routine
 
     Required Arguments:
@@ -196,62 +224,80 @@ def _course_correction(correction_flag, motors=MOTORS, scalers=None):
     scalers -- Dict containing scalers to influence the motor's speed, intended
                for dependency injection.
     """
+    
+    global _last_error
+    global _integral
 
-    if scalers is None:
-        scalers = _SCALERS
+    try:
+        ref_read = read_reflect()
+    except EXCEPTIONS:
+        stop_motors()
+        raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
 
-    # For clarity below
-    turning_motors = (motors.left, motors.right)
+    error = _TARGET - (100 * (ref_read - _MINREF) / (_MAXREF - _MINREF))
+    derivative = error - _last_error
+    _last_error = error
+    _integral = 0.5 * _integral + error
+    course = -(_KP * error - _KD * derivative + _KI * _integral)
 
-    left, right = _detect_color()
+    for (motor, speed) in zip([lefty, righty, front, back], _steering(course, _DEFAULT_RUN_SPEED)):
+        run_motor(motor, speed)
+    time.sleep(0.01) # Aprox 100 Hz
+    return
 
-    # If we are turning right
-    if correction_flag == Turning.RIGHT:
-        # And we can't see the line in the right sensor
-        if not right:
-            # Stop running the turning motors
-            stop_motors(turning_motors)
-            # And start running the stopped wheel
-            run_motor(motors.left, _DEFAULT_RUN_SPEED, reset=False)
-            return Turning.NONE # Stopped turning
+def _steering(course, speed):
+    if course >= 0:
+        if course > 100:
+            speed_right = 0
+            speed_left = speed
         else:
-            return correction_flag # Still turning
-
-    # If we are turning left
-    elif correction_flag == Turning.LEFT:
-        # And we can't see the line in the left sensor
-        if not left:
-            # Stop running the turning motors
-            stop_motors(turning_motors)
-            # And start running the stopped wheel
-            run_motor(motors.right, _DEFAULT_RUN_SPEED, reset=False)
-            return Turning.NONE # Stopped turning
-        else:
-            return correction_flag # Still turning
-
-    # We are not turning
+            speed_left = speed
+            speed_right = speed - ((speed * course) / 100)
     else:
-        # We can see the line in the right sensor
-        if right:
-            # Run the front motor right and the back motor left
-            run_motor(motors.front, _DEFAULT_TURN_SPEED)
-            run_motor(motors.back, -1*_DEFAULT_TURN_SPEED)
-            # Stop the left motor
-            stop_motors([motors.left])
-            # Allows the kernel to shedule other threads if required for sensor
-            # input
-            time.sleep(0)
-            return Turning.RIGHT # Start turning right
-        elif left:
-            # Run the front motor left and the back motor right
-            run_motor(motors.front, -1*_DEFAULT_TURN_SPEED)
-            run_motor(motors.back, _DEFAULT_TURN_SPEED)
-            # Stop the right motor
-            stop_motors([motors.right])
-            # Allows the kernel to shedule other threads if required for sensor
-            # input
-            time.sleep(0)
-            return Turning.LEFT # Start turning left
+        if course < -100:
+            speed_left = 0
+            speed_right = speed
+        else:
+            speed_right = speed
+            speed_left = speed + ((speed * course) / 100)
+
+    speed_front = -delta_deg(speed_left, speed_right)
+    speed_back = delta_deg(speed_left, speed_right)
+
+    return [int(speed_left), int(speed_right), int(speed_front), int(speed_back)]
+
+def d_deg(): # distance traveled per degree by a wheel
+    return _WHEEL_CIRCUM/360
+
+def dist(velocity): # distance traveled by each wheel per second in cm
+    return velocity * d_deg()
+
+def diff_in_dist(vel_left, vel_right): # the difference in distance traveled by the left and right wheels in cm
+    return dist(vel_left) - dist(vel_right)
+
+def omega(vel_left, vel_right): # angle of base rotation per second in radians
+    return (diff_in_dist(vel_left, vel_right)/_CONFIG.robot_diameter)
+
+def IC_dist(vel_left, vel_right): # the distance from the centre of rotation to the centre of the drive axis
+    return (_CONFIG.robot_diameter/2)*( (vel_right + vel_left)/(vel_right - vel_left) )
+
+def omega_to_axis(vel_left, vel_right):
+    # Result of rotating the vector defined by IC_dist through omega
+    # in euclidian space, only the x coordinate is required in cm
+    # (L/2 is the original y coordinate)
+    result = IC_dist(vel_left, vel_right) * cos(omega(vel_left, vel_right))
+    result -= _CONFIG.robot_diameter/2 * sin(omega(vel_left, vel_right))
+    return result
+
+def delta(vel_left, vel_right): # change is x coordinate is how far the front wheel
+                                # must move perpendicular to the direction of travel (cm)
+    return IC_dist(vel_left, vel_right) - omega_to_axis(vel_left, vel_right)
+
+def delta_deg(vel_left, vel_right): # converting distance to the number of degrees the wheel must move through in a second
+    if abs(vel_left-vel_right) > 3:
+        return 360 * delta(vel_left, vel_right)/_WHEEL_CIRCUM
+    else:
+        return 0
 
 def stop_motors(motors=MOTORS):
     """Stop specified motors.
@@ -259,9 +305,16 @@ def stop_motors(motors=MOTORS):
     Optional Arguments:
     motors -- The motors to stop, defaults to all of them.
     """
-
+    dead_motor = motors.back # disconnected motor is the back motor by default
+    bool_dead = False
     for motor in motors:
-        motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
+        try:
+            motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
+        except EXCEPTIONS:
+            bool_dead = True
+            dead_motor = motor
+    if bool_dead:
+        raise MotorDisconnectedError("Motor " + str(dead_motor) + " disconnected")
 
 # Force the function onto a background thread, function now returns the thread
 # it is running on
@@ -299,31 +352,51 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
     if odometry is None:
         odometry = _default_odometry
     if correction is None:
-        correction = lambda x: Turning.NONE
-
-    # Calculate distance to travel in degrees of rotation
+        correction = lambda: None
+    
     ticks = distance(dist)
     traveled = 0
-    correction_flag = Turning.NONE
-    # Start all the motors at the correct speed and direction
     for motor in motors:
         run_motor(motor, speed=multiplier[motor]*speed)
-    # While we haven't reached the distance yet
-    while traveled < ticks:
-        # If the sonar picks up anything stop TODO: Magic number
-        if sonar_poll() < 7:
-            stop_motors()
-            break
-        # Attempt course correction
-        correction_flag = correction(correction_flag)
-        # Produce a tuple of odometer readings
-        odometer_readings = tuple(map(_read_odometer, motors))
-        # Parse them
-        traveled = odometry(odometer_readings)
-        # Stop if we have travelled too far
-        if traveled >= ticks:
-            stop_motors()
-            break
+        while traveled < ticks:
+            try:
+                if sonar_poll() < 12:
+                    stop_motors()
+                    break
+            except EXCEPTIONS:
+                stop_motors()
+                raise SonarDisconnectedError('Sonar disconnected')
+            btn.process()
+            correction()
+            odometer_readings = tuple(map(_read_odometer, motors))
+            traveled = odometry(odometer_readings)
+            if traveled >= ticks:
+                stop_motors()
+                break
+
+def changeP(state):
+    global _KP
+    _KP += .025
+    print("p: " + str(_KP))
+
+def changeD(state):
+    global _KD
+    _KD += 0.005
+    print("d: " + str(_KD))
+
+def changeI(state):
+    global _KI
+    _KI += 0.005
+    print("i: " + str(_KI))
+
+def reset(state):
+    global _KP
+    _KP = 1
+    global _KD
+    _KD = 0
+    global _KI
+    _KI = 0
+    print("p: " + str(_KP) + " d: " + str(_KD) + " i: " + str(_KI))
 
 def _generic_axis(dist, direction, correction=False):
     # TODO: Check incomming direction enum, correction can only be true when
@@ -422,3 +495,12 @@ def rotate(angle, direction=Directions.ROT_LEFT):
 
     motors, multiplier = _get_motor_params(direction)
     _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
+
+if __name__ == '__main__':
+    btn = ev3.Button()
+    btn.on_left = changeP
+    btn.on_right = changeD
+    btn.on_down = changeI
+    btn.on_up = reset
+
+    forward(99999999).join()
