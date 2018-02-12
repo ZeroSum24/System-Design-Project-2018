@@ -22,3 +22,6 @@ my vision:
 {end body block }
 checks for drop down to make sure that there are no duplicate locations
 button arrangement can be as you see fit
+
+barcode simulation bits:
+need jinja to populate the dropdowns for the slots - either with location (that might be better actually, since people is a 3rd demo thing) or with recipiants  - then send selected things via whatever stephen gets working
