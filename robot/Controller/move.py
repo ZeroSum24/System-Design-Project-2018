@@ -36,18 +36,30 @@ class ColorDisconnectedError(Exception):
 
 ##### Setup #####
 
-# Read config file
+# Read config file (In python modules are just objects, the basic import syntax
+# just parses a file as the definition of a module and places the resulting
+# object in the global namespace. imp has hooks to allow user level access to
+# the standard import machinery, load_source interprets the given file as python
+# code and returns the resulting module object). The with statement is a context
+# manager, in the case of files the filehandle created by open is assigned to
+# the variable specified after as for the duration of the block, the filehandle
+# is gaurenteed to be closed when execution exits the block regardless of how
+# that happens. TODO: imp is deprecated in favor of importlib apparently
 with open('move.conf') as f:
     _CONFIG = imp.load_source('config', '', f)
 
+# Assign parameters from the config file to global constants
 _WHEEL_CIRCUM = _CONFIG.wheel_diameter * pi
 _BASE_ROT_TO_WHEEL_ROT = (_CONFIG.robot_diameter * pi) / _WHEEL_CIRCUM
 _DEFAULT_RUN_SPEED = _CONFIG.default_run_speed
 _DEFAULT_TURN_SPEED = _CONFIG.default_turn_speed
-_DEFAULT_TURN_TIME = _CONFIG.default_turn_time
 
+# Bi-directional map linking human readable motor names to their ports in the
+# brick
 _PORTMAP = DoubleMap(_CONFIG.port_map)
 
+# Named tuples are light weight immutable objects that respond to dot notation,
+# the names of the attributes are given in the second string of the constructor
 MOTORS = namedtuple('motors', 'front back left right')(
     ev3.LargeMotor(_PORTMAP['front']), # Front
     ev3.LargeMotor(_PORTMAP['back']),  # Back
@@ -69,12 +81,16 @@ _DEFAULT_MULTIPLIER = {MOTORS.front : 1,
 
 def _get_odometers(root, portmap):
     """Autodiscover the mapping between each motor and the file that holds it's
-       position information (Not stable across boots)"""
+       position information (Not stable across boots)."""
     odometers = {}
     for motor in os.listdir(root):
         # The address file contains the real name of the motor (out*)
         with open(path.join(root, motor, 'address')) as file:
+            # Read one line from the file (There should only be 1 line) and
+            # strip off trailing whitespace
             name = file.readline().rstrip()
+            # Map each motor to the relavent file (getattr allows the addressing
+            # of objects by string rather than dot notation)
             odometers[getattr(MOTORS, portmap[name])] = path.join(root, motor, 'position')
     return odometers
 _ODOMETERS = _get_odometers(_CONFIG.motor_root, _PORTMAP)
@@ -82,17 +98,38 @@ _ODOMETERS = _get_odometers(_CONFIG.motor_root, _PORTMAP)
 ### End Setup ###
 
 def _read_odometer(motor):
-    """Read the odometer on one motor"""
+    """Read the odometer on one motor."""
     with open(_ODOMETERS[motor]) as file:
+        # abs as actual direction of rotation is irrelevent
         return abs(int(file.readline()))
 
 def _default_odometry(readings):
+    """By default the actual distance traveled is conservativly estimated as
+       the minimum of all supplied readings."""
     return min(readings)
 
 def _detect_color(color=Colors.BLACK):
-    return map(lambda x: x is color, read_color())
+    # Map returns a generator which lazily computes its values, they can't be
+    # indexed and can only be consumed once, subsequent attempts result in an
+    # exception. As read_color is stateful the tuple constructor is used to
+    # instantly consume the generator into a tuple preserving the values for
+    # safer use later
+    return tuple(map(lambda x: x is color, read_color()))
 
 def _get_motor_params(direction, motors=MOTORS):
+    """Centeralises the access of the relavent parameters for each kind of
+       motion. There's likely a better way of doing this.
+
+    Reqired Arguments:
+    direction -- A member of the Directions Enum, identifies the kind of motion.
+
+    Optional Arguments:
+    motors -- The motors to return, for dependency injection.
+    """
+
+    # Forward, Backward, Left and Right recive a tuple containing the motors
+    # they should use to drive and a boolean indicating whether the default
+    # direction should be reversed
     if direction is Directions.FORWARD:
         return (motors.left, motors.right), False
     elif direction is Directions.BACKWARD:
@@ -100,45 +137,72 @@ def _get_motor_params(direction, motors=MOTORS):
     elif direction is Directions.RIGHT:
         return (motors.front, motors.back), False
     elif direction is Directions.LEFT:
-        return (motors.front, motors.back), True
+        return ((motors.front, motors.back), True)
+
+    # The rotations always receive all the motors (TODO: there is no point in
+    # doing this) and a dict using the same format as _DEFAULT_MULTIPLER
+    # indicating which motors should be reversed
     elif direction is Directions.ROT_RIGHT:
         return (motors, {motors.front :  1,
                          motors.back  : -1,
-                         motors.left  :  1,
-                         motors.right : -1})
+                         motors.left  : -1,
+                         motors.right :  1})
     elif direction is Directions.ROT_LEFT:
         return (motors, {motors.front : -1,
                          motors.back  :  1,
-                         motors.left  : -1,
-                         motors.right :  1})
+                         motors.left  :  1,
+                         motors.right : -1})
+    # Die noisily if a direction was missed
     else:
         raise ValueError('Unknown Direction: {}'.format(direction))
 
 def _straight_line_odometry(dist):
+    # The distance covered by one degree of rotation of a wheel is
+    # _WHEEL_CIRCUM // 360. Thus the total number of degrees of rotation is
+    # dist // (_WHEEL_CIRCUM // 360) == (360 * dist) // _WHEEL_CIRCUM
     return (360 * dist) // _WHEEL_CIRCUM
 
 def _rotation_odometry(angle):
+    # To convert between the angle the base should move through to the angle the
+    # wheel should move through we multiply by the ratio of the two
+    # circumferences and floor to int
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
-def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
+def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
+    """Run the specified motor forever.
 
+    Required Arguments:
+    motor -- A LargeMotor object representing the motor to run.
+
+    Optional Arguments:
+    speed -- Speed to run the motor at.
+    scalers -- Dict containing scalers to influence the motor's speed,
+               intended for dependency injection.
+    reset -- If False, don't reset the motor's odometer on restart
+    """
+
+    # Mutable structures shouldn't be passed as default arguments. Python
+    # evaluates default arguments at definition time not call time so the
+    # objects passed as default arguments are always the same across function
+    # calls. With mutable structures if the function modifies the argument while
+    # using the default further calls of the same function will receive the
+    # modified structure. The None trick forces assignment of default arguments
+    # at call time
     if scalers is None:
         scalers = _SCALERS
+    try:    
+        if correct:
+            # Zero the motor's odometer
+            motor.reset()
+            # Fixes the odometer reading bug
+            motor.run_timed(speed_sp=500, time_sp=500)
 
-    # Zero the motor's odometer
-    #motor.reset()
-    # Fixes the odometer reading bug
-    #motor.run_timed(speed_sp=500, time_sp=500)
-    # Preempts the previou
-    # s command
-    try:
+        # Preempts the previous command
         motor.run_forever(speed_sp=scalers[motor]*speed)
     except EXCEPTIONS:
         stop_motors()
         #raise MotorDisconnectedError('Motor disconnected')
-
-
-
+        
 _last_error = 0
 _integral = 0
 _MAXREF = 54
@@ -148,8 +212,19 @@ _KP = 1.55
 _KD = 0.09
 _KI = 0.02
 
-
 def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, righty=MOTORS.right):
+    """Default course correction routine
+
+    Required Arguments:
+    correction_flag -- A member of the Turning enum, indicates which direction
+                       if any the robot is currently turning.
+
+    Optional Arguments:
+    motors -- The motors available for use, intended for dependency injection.
+    scalers -- Dict containing scalers to influence the motor's speed, intended
+               for dependency injection.
+    """
+    
     global _last_error
     global _integral
 
@@ -169,7 +244,6 @@ def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, 
         run_motor(motor, speed)
     time.sleep(0.01) # Aprox 100 Hz
     return
-
 
 def _steering(course, speed):
     if course >= 0:
@@ -226,6 +300,11 @@ def delta_deg(vel_left, vel_right): # converting distance to the number of degre
         return 0
 
 def stop_motors(motors=MOTORS):
+    """Stop specified motors.
+
+    Optional Arguments:
+    motors -- The motors to stop, defaults to all of them.
+    """
     dead_motor = motors.back # disconnected motor is the back motor by default
     bool_dead = False
     for motor in motors:
@@ -237,18 +316,44 @@ def stop_motors(motors=MOTORS):
     if bool_dead:
         raise MotorDisconnectedError("Motor " + str(dead_motor) + " disconnected")
 
+# Force the function onto a background thread, function now returns the thread
+# it is running on
 @thread
 def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                distance=None, odometry=None, correction=None):
+    """Base controll loop for moving, behavior is managed by arguments and
+    customised by the movement functions below
+
+    Required Arguments:
+    dist -- The 'distance' that should be traveled, meaning of distance is
+            determined by the distance argument
+    motors -- The motors that should be used for this motion
+
+    Optional Arguments:
+    speed -- The base speed of the motors
+    multiplier -- A dict contiaining 1 or -1 for each motor, used to affect the
+                  direction of each motor individually
+    distance -- The distance measure to use, it should be a function that
+                accepts the distance to travel and returns the number of degrees
+                the drive wheels should move through. It defaults to the
+                identity function
+    odometry -- Strategy for unifying individual odometer readings into a single
+                number. It will be passes a tuple containing the reading for
+                each motor.d
+    correction -- Course correction routine. It will be passed a member of the
+                  Turning Enum indicating the direction the robot is currently
+                  turning. It should also return a member of Turning.
+    """
 
     if multiplier is None:
         multiplier = _DEFAULT_MULTIPLIER
     if distance is None:
-        return
+        distance = lambda x: x
     if odometry is None:
         odometry = _default_odometry
     if correction is None:
         correction = lambda: None
+    
     ticks = distance(dist)
     traveled = 0
     for motor in motors:
@@ -268,7 +373,6 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
             if traveled >= ticks:
                 stop_motors()
                 break
-
 
 def changeP(state):
     global _KP
@@ -295,29 +399,108 @@ def reset(state):
     print("p: " + str(_KP) + " d: " + str(_KD) + " i: " + str(_KI))
 
 def _generic_axis(dist, direction, correction=False):
+    # TODO: Check incomming direction enum, correction can only be true when
+    # direction is FORWARD
+    """Specialization of _base_move for axis motions (forward, backward, left
+    and right)
+
+    Required Arguments:
+    dist -- Distance in cm to move
+    direction -- Member of the Directions Enum, indicates which direction to
+                 move (Note: ROT_* members are invalid but this is never
+                 checked)
+
+    Optional Arguments:
+    correction -- If true apply course correction to this motion, defaults to
+                  false (Note: due to the placement of the sensors this is only
+                  applicable to forward motion, this is also never checked)
+    """
+
+    # Get the relavent parameters
     motors, should_reverse = _get_motor_params(direction)
+
+    # Partially apply some of the arguments of _base_move now we know them
     func = partial(_base_move, dist, motors, distance=_straight_line_odometry)
+
+    # If we need course correction add that too
     if correction:
         func = partial(func, correction=_course_correction)
+
+    # If we need to reverse motors make a copy of the _DEFAULT_MULTIPLIER dict,
+    # change the relavant values and add that (dict constructor does a shallow
+    # copy but as ints are immutable this is ok and cheaper than a full copy)
     if should_reverse:
         multiplier = dict(_DEFAULT_MULTIPLIER)
         for motor in motors:
             multiplier[motor] = -1
         func = partial(func, multiplier=multiplier)
+    # Return the result of calling the function (Does the requested motion and
+    # returns a thread object back to the caller)
     return func()
 
+# The only interesting thing here is forward has course correction on by default
+# but can have it turned off by setting it's correction argument to false, the
+# rest don't provide a means to turn course correction on. Also every function
+# here must return the result of calling the lower level move function in order
+# to pass the thread object up to where it is needed
 def forward(dist, correction=True):
+    """Move forward.
+
+    Required Arguments:
+    dist -- distance to move in cm
+
+    Optional Arguments:
+    correction -- Set to False to disable course correction
+    """
+
     return _generic_axis(dist, Directions.FORWARD, correction=correction)
 
+def backward(dist):
+    """Move backward.
+
+    Required Arguments:
+    dist -- distance to move in cm
+    """
+    return _generic_axis(dist, Directions.BACKWARD)
+
+def left(dist):
+    """Move left.
+
+    Required Arguments:
+    dist -- distance to move in cm
+    """
+    return _generic_axis(dist, Directions.LEFT)
+
+def right(dist):
+    """Move right.
+
+    Required Arguments:
+    dist -- distance to move in cm
+    """
+    return _generic_axis(dist, Directions.RIGHT)
+
+# Direction of rotation defaults to left but can be set, this one calls directly
+# into _base_move
 def rotate(angle, direction=Directions.ROT_LEFT):
+    """Rotate inplace.
+
+    Required Arguments:
+    angle -- Angle to rotate through, in degrees
+
+    Optional Arguments:
+    direction -- Member of the Directions Enum, the direction to rotate it
+                 defaults to ROT_LEFT. ROT_RIGHT is also applicable, no
+                 other members are and this is never checked
+    """
+
     motors, multiplier = _get_motor_params(direction)
     _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
 
+if __name__ == '__main__':
+    btn = ev3.Button()
+    btn.on_left = changeP
+    btn.on_right = changeD
+    btn.on_down = changeI
+    btn.on_up = reset
 
-btn = ev3.Button()
-btn.on_left = changeP
-btn.on_right = changeD
-btn.on_down = changeI
-btn.on_up = reset
-
-forward(99999999).join()
+    forward(99999999).join()
