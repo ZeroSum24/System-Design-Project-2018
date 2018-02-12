@@ -180,7 +180,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
         motor.reset()
         # Fixes the odometer reading bug
         motor.run_timed(speed_sp=500, time_sp=500)
-    
+
     # Preempts the previous command
     motor.run_forever(speed_sp=scalers[motor]*speed)
 
