@@ -190,7 +190,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
     # at call time
     if scalers is None:
         scalers = _SCALERS
-    try:    
+    try:
         if correct:
             # Zero the motor's odometer
             motor.reset()
@@ -202,7 +202,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
     except EXCEPTIONS:
         stop_motors()
         #raise MotorDisconnectedError('Motor disconnected')
-        
+
 _last_error = 0
 _integral = 0
 _MAXREF = 54
