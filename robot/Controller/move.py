@@ -19,6 +19,9 @@ from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
 from thread_decorator import thread
 
+# Known exceptions produced when motors or sensors disconnect
+EXCEPTIONS = (OSError, FileNotFoundError)
+
 class MotorDisconnectedError(Exception):
     pass
 
@@ -130,7 +133,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None):
     # s command
     try:
         motor.run_forever(speed_sp=scalers[motor]*speed)
-    except:
+    except EXCEPTIONS:
         stop_motors()
         #raise MotorDisconnectedError('Motor disconnected')
 
@@ -152,7 +155,7 @@ def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, 
 
     try:
         ref_read = read_reflect()
-    except:
+    except EXCEPTIONS:
         stop_motors()
         raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
 
@@ -228,7 +231,7 @@ def stop_motors(motors=MOTORS):
     for motor in motors:
         try:
             motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
-        except:
+        except EXCEPTIONS:
             bool_dead = True
             dead_motor = motor
     if bool_dead:
@@ -255,10 +258,9 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                 if sonar_poll() < 12:
                     stop_motors()
                     break
-            except:
+            except EXCEPTIONS:
                 stop_motors()
                 raise SonarDisconnectedError('Sonar disconnected')
-                break
             btn.process()
             correction()
             odometer_readings = tuple(map(_read_odometer, motors))
