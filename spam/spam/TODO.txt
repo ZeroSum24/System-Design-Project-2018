@@ -1,0 +1,24 @@
+staff management -add delete and edit name
+location management - is this hard coded or do we want to edit it via UI
+                      I think actually hard coded - we can edit it from shell and the receptionist doesnt need to see this
+
+staff location management - each staff has at least one location
+each location has (possible) many staff - so the forign key goes into location, but we can restrict the many relationship to 1-1 with sqlalchemny things
+#relationships might be broken - test
+
+
+my vision:
+
+{extend body block}
+
+#use jinja templating to repeat this element for all staff
+#use db querys and join statment to fetch this inofrmation
+ __________________________________________________________________________
+| staff member name | dropdown or other thing for location | edit | delete |
+
+ #button click unfolds js for creation of new staff - same as above but the name is a text box not text
+ #thinking of it the edit button could do something fancy with js to do inline editing - transformation of text chunk into text box for editing name
+|add staff|
+{end body block }
+checks for drop down to make sure that there are no duplicate locations
+button arrangement can be as you see fit

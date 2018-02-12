@@ -78,5 +78,5 @@ alias pydoc="python -m pydoc"
 if [ -n "$BASH" -o -n "$ZSH_VERSION" ] ; then
     hash -r 2>/dev/null
 fi
-export FLASK_APP=spam
+export FLASK_APP=spam.py
 export FLASK_DEBUG=true

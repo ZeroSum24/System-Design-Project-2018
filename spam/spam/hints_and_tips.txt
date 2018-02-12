@@ -1,10 +1,41 @@
 forms need a form action for the button to work
 
-need to 'extend' more things
-need to switch to blueprints
+I dont think we'll need blueprints
 
-WHAT CAN OTHER PEOPLE DO
+in tutorial relationship field works differently - make sure this works
+I dont think we need the database file anymore ????-????
 
--sort out the bluetooth library so theres a nice api
--do more html
--do the database (switch to sqlalchemy)
+how to use the database:
+http://docs.sqlalchemy.org/en/latest/orm/tutorial.html#common-filter-operators
+python3 -m flask shell
+>>> from spam.models import Staff
+>>> from spam.models import Location
+>>> staff1 = Staff(name='ed', robot_id='fsdf')
+>>> from spam.database import db_session
+>>> db_session.add(staff1)
+>>> Staff.query.all()
+[]
+>>> db_session.commit()
+>>> Staff.query.all()
+[<User 'ed'>]
+>>> staff1.location
+[]
+>>> staff1.location = [Location(robot_location='robot', physical_location='physical')]
+>>> staff1.location
+[<Location 'physical'>]
+>>> db_session.commit()
+>>> db_session.query(Staff.id, Location.id).all()
+[(1, 1)]
+>>> db_session.query(Staff.id, Location.id, Location.staff_id).all()
+[(1, 1, 1)]
+>>> for u,a in db_session.query(Staff, Location).filter(Staff.id==Location.staff_id).all():
+...     print(u)
+...     print(a)
+<User 'ed'>
+<Location 'physical'>
+>>> for u,a in db_session.query(Staff.name, Location.physical_location).filter(Staff.id==Location.staff_id).all():
+...     print(u)
+...     print(a)
+...
+ed
+physical
