@@ -94,6 +94,9 @@ def mail_delivery():
 def report():
     return render_template('report.html')
 
+@app.route('/status')
+def report():
+    return render_template('status.html')
 
 
 #TODO: need database editing thingymijig
