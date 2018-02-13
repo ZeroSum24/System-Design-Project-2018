@@ -212,7 +212,7 @@ _KP = 1.55
 _KD = 0.0
 _KI = 0.8
 
-def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, righty=MOTORS.right):
+def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, righty=MOTORS.right):
     """Default course correction routine
 
     Required Arguments:
@@ -235,15 +235,14 @@ def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, 
         raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
 
     error = _TARGET - (100 * (ref_read - _MINREF) / (_MAXREF - _MINREF))
-    derivative = error - _last_error
+    derivative = (error - _last_error) / delta_time
     _last_error = error
     _integral = 0.5 * _integral + error
-    course = -(_KP * error - _KD * derivative + _KI * _integral)
+    course = -(_KP * error - _KD * derivative + _KI * _integral * delta_time)
 
     for (motor, speed) in zip([lefty, righty, front, back], _steering(course, _DEFAULT_RUN_SPEED)):
         run_motor(motor, speed)
-    time.sleep(0.01) # Aprox 100 Hz
-    return
+    time.sleep(0.00)
 
 def _steering(course, speed):
     if course >= 0:
@@ -356,23 +355,26 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
 
     ticks = distance(dist)
     traveled = 0
+    previous_time = time.time()
     for motor in motors:
         run_motor(motor, speed=multiplier[motor]*speed)
-        while traveled < ticks:
-            try:
-                if sonar_poll() < 12:
-                    stop_motors()
-                    break
-            except EXCEPTIONS:
-                stop_motors()
-                raise SonarDisconnectedError('Sonar disconnected')
-            btn.process()
-            correction()
-            odometer_readings = tuple(map(_read_odometer, motors))
-            traveled = odometry(odometer_readings)
-            if traveled >= ticks:
+    while traveled < ticks:
+        delta_time = time.time() - previous_time
+        previous_time = time.time()
+        try:
+            if sonar_poll() < 12:
                 stop_motors()
                 break
+        except EXCEPTIONS:
+            stop_motors()
+            raise SonarDisconnectedError('Sonar disconnected')
+        btn.process()
+        correction(delta_time)
+        odometer_readings = tuple(map(_read_odometer, motors))
+        traveled = odometry(odometer_readings)
+        if traveled >= ticks:
+            stop_motors()
+            break
 
 def changeP(state):
     global _KP
