@@ -95,7 +95,7 @@ def report():
     return render_template('report.html')
 
 @app.route('/status')
-def report():
+def status():
     return render_template('status.html')
 
 

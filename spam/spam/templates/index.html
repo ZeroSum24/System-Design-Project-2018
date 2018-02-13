@@ -26,7 +26,7 @@
           <a class="nav-link" href="#">Mail Delivery <span class="sr-only">(current)</span></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">Status</a>
+          <a class="nav-link" href="{{ url_for('status') }}">Status</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="#">Settings</a>
@@ -53,7 +53,7 @@
     </div>
   </nav>
 
-  {% block body %}{% endblock %}
+  {% block recipients %}{% endblock %}
 
   <div class="jumbotron">
     <h1>Emergency Commands</h1>
