@@ -1,3 +1,0 @@
-graft spam/templates
-graft spam/static
-include spam/schema.sql
