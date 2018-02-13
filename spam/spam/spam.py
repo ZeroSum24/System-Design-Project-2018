@@ -99,6 +99,12 @@ def report():
 def status():
     return render_template('status.html')
 
+@app.route('/handle_data', methods=['POST'])
+def handle_data():
+    projectpath = request.form['projectFilepath']
+    #fill here with the socket server code
+
+    
 
 #TODO: need database editing thingymijig
         #technically extension, but hey, once I get the db working it'll be fine
