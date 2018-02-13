@@ -19,7 +19,7 @@ app.config.update(dict(
 app.config.from_envvar('SPAM_SETTINGS', silent=True)
 
 
-#database functions TODO: swtich to sqlalchemy
+#database functions TODO: switch to sqlalchemy
 def connect_db():
     """Connects to the specific database."""
     rv = sqlite3.connect(app.config['DATABASE'])
@@ -101,10 +101,31 @@ def status():
 
 @app.route('/handle_data', methods=['POST'])
 def handle_data():
+    #this is an example of threading in flask
+    #from here if a connection is established then the data has to be
+    #filtered into the correct points in the html
+    #TODO: figure out how to update the html with these variables
+
     projectpath = request.form['projectFilepath']
     #fill here with the socket server code
 
-    
+    TCP_IP = '127.0.0.1'
+    TCP_PORT = 62
+    BUFFER_SIZE = 20 #Normally 1024, but we want a fast response
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((TCP_IP, TCP_PORT)
+    s.listen(1)
+
+    conn, addr = s.accept()
+    print 'Connection address:', address
+    while 1:
+        data = conn.recv(BUFFER_SIZE)
+        if not data:break
+        print "recieved data:",data
+        conn.send(data) #echo
+    conn.close()
+
 
 #TODO: need database editing thingymijig
         #technically extension, but hey, once I get the db working it'll be fine

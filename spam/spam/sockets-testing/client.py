@@ -4,10 +4,22 @@ import socket
 import requests
 from sys import argv
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(('localhost', 8888))
-payload = (('key1', 'value1'), ('key1', 'value2'))
-r = requests.post('http://127.0.0.1:5000', data=payload)
-print(r.text)
+TCP_IP = '127.0.0.1'
+TCP_PORT = 5000
+BUFFER_SIZE = 1024
+MESSAGE = "Hello, World!"
 
-s.send(r)
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((TCP_IP, TCP_PORT))
+s.send(MESSAGE)
+data = s.recv(BUFFER_SIZE)
+s.close()
+
+if (data == 1):
+	print "Eureka! Connnection has been established"
+else: 
+	print "Keep trying Steve!"
+
+
+
