@@ -209,8 +209,8 @@ _MAXREF = 54
 _MINREF = 20
 _TARGET = 37
 _KP = 1.55
-_KD = 0.09
-_KI = 0.02
+_KD = 0.0
+_KI = 0.8
 
 def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, righty=MOTORS.right):
     """Default course correction routine
@@ -224,7 +224,7 @@ def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, 
     scalers -- Dict containing scalers to influence the motor's speed, intended
                for dependency injection.
     """
-    
+
     global _last_error
     global _integral
 
@@ -353,7 +353,7 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
         odometry = _default_odometry
     if correction is None:
         correction = lambda: None
-    
+
     ticks = distance(dist)
     traveled = 0
     for motor in motors:
