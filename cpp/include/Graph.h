@@ -1,17 +1,17 @@
-// In order to be used as an importable module, the header files need to be 
-// held in a managing file. This is that files
+/* Actual classes implemented by Graph.cpp are here, this allows them to be
+ * imported by other files */
 
 #ifndef GRAPH_H
 #define GRAPH_H
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <map>
-#include <limits>
-#include <algorithm>
-#include <deque>
-#include <set>
+#include <iostream>  // std::endl
+#include <string>    // std::string
+#include <vector>    // std::vector
+#include <map>       // std::map
+#include <limits>    // std::numeric_limits
+#include <algorithm> // std::sort, std::reverse
+#include <deque>     // std::deque
+#include <set>       // std::set
 
 class Edge {
     const std::string m_left = "";

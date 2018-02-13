@@ -1,4 +1,4 @@
-# Builds and tests specifically the pathfinder c++ code.
+# Builds and tests specifically the pathfinder C++ code.
 
 # Unfortunatly make has no logical or so this mess has to be used to set various
 # environment variables of the build system depending on the

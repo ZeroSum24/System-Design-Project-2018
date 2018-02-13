@@ -1,5 +1,5 @@
 //Actual pathfinder code including Dijkstra's algorithm commented
-//below.  See Graph.h (inside include) for the classes of this code
+//below. See Graph.h (inside include) for the public class structure
 
 #include "Graph.h"
 
@@ -16,21 +16,29 @@ class Node {
     
 public:
 
-    /* Though this does nothing it *must* exist or Graph::route will break
-     * because std::map is autovivificious and uses the default constructor for
-     * new values. The compiler won't generate one if another constructor
+    /* Though this does nothing it *must* exist or Graph::route will break. This
+     * is because std::map is autovivificious and uses the default constructor
+     * for new values. The compiler won't generate one if another constructor
      * already exists. */
     Node() {}
 
-    // The real constructor
+    /* The real constructor. Explicit is required for one argument constructors
+     * or the compiler assumes it knows how to convert between the argument type
+     * and the constructed type and will do so automatically in many strange
+     * places */
     explicit Node(const std::string &name):
         m_name(name) {}
 
+    /* << is essentially C++ toString function when it's left operand is a
+     * std::ostream. (Direct printing is available with std::cout, string
+     * construction is available with std::stringstream) */
     friend std::ostream& operator<< (std::ostream &out, Node &node) {
         out << "Node(name=" << node.m_name << ", cost=" << node.m_cost << ", prev_vertex=" << node.m_prev_vertex << ")";
         return out;
     }
 
+    /* According to the internet Getters and Setters traditionally have the same
+     * name and are overloaded on the parameters they take */
     const std::string name(void) const {
         return m_name;
     }
@@ -53,7 +61,7 @@ public:
 };
 
 // As above, needed for the python wrapper
-Edge::Edge() {}
+//Edge::Edge() {}
 
 Edge::Edge(const std::string &left, const std::string &right, int len):
         m_left(left), m_right(right), m_len(len) {}
@@ -123,12 +131,23 @@ std::vector<std::string> Graph::route(const std::string &start, const std::strin
     }
 
     /* Comparison function (Places the node with the lowest cost at the front of
-     * the list) */
+     * the list). C++ lambda syntax [state](arguments){body} -> Return. Return
+     * type is usually figured out by the compiler, arguments and body are self
+     * explanitory. By default lambdas have no access to variables from their
+     * enclosing scope, if outside variables are required they may be listed in
+     * the state section: varname means make a copy of varname, &varname means
+     * take a reference to varname, = means make a copy of all variables and &
+     * means take references to all variables. A comma seperated list of the
+     * above is also allowed e.g [=, &varname] means take copies of all
+     * variables but a reference to varname. By default all references are
+     * const, adding mutable between the state and arguments blocks makes all
+     * references mutable. */
     auto comp = [&nodes](std::string left, std::string right) {
         return nodes[left].cost() < nodes[right].cost();
     };
 
-    // Sort the unvisited list
+    /* Sort the unvisited list, std::begin and std::end are generic functions
+     * that give the begin and end markers of the passed iterators */
     std::sort(std::begin(unvisited), std::end(unvisited), comp);
 
     std::set<std::string> visited;
@@ -151,16 +170,18 @@ std::vector<std::string> Graph::route(const std::string &start, const std::strin
             std::string end = arc.first;
             int dist = arc.second;
 
-            // If the end has already been seen do nothing
+            /* If the end has already been seen do nothing. (std::set::find
+             * returns an iterator to the found marker and the set's end
+             * iterator if the item wasn't in the set) */
             if (visited.find(end) != std::end(visited)) {
                 continue;
             }
 
-            // Calculate the cost to reach this node by this path (The current
-            // cost to get this far + the distance still to travel)
+            /* Calculate the cost to reach this node by this path (The current
+             * cost to get this far + the distance still to travel) */
             
-            // Check for overflow as we're potentially dealing with one or both
-            // operands being INT_MAX
+            /* Check for overflow as we're potentially dealing with one or both
+             * operands being INT_MAX */
             int current_cost = current_node.cost();
             if ((dist > 0) && (current_cost > std::numeric_limits<int>::max() - dist)) {
                 // Will overflow, set the cost to INT_MAX
@@ -186,8 +207,8 @@ std::vector<std::string> Graph::route(const std::string &start, const std::strin
     std::vector<std::string> path;
     Node &node = nodes[dest];
 
-    // If the cost attached to the destination node is INT_MAX then there was no
-    // path found from the start node, so return the empty path
+    /* If the cost attached to the destination node is INT_MAX then there was no
+     * path found from the start node, so return the empty path */
     if (node.cost() == std::numeric_limits<int>::max()) {
         return path;
     }

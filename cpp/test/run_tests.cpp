@@ -11,8 +11,9 @@
 
 using namespace std;
 
-TEST_CASE( "Simple Routing", "Graph::route" ) {
-    
+TEST_CASE( "Routing", "Graph::route" ) {
+
+    // Test setup, happens before each section
     Edge ab("A", "B", 5);
     Edge ac("A", "C", 5);
     Edge bc("B", "C", 5);
