@@ -60,6 +60,7 @@ def login():
             error = 'Invalid email'
         elif request.form['inputPassword'] != app.config['PASSWORD']:
             error = 'Invalid password'
+            #TODO: allow the user to reattempt even if they have got the wrong password
         else:
             session['logged_in'] = True
             flash('You were logged in')

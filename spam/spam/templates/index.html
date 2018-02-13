@@ -66,7 +66,7 @@
           <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
               <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLongTitle">Stop Robot</h5>
+                <h5 class="modal-title" id="stopButtonTitle">Stop Robot</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
                 </button>
@@ -82,17 +82,85 @@
           </div>
         </div>
 
+      </div>
+
+
+      <div style= "padding-right:10px;">
+        <button type="submit" class="btn btn-success" data-toggle="modal" data-target="#startModalConfirmation">Start</button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="startModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="startButtonTitle">Start Robot</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to start the robot?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success">Start</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+
+      <div style= "padding-right:10px;">
+        <button type="submit" class="btn btn-warning" data-toggle="modal" data-target="#callbackModalConfirmation">Callback</button>
+
+        <!-- Modal -->
+        <div class="modal fade" id="callbackModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="callbackButtonTitle">Callback Robot</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to call the robot back to the loading bay?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning">Callback</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
       </div>
-      <div style= "padding-right:10px;">
-        <button type="submit" class="btn btn-warning">Callback</button>
-      </div>
+
       <div>
-        <button type="submit" class="btn btn-success">Continue</button>
-      </div>
-      <div style= "padding-left:10px;">
-        <button type="submit" class="btn btn-info">Reset</button>
-      </div>
+        <div style= "padding-right:10px;">
+          <button type="submit" class="btn btn-info" data-toggle="modal" data-target="#resetModalConfirmation">Reset</button>
+
+          <!-- Modal -->
+          <div class="modal fade" id="resetModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="resetButtonTitle">Reset Robot</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  Are you sure you want to reset the robot?
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                  <button type="button" class="btn btn-info">Reset</button>
+                </div>
+              </div>
+            </div>
+          </div>
     </div>
 
     <!--TODO: remove the flashed message-->
