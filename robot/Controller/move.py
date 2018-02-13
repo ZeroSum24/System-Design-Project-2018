@@ -168,7 +168,7 @@ def _rotation_odometry(angle):
     # circumferences and floor to int
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
-def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
+def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=False):
     """Run the specified motor forever.
 
     Required Arguments:
@@ -191,7 +191,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
     if scalers is None:
         scalers = _SCALERS
     try:
-        if correct:
+        if reset:
             # Zero the motor's odometer
             motor.reset()
             # Fixes the odometer reading bug
