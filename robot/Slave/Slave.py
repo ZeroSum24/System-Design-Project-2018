@@ -5,10 +5,14 @@ import re
 from thread_decorator import thread
 import rpyc
 from rpyc.utils.server import ThreadedServer
+from queue import Queue
 
 # Start a server
+incoming = Queue()
+
 class _Service(rpyc.Service):
-    pass
+    def exposed_reverse(string):
+        controller.reverse_responce(reversed(string))
 
 @thread
 def _server():
