@@ -185,6 +185,7 @@ def move(CURRENT_POSITION, BRACKETS, STATE): #all global returns will have to be
 
 def panic_loop():
 	send_position_to_server()
+	move.stop_motors()
 	pass
 
 def send_position_to_server():
