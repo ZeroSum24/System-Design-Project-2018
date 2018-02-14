@@ -12,8 +12,8 @@ import socket
 incoming = Queue()
 
 class _Service(rpyc.Service):
-    def exposed_reverse(string):
-        controller.reverse_responce(reversed(string))
+    def exposed_reverse(self, string):
+        controller.reverse_responce(string[::-1])
 
 @thread
 def _server():
@@ -61,8 +61,8 @@ _slave_ip = tuple(_ips)[0]
 
 # Attempt a connection to the controllers server TODO: What happens when there
 # is no server yet
-_conn = rpyc.connect(controller_ip, 8889)
+_conn = rpyc.connect(_controller_ip, 8889)
 # Get the remote object
-controller = _conn.remote
+controller = _conn.root
 # Send it our ip
-controller.send_ip(slave_ip)
+controller.send_ip(_slave_ip)

@@ -12,10 +12,10 @@ from queue import Queue
 incoming = Queue()
 
 class _Service(rpyc.Service):
-    def exposed_send_ip(ip):
+    def exposed_send_ip(self, ip):
         # When we get an ip put it on the queue
-        incomming.put(ip)
-    def exposed_reverse_responce(string):
+        incoming.put(ip)
+    def exposed_reverse_responce(self, string):
         incoming.put(string)
         
 @thread
@@ -32,5 +32,5 @@ _slave_ip = incoming.get()
 
 # Open a connection back to the slave (This should never fail as the slave
 # creates it's server before sending the ip)
-_conn = rpyc.connect(slave_ip, 8888)
-slave = _conn.remote
+_conn = rpyc.connect(_slave_ip, 8888)
+slave = _conn.root

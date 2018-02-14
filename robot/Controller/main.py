@@ -4,12 +4,16 @@ from Controller import slave, incoming
 from queue import Empty
 
 while True:
-    print('Robot')
+    print(1)
     slave.reverse('Robot')
+    print(2)
     try:
-        result = incomming.get_nowait()
+        print(3)
+        result = incoming.get_nowait()
+        print(4)
     except Empty:
-        pass
+        print(5)
     else:
+        print(6)
         print(result)
         
