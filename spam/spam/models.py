@@ -31,6 +31,7 @@ class Location(db.Model):
     id = db.Column(Integer, primary_key=True)
     map_node = db.Column(String(50), unique=True, nullable=False)
     location_name = db.Column(String(50), unique=True, nullable=False)
+    is_desk = db.Column(Boolean, default=True)
     #uselist=false restricts to one-one
     staff = db.relationship('Staff', backref='staff')
 

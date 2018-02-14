@@ -95,16 +95,13 @@ def mail_delivery():
         #     l.append(u)
         #     l.append(a)
 
-        return render_template('echo_submit.html', submit=submit, desks=desks)
+        return render_template('echo_submit.html', submit=submit, desks=get_desks_list())
     #else
-    return render_template('recipients.html', error=error, desks=desks)
+    return render_template('recipients.html', error=error, desks=get_desks_list())
 
 @spam.route('/report')
 def report():
-    desks=[]
-    for location in Location.query.all():
-        desks.append(location.location_name)
-    return render_template('report.html', desks=desks)
+    return render_template('report.html', desks=get_desks_list())
 
 @spam.route('/test')
 def test():
@@ -134,3 +131,10 @@ def receive_http():
         return render_template('login.html', error=error)
     #else
     return render_template('login.html', error=error)
+
+def get_desks_list():
+    desks=[]
+    for location in Location.query.all():
+        if location.is_desk:
+            desks.append(location.location_name)
+    return desks
