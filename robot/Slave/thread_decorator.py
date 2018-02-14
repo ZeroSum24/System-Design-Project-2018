@@ -5,6 +5,9 @@ from functools import wraps
 
 class GenericThread(threading.Thread):
     """Generic thread object, runs the passed target with arguments"""
+
+    daemon=True
+
     def __init__(self, target, args, kwargs):
         threading.Thread.__init__(self)
         self._target = target

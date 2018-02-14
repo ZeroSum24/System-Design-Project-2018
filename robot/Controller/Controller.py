@@ -22,7 +22,7 @@ class _Service(rpyc.Service):
 def _server():
     # Using an instance of Service causes every connection to get the same
     # object
-    server = ThreadedServer(_Service(), port=8889)
+    server = ThreadedServer(_Service, port=8889)
     # This blocks, hence the thread
     server.start()
 _server()

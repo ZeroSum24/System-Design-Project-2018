@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-from Slave import controller, incoming
+try:
+    from Slave import controller, incoming
 
-while True:
-    pass
+    while True:
+        pass
+except (SystemExit, KeyboardInterrupt):
+    raise
+except:
+    input()
