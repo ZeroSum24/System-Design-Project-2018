@@ -7,6 +7,11 @@ import rpyc
 from rpyc.utils.server import ThreadedServer
 from queue import Queue
 import socket
+from os import system
+
+controller = None
+
+log = open('log.txt', 'w')
 
 # Start a server
 incoming = Queue()
@@ -24,40 +29,28 @@ def _server():
     server.start()
 _server()
 
-_proc = Popen('netstat', universal_newlines=True, stdout=PIPE)
-_stdout, _stderr = _proc.communicate()
-
-# Inter-brick network shows up as udp in netstat output. The IP is the 5th field
-# split by whitespace (split with no arguments splits splits on \s+). The port
-# is irrelevent so it gets chopped off. Set comprehension because order is 
-# irrelevent and duplicates should be removed
-_ips = {(line.split()[4]).split(':')[0] for line in _stdout.splitlines() if line.startswith('udp')}
-
-if len(_ips) != 1:
-    raise ValueError('Expected 1 IP, got {} ({})'.format(len(_ips), ','.join(_ips)))
-
-# Sets aren't indexable
-_controller_ip = tuple(_ips)[0]
-
-# Discover the ip of the current device
-# Running ifconfig like this requires the brick's sudoers file to be modified
-# to have %sudo   ALL=(ALL:ALL) NOPASSWD:ALL in it
 _proc = Popen(['sudo', 'ifconfig'], universal_newlines=True, stdout=PIPE)
 _stdout, _stderr = _proc.communicate()
-
 # Generator comprehension to allow lazy evaluation of intermediate results,
 # strip all leading and trailing whitespace from each line
 _lines = (line.strip() for line in _stdout.splitlines())
-# Relavent data is the second field split on whitespace and the part after
-# the : on a line that starts with inet
-_ips_unfiltered = ((line.split()[1]).split(':')[1] for line in _lines if line.startswith('inet'))
+# Information is on a line starting with inet. Fields are seperated by whitespace
+_addresses = (line.split()[1:] for line in _lines if line.startswith('inet'))
+_addresses_dicts = []
+for _address in _addresses:
+    _addresses_dicts.append(dict(map(lambda x: x.split(':'), _address)))
+
+_res = [x for x in _addresses_dicts if x['addr'] != '127.0.0.1'][0] # TODO: Do better
 # Localhost will be included in the previous result, remove it and any duplicate entries
-_ips = {line for line in _ips_unfiltered if line != '127.0.0.1'}
+#_ips = {line for line in _ips_unfiltered if line != '127.0.0.1'}
 
-if len(_ips) != 1:
-    raise ValueError('Expected 1 IP, got {} ({})'.format(len(_ips), ','.join(_ips)))
+_slave_ip = _res['addr']
+_bcast = _res['Bcast']
 
-_slave_ip = tuple(_ips)[0]
+system('sudo ping -c 3 -b {}'.format(_bcast)) # TODO: unsafe
+_proc = Popen(['sudo', 'arp', '-a'], universal_newlines=True, stdout=PIPE)
+_stdout, _stderr = _proc.communicate()
+_controller_ip = re.match(r'^.*\((.*)\).*$', _stdout).group(1)
 
 # Attempt a connection to the controllers server TODO: What happens when there
 # is no server yet
@@ -66,3 +59,4 @@ _conn = rpyc.connect(_controller_ip, 8889)
 controller = _conn.root
 # Send it our ip
 controller.send_ip(_slave_ip)
+
