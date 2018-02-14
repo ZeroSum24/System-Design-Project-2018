@@ -4,7 +4,6 @@ import time
 import imp
 from collections import namedtuple
 from double_map import DoubleMap
-import utilities as util
 from functools import partial
 
 ##### Setup #####
