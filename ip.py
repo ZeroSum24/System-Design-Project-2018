@@ -8,4 +8,14 @@ ip_address = re.compile(r'^\d+(\.\d+){3}')
 
 proc = Popen('netstat', universal_newlines=True, stdout=PIPE)
 stdout, stderr = proc.communicate()
-print(tuple(sorted(set(map(lambda x: x.split(':')[0], map(lambda x: tuple(filter(lambda y: ip_address.match(y), x))[0], map(lambda x: x.split(), filter(lambda x: udp_line.match(x), stdout.splitlines()))))))))
+
+# Inter-brick network shows up as udp in netstat output. The IP is the 5th field
+# split by whitespace (split with no arguments splits splits on \s+). The port
+# is irrelevent so it gets chopped off
+ips = {(line.split()[4]).split(':')[0] for line in stdout.splitlines() if udp_line.match(line)}
+
+if len(ips) != 1:
+    raise ValueError('Expected 1 IP, got {} ({})'.format(len(ips), ','.join(ips)))
+
+# Sets aren't indexable
+controller_ip = tuple(ips)[0]
