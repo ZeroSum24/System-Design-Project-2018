@@ -4,13 +4,15 @@ import socket
 import requests
 from sys import argv
 import time
-from queue import Queue
+from queue import ProrityQueue
 
 import ev3dev.ev3 as ev3
 import urllib.request as request
 
 from move import forward, select_junction, initialize_motors
+import dispenser
 import State
+import UniquePriorityQueue as uniq
 
 #---communications
 #------------------
@@ -49,13 +51,20 @@ BRACKETS = {1 : 0, 2 : 0, 3 : 0, 4 : 0, 5 : 0}
 
 CURRENT_POSITION = 0 # current node number
 
-CHOSEN_PATH = 0 # this is going to be a dictionary of nodes and angles
-
-STATE_QUEUE = Queue(1)
+CHOSEN_PATH = [] # this is going to be a list of node distances and angles
 
 MOVING_FLAG = False # flag indicating whether the robot is moving
 
 STATE = State.LOADING
+
+STATE_QUEUE = uniq.UniquePriorityQueue(4) # give it the size of possible state changes + 1
+										  # otherwise the last entry will be blocked
+# the lower the number, the higher the priority
+T_LOADING = (3, State.LOADING)
+T_DELIVERING = (3, State.DELIVERING)
+T_RETURNING = (2, State.RETURNING)
+T_STOPPING = (1, State.STOPPING)
+T_PANICKING = (3, State.PANICKING)
 
 def setup_procedure():
 	move.initialize_motors()
@@ -97,52 +106,97 @@ def control_loop():
 		elif STATE = State.DELIVERING:
 			STATE = delivery_loop()
 		elif STATE = State.RETURNING:
-			STATE = return_loop()
-		elif STATE = State.PANIC:
+			STATE = delivery_loop() # same function as above
+		elif STATE = State.STOPPING:
+			STATE = stop_loop()
+		elif STATE = State.PANICING:
 			STATE = panic_loop()
 
 def loading_loop():
 	# pool for "go-ahead" button
-	pass
+	return State.DELIVERING
 
-def delivery_loop(): # queue-ception to move and back
+def check_state():
+	try:
+		state = STATE_QUEUE.get_nowait()
+	except Empty:
+		return None
+	else:
+		if state[1] != State.DELIVERING:
+			with STATE_QUEUE.mutex:
+				STATE_QUEUE.queue.clear()
+			return state[1]
+
+def delivery_loop():
 	global MOVING_FLAG
 	while True:
-		try:
-			state = STATE_QUEUE.get_nowait()
-			STATE = state
-		except Empty:
-			pass
-
-		if MOVING_FLAG:
+		new_state = check_state()
+		if new_state != None:
 			MOVING_FLAG = False
-			choose_path()
+			return new_state
+
+		if not MOVING_FLAG:
+			MOVING_FLAG = True
 			move()
-	return State.RETURNING
 
-def choose_path():
-	list_of_paths = []
-	for bracket, table_no in BRACKETS:
-		list_of_paths.append(plan_path(CURRENT_POSITION, table_no))
-	global CHOSEN_PATH
-	CHOSEN_PATH = shortest_path(list_of_paths)
 
-def plan_path():
+def choose_path(reception = False):
+	if reception:
+		CHOSEN_PATH = plan_path(CURRENT_POSITION, 0)
+	else:
+		list_of_paths = []
+		for bracket, table_no in BRACKETS:
+			list_of_paths.append(plan_path(CURRENT_POSITION, table_no))
+		global CHOSEN_PATH
+		CHOSEN_PATH = shorte`st_path(list_of_paths) # need to return the bracket number, so that we know what is left to deliver
+
+def plan_path(current, destination):
 	pass # djikstra: this can be either implemented on the brick, or fed from the server
 
-def shortest_path():
+def shortest_path(paths):
 	pass # returns the shortest path from the path list
 
 @thread
-def move():
-	pass # move, junction, dispense
+def move(CURRENT_POSITION, BRACKETS, STATE): #all global returns will have to be passed in queues
+	if STATE = STATE_RETURNING:
+		choose_path(reception = True)
+	else:
+		choose_path()
+	while True:
+		distance = CHOSEN_PATH.pop()
+		CURRENT_POSITION = move.forward(distance).join() # maybe make the forward seek and return the junction?
+		if CURRENT_POSITION = -1: # indicates being lost
+			STATE_QUEUE.put(T_PANICKING)
+			break
+		elif CURRENT_POSITION = 0: # indicates reception
+			STATE_QUEUE.put(T_LOADING)
+			break
+		elif CHOSEN_PATH.empty()
+			dispenser.dump(bracket) # need to establish some mapping
+			BRACKETS[bracket] = 0
+			move.turn_around().join()
+			# if all BRACKETS are assigned to 0, enter RETURNING state
+				break # and set path_plan(CURRENT_POSITION, 0)
+			choose_path()
+		else:
+			angle = CHOSEN_PATH.pop()
+			move.choose_junction(angle).join()
+
 
 def panic_loop():
+	send_position_to_server()
 	pass
 
-def return_loop():
-	# path
+def send_position_to_server():
 	pass
+
+def stop_loop():
+	# stop all of the motors and wait for further instuctons
+	move.stop_motors()
+	while True:
+		new_state = check_state()
+		if new_state != None:
+			return new_state
 
 
 if __name__ = "__main__":
