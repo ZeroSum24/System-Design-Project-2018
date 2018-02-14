@@ -27,10 +27,10 @@
   <div class="form-group">
     <label for="exampleFormControlSelect1" style="color:#ffffff;">Office Desk</label>
     <select class="form-control" id="exampleFormControlSelect1">
-      <option>Please select a desk</option>
-      <option>Desk 1</option>
-      <option>Desk 2</option>
-      <option>Desk 3</option>
+      <option>Select a desk</option>
+      {% for desk in desks %}
+      <option>{{ desk }}</option>
+      {% endfor %}
     </select>
   </div>
   <div class="form-group">

@@ -19,9 +19,9 @@
       <div class="col-sm-10">
         <select class="form-control">
         <option>Select a desk</option>
-        <option>Desk 1</option>
-        <option>Desk 2</option>
-        <option>Desk 3</option>
+        {% for desk in desks %}
+        <option>{{ desk }}</option>
+        {% endfor %}
 
       </select> </div>
     </div>
@@ -29,10 +29,10 @@
       <label for="inputSlot2" class="col-sm-2 col-form-label">Slot 2</label>
       <div class="col-sm-10">
         <select class="form-control">
-        <option>Select a desk</option>
-        <option>Desk 1</option>
-        <option>Desk 2</option>
-        <option>Desk 3</option>
+          <option>Select a desk</option>
+          {% for desk in desks %}
+          <option>{{ desk }}</option>
+          {% endfor %}
 
       </select> </div>
     </div>
@@ -40,10 +40,10 @@
       <label for="inputSlot3" class="col-sm-2 col-form-label">Slot 3</label>
       <div class="col-sm-10">
         <select class="form-control">
-        <option>Select a desk</option>
-        <option>Desk 1</option>
-        <option>Desk 2</option>
-        <option>Desk 3</option>
+          <option>Select a desk</option>
+          {% for desk in desks %}
+          <option>{{ desk }}</option>
+          {% endfor %}
 
       </select> </div>
     </div>
@@ -51,10 +51,10 @@
       <label for="inputSlot4" class="col-sm-2 col-form-label">Slot 4</label>
       <div class="col-sm-10">
         <select class="form-control">
-        <option>Select a desk</option>
-        <option>Desk 1</option>
-        <option>Desk 2</option>
-        <option>Desk 3</option>
+          <option>Select a desk</option>
+          {% for desk in desks %}
+          <option>{{ desk }}</option>
+          {% endfor %}
 
       </select> </div>
     </div>
@@ -63,10 +63,10 @@
         <label for="inputSlot5" class="col-sm-2 col-form-label">Parcel</label>
         <div class="col-sm-10">
           <select class="form-control">
-          <option>Select a desk</option>
-          <option>Desk 1</option>
-          <option>Desk 2</option>
-          <option>Desk 3</option>
+            <option>Select a desk</option>
+            {% for desk in desks %}
+            <option>{{ desk }}</option>
+            {% endfor %}
 
         </select> </div>
       </div>

@@ -2,7 +2,6 @@ forms need a form action for the button to work
 
 I dont think we'll need blueprints
 
-in tutorial relationship field works differently - make sure this works
 I dont think we need the database file anymore ????-????
 
 how to use the database:

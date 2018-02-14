@@ -9,7 +9,7 @@ from sys import argv
 from flask_sqlalchemy import SQLAlchemy
 from spam.database import db_session
 from spam.database import init_db
-from spam.models import Staff, Location
+from spam.models import Staff, Location, Problem
 
 # spam = Flask(__name__) # create the spamlication instance :)
 # #spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
@@ -70,6 +70,7 @@ def login():
             session['logged_in'] = True
             flash('You were logged in')
             return redirect(url_for('mail_delivery'))
+
     #else
     return render_template('login.html', error=error)
 
@@ -83,20 +84,27 @@ def logout():
 @spam.route('/view', methods=['GET', 'POST'])
 def mail_delivery():
     error = None
+
+    desks=[]
+    for location in Location.query.all():
+        desks.append(location.location_name)
+
     if request.method == 'POST':
-        l = ['zed']
-        submit = Staff.query.all()
+        pass
         # for u,a in db_session.query(Staff.name, Location.physical).filter(Staff.id==Location.staff_id).all():
         #     l.append(u)
         #     l.append(a)
 
-        return render_template('echo_submit.html', submit=submit)
+        return render_template('echo_submit.html', submit=submit, desks=desks)
     #else
-    return render_template('recipients.html', error=error)
+    return render_template('recipients.html', error=error, desks=desks)
 
 @spam.route('/report')
 def report():
-    return render_template('report.html')
+    desks=[]
+    for location in Location.query.all():
+        desks.append(location.location_name)
+    return render_template('report.html', desks=desks)
 
 @spam.route('/test')
 def test():
