@@ -9,7 +9,7 @@
 #     ],
 # )
 from spam import spam, db
-from spam.models import Staff,Location
+from spam.models import Staff,Location, Problem
 
 @spam.shell_context_processor
 def make_shell_context():

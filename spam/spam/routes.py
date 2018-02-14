@@ -89,11 +89,9 @@ def mail_delivery():
         desks.append(location.location_name)
 
     if request.method == 'POST':
-        pass
         # for u,a in db_session.query(Staff.name, Location.physical).filter(Staff.id==Location.staff_id).all():
         #     l.append(u)
         #     l.append(a)
-
         return render_template('echo_submit.html', submit=submit, desks=get_desks_list())
     #else
     return render_template('recipients.html', error=error, desks=get_desks_list())
@@ -130,6 +128,7 @@ def receive_http():
     #else
     return render_template('login.html', error=error)
 
+# Function that produces a list of Desk names by going into the database.
 def get_desks_list():
     desks=[]
     for location in Location.query.all():
