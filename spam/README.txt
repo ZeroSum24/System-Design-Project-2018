@@ -14,8 +14,8 @@ how to install with venv in dice
     git checkout flask
     git pull
     go to spam folder
-    sudo FLASK_APP=spam.py python3 -m flask run --host=0.0.0.0 --port=80   
-    
+    sudo FLASK_APP=spam.py python3 -m flask run --host=0.0.0.0 --port=80
+
 you also need to have the echo server running if you want to send things over sockets or you'll get a connection refused
 
 might need to install other packages
@@ -25,6 +25,5 @@ bluetooth (didnt install first try, gonna leave this
 TODO:
 fix some minor problems withe flash messages
 get communication with the ev3 working
-get the database working
 follow the requirements to implement features
 see code for inline todos

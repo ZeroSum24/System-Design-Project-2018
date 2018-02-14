@@ -4,10 +4,6 @@ from spam.database import Base
 from spam import db
 from datetime import datetime
 
-#TODO: figure out what data type and data robot_location and robot_id need
-#TODO: write a database blueprint to build the data automatically every time the code gets reset in production
-#TODO: add Flask-Migrate ? (probably wont need, as the database structure wont change while containing real data)
-#I dont really like the naming convention here
 class Staff(db.Model):
     __tablename__ = 'staff'
     id = db.Column(Integer, primary_key=True)

@@ -28,7 +28,7 @@ from spam.models import Staff, Location, Problem
 # spam.config.from_envvar('SPAM_SETTINGS', silent=True)
 db = SQLAlchemy(spam)
 
-#database functions TODO: swtich to sqlalchemy
+#database functions
 # def connect_db():
 #     """Connects to the specific database."""
 #     rv = sqlite3.connect(spam.config['DATABASE'])
@@ -36,7 +36,6 @@ db = SQLAlchemy(spam)
 #     return rv
 
 #this cli contexct is for the flask shell
-#TODO: get flask shell working
 @spam.cli.command('initdb')
 def initdb_command():
     """Initializes the database."""
@@ -120,7 +119,6 @@ def test():
 #<a class="nav-link" href="#">Help</a>
 #<a class="nav-link" href="#">Logout</a>
 
-#TODO: add the 'user' things for reporting wrong mail - probably need a new database table to hold them and a emial thing (maybe) or we just hold them in notifications but that might make that a bit cluttered
 #TODO: get a bluetooth connection cycle going - probably
     #<span class="badge badge-pill badge-success">Robot Connected</span>
 #TODO: get external post requests working
