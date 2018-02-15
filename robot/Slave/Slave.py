@@ -7,11 +7,11 @@ import rpyc
 from rpyc.utils.server import ThreadedServer
 from queue import Queue
 import socket
-from os import system
 
-controller = None
-
-log = open('log.txt', 'w')
+def run(*cmd):
+    proc = Popen(cmd, universal_newlines=True, stdout=PIPE)
+    stdout, stderr = proc.communicate()
+    return stdout
 
 # Start a server
 incoming = Queue()
@@ -29,8 +29,7 @@ def _server():
     server.start()
 _server()
 
-_proc = Popen(['sudo', 'ifconfig'], universal_newlines=True, stdout=PIPE)
-_stdout, _stderr = _proc.communicate()
+_stdout = run('sudo', 'ifconfig')
 # Generator comprehension to allow lazy evaluation of intermediate results,
 # strip all leading and trailing whitespace from each line
 _lines = (line.strip() for line in _stdout.splitlines())
@@ -47,16 +46,14 @@ _res = [x for x in _addresses_dicts if x['addr'] != '127.0.0.1'][0] # TODO: Do b
 _slave_ip = _res['addr']
 _bcast = _res['Bcast']
 
-system('sudo ping -c 3 -b {}'.format(_bcast)) # TODO: unsafe
-_proc = Popen(['sudo', 'arp', '-a'], universal_newlines=True, stdout=PIPE)
-_stdout, _stderr = _proc.communicate()
+run('sudo', 'ping',' -c', '3', '-b', _bcast)
+_stdout = run('sudo', 'arp', '-a')
 _controller_ip = re.match(r'^.*\((.*)\).*$', _stdout).group(1)
 
-# Attempt a connection to the controllers server TODO: What happens when there
+# Attempt a connection to the controller's server TODO: What happens when there
 # is no server yet
 _conn = rpyc.connect(_controller_ip, 8889)
 # Get the remote object
 controller = _conn.root
 # Send it our ip
 controller.send_ip(_slave_ip)
-
