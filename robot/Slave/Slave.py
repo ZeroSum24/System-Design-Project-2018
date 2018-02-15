@@ -29,26 +29,29 @@ def _server():
     server.start()
 _server()
 
-_stdout = run('sudo', 'ifconfig')
-# Generator comprehension to allow lazy evaluation of intermediate results,
-# strip all leading and trailing whitespace from each line
-_lines = (line.strip() for line in _stdout.splitlines())
-# Information is on a line starting with inet. Fields are seperated by whitespace
-_addresses = (line.split()[1:] for line in _lines if line.startswith('inet'))
-_addresses_dicts = []
-for _address in _addresses:
-    _addresses_dicts.append(dict(map(lambda x: x.split(':'), _address)))
-
-_res = [x for x in _addresses_dicts if x['addr'] != '127.0.0.1'][0] # TODO: Do better
-# Localhost will be included in the previous result, remove it and any duplicate entries
-#_ips = {line for line in _ips_unfiltered if line != '127.0.0.1'}
-
-_slave_ip = _res['addr']
-_bcast = _res['Bcast']
-
-run('sudo', 'ping',' -c', '3', '-b', _bcast)
-_stdout = run('sudo', 'arp', '-a')
-_controller_ip = re.match(r'^.*\((.*)\).*$', _stdout).group(1)
+def _get_ips():
+    stdout = run('sudo', 'ifconfig')
+    # Generator comprehension to allow lazy evaluation of intermediate results,
+    # strip all leading and trailing whitespace from each line
+    lines = (line.strip() for line in stdout.splitlines())
+    # Information is on a line starting with inet. Fields are seperated by whitespace
+    addresses = (line.split()[1:] for line in _lines if line.startswith('inet'))
+    addresses_dicts = []
+    for address in addresses:
+        addresses_dicts.append(dict(map(lambda x: x.split(':'), address)))
+        
+        res = [x for x in addresses_dicts if x['addr'] != '127.0.0.1'][0] # TODO: Do better
+        # Localhost will be included in the previous result, remove it and any duplicate entries
+        #_ips = {line for line in _ips_unfiltered if line != '127.0.0.1'}
+        
+        slave_ip = res['addr']
+        bcast = res['Bcast']
+        
+        run('sudo', 'ping',' -c', '3', '-b', _bcast)
+        stdout = run('sudo', 'arp', '-a')
+        controller_ip = re.match(r'^.*\((.*)\).*$', _stdout).group(1)
+        return slave_ip, controller_ip
+_slave_ip, _controller_ip = _get_ips()
 
 # Attempt a connection to the controller's server TODO: What happens when there
 # is no server yet
