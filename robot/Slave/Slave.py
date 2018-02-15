@@ -33,7 +33,7 @@ def _get_ips():
     # is the one we want, the other is from the loopback interface, it is
     # distinguisable because it contains 127.0.0.1). Fields are seperated by
     # whitespace
-    inet = [line.split()[1:] for line in _lines if line.startswith('inet') and not '127.0.0.1' in line]
+    inet = [line.split()[1:] for line in lines if line.startswith('inet') and not '127.0.0.1' in line]
     # inet should only have one entry
     if len(inet) != 1:
         # TODO: Should be an exception so the control loop can catch it, is a
@@ -43,17 +43,17 @@ def _get_ips():
         while True:
             pass
     # Convert to dict by spliting on :, ip is under addr, Broadcast is under Bcast
-    addresses = dict(map(lambda x: x.split(':'), inet[0])))
+    addresses = dict(map(lambda x: x.split(':'), inet[0]))
     slave_ip = addresses['addr']
     bcast = addresses['Bcast']
 
     # ping the broardcast address, seems to force arp cache repopulation
-    run('sudo', 'ping',' -c', '1', '-b', _bcast)
+    run('sudo', 'ping', '-c', '1', '-b', bcast)
     # Read the arp cache
     ips_raw = run('sudo', 'arp', '-a').splitlines()
     # Should only get one line out as there is only one other computer on the
     # network
-     if len(ips_raw) != 1:
+    if len(ips_raw) != 1:
         # TODO: Should be an exception so the control loop can catch it, is a
         # print statement so we can see it
         print('Expected 1 IP, got {} ({})'.format(len(inet), '|'.join(inet)))
