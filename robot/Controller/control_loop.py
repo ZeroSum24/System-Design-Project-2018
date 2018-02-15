@@ -84,60 +84,65 @@ def initialize_connection():
 
 def get_current_instruction():
 	global STATE_QUEUE
-	global BRACKETS
-	global CURRENT_POSITION
-	global TARGET_POSITION
+	# global BRACKETS
+	# global CURRENT_POSITION
+	# global TARGET_POSITION these also have to be queues
 	pass # get the current instruction and set the STATE accordingly
 
 @thread
 def poll_for_instructions(): # this can also be an interrupt-based listener, not a polling one
 	while True:
-		# if (lost_connection):
-		# 	initialize_connection()
-		# 	return
+		try:
+			get_current_instruction()
+		except IOError:
+			initialize_connection() # not a deamon, so continues existing after this dies
+			return
 		get_current_instruction()
 		time.sleep(2) # wait 2s between pooling intervals
 
 def control_loop():
 	global STATE
 	while True:
-		if STATE = State.LOADING:
+		if STATE == State.LOADING:
 			STATE = loading_loop() # these are going to be blocking
-		elif STATE = State.DELIVERING:
+		elif STATE == State.DELIVERING:
 			STATE = delivery_loop()
-		elif STATE = State.RETURNING:
+		elif STATE == State.RETURNING:
 			STATE = delivery_loop() # same function as above
-		elif STATE = State.STOPPING:
+		elif STATE == State.STOPPING:
 			STATE = stop_loop()
-		elif STATE = State.PANICING:
+		elif STATE == State.PANICING:
 			STATE = panic_loop()
 
 def loading_loop():
 	# pool for "go-ahead" button
 	return State.DELIVERING
 
-def check_state():
+def check_state(current_state):
 	try:
 		state = STATE_QUEUE.get_nowait()
 	except Empty:
 		return None
 	else:
-		if state[1] != State.DELIVERING:
+		if state[1] != current_state:
 			with STATE_QUEUE.mutex:
 				STATE_QUEUE.queue.clear()
 			return state[1]
+		else:
+			return None
 
 def delivery_loop():
 	global MOVING_FLAG
 	while True:
-		new_state = check_state()
+		new_state = check_state(STATE)
 		if new_state != None:
 			MOVING_FLAG = False
+			# tear apart the move() thread
 			return new_state
 
 		if not MOVING_FLAG:
 			MOVING_FLAG = True
-			move()
+			move(CURRENT_POSITION, BRACKETS, STATE)
 
 
 def choose_path(reception = False):
@@ -157,26 +162,26 @@ def shortest_path(paths):
 	pass # returns the shortest path from the path list
 
 @thread
-def move(CURRENT_POSITION, BRACKETS, STATE): #all global returns will have to be passed in queues
-	if STATE = STATE_RETURNING:
+def move(current_position, brackets, state): #all global returns will have to be passed in queues
+	if state == State.RETURNING:
 		choose_path(reception = True)
 	else:
 		choose_path()
 	while True:
 		distance = CHOSEN_PATH.pop()
-		CURRENT_POSITION = move.forward(distance).join() # maybe make the forward seek and return the junction?
-		if CURRENT_POSITION = -1: # indicates being lost
+		current_position = move.forward(distance).join() # maybe make the forward seek and return the junction?
+		if current_position == -1: # indicates being lost
 			STATE_QUEUE.put(T_PANICKING)
-			break
-		elif CURRENT_POSITION = 0: # indicates reception
+			return
+		elif current_position == 0: # indicates reception
 			STATE_QUEUE.put(T_LOADING)
-			break
+			return
 		elif CHOSEN_PATH.empty()
 			dispenser.dump(bracket) # need to establish some mapping
-			BRACKETS[bracket] = 0
+			brackets[bracket] = 0 # a QUEUE!!!!
 			move.turn_around().join()
-			# if all BRACKETS are assigned to 0, enter RETURNING state
-				break # and set path_plan(CURRENT_POSITION, 0)
+			# if all brackets are assigned to 0, enter RETURNING state
+				return # and set path_plan(current_position, 0)
 			choose_path()
 		else:
 			angle = CHOSEN_PATH.pop()
@@ -184,8 +189,8 @@ def move(CURRENT_POSITION, BRACKETS, STATE): #all global returns will have to be
 
 
 def panic_loop():
-	send_position_to_server()
 	move.stop_motors()
+	send_position_to_server()
 	pass
 
 def send_position_to_server():
