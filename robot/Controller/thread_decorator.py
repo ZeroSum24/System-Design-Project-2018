@@ -2,6 +2,11 @@
 
 import threading
 from functools import wraps
+import ctypes
+from time import sleep
+
+class ThreadKiller(Exception):
+    pass
 
 class GenericThread(threading.Thread):
     """Generic thread object, runs the passed target with arguments"""
@@ -11,6 +16,9 @@ class GenericThread(threading.Thread):
     # execption) the interpreter will die immedatly and bring these threads down
     # with it.
     daemon = True
+
+    # Set to False to make the thread immune to ThreadKiller
+    stoppable = True
 
     def __init__(self, target, args, kwargs):
         threading.Thread.__init__(self)
@@ -22,6 +30,53 @@ class GenericThread(threading.Thread):
     # called
     def run(self):
         self._target(*self._args, **self._kwargs)
+
+    # From https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python#325528
+    def _get_tid(self):
+        """Get the current thread's tid (Caches due to the looping in stop)"""
+
+        # If it's cached return it
+        if hasattr(self, "_tid"):
+            return self._tid
+
+        # Or look it up
+        for tid, tobj in threading._active.items():
+            if tobj is self:
+                self._tid = tid
+                return tid
+    
+    def _raise_exc(self):
+        """Raises a ThreadKiller exception in the thread, note this is blocked
+        by system calls (sleep, io, network, etc...)"""
+
+        # Uses the Python C api to send an exception across the thread boundry
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(self._get_tid()), ctypes.py_object(ThreadKiller))
+        if res == 0:
+            return
+        elif res != 1:
+            # If it returns > 1 we need to repair the damage done and try again
+            # later
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+            return
+
+    def stop(self):
+        """Loop _raise_exc until the thread dies"""
+        # Exit instantly if this thread isn't stoppable
+        if not self.stoppable:
+            return
+        # Kill the thread
+        try:
+            # Probably the thread will die here
+            self._raise_exc()
+            # But loop incase it happend to be in a system call when the exeption hit
+            while self.isAlive():
+                # Small sleep so we don't bombard the thread with exceptions
+                sleep(.1)
+                self._raise_exc()
+        # A RuntimeError can be raised if _raise_exc gets called after the
+        # thread dies
+        except RuntimeError:
+            pass
 
 # Decorators in python nearly implement the decorator pattern (See
 # Wikipedia). A python decorator is a function that accepts a function as a
