@@ -80,10 +80,14 @@ incoming = Queue()
 _server()
 _slave_ip, _controller_ip = _get_ips()
 
-# Attempt a connection to the controller's server TODO: What happens when there
-# is no server yet
-_conn = rpyc.connect(_controller_ip, 8889)
-# Get the remote object
+# Attempt a connection to the controller's server and get the remote object
+while True:
+    try:
+        _conn = rpyc.connect(_controller_ip, 8889)
+    except ConnectionRefusedError:
+        pass
+    else:
+        break
 controller = _conn.root
 # Send it our ip
 controller.send_ip(_slave_ip)
