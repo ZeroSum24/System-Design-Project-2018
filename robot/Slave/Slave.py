@@ -61,7 +61,7 @@ def _get_ips():
         while True:
             pass
     # Assuming the line is what we expect the ip should be in brackets
-    match = re.match(r'^.*\((.*)\).*$', ips_raw)
+    match = re.match(r'^.*\((.*)\).*$', ips_raw[0])
     if match:
         # If the match was successful, pull out the ip
         controller_ip = match.group(1)
