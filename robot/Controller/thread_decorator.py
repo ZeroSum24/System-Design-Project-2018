@@ -6,7 +6,30 @@ import ctypes
 from time import sleep
 
 class ThreadKiller(Exception):
+    def __init__(self):
+        self.thrower = ThreadKiller.thrower
+
+class ThreadDying(Exception):
     pass
+
+def acknowledge(exception):
+    """Raises a ThreadDying exception in a thread in responce to a recived
+    ThreadKiller Exception"""
+    
+    # Only allow ThreadKiller to be acknowleged in this way
+    if not isinstance(exception, ThreadKiller):
+        return
+    thrower = exception.thrower
+
+    # Uses the Python C api to send an exception across the thread boundry
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thrower), ctypes.py_object(ThreadDying))
+    if res == 0:
+        return
+    elif res != 1:
+        # If it returns > 1 we need to repair the damage done and try again
+        # later
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(thrower, 0)
+        return
 
 class GenericThread(threading.Thread):
     """Generic thread object, runs the passed target with arguments"""
@@ -44,19 +67,20 @@ class GenericThread(threading.Thread):
             if tobj is self:
                 self._tid = tid
                 return tid
-
+    
     def _raise_exc(self):
         """Raises a ThreadKiller exception in the thread, note this is blocked
         by system calls (sleep, io, network, etc...)"""
 
         # Uses the Python C api to send an exception across the thread boundry
+        ThreadKiller.thrower = threading.get_ident()
         res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(self._get_tid()), ctypes.py_object(ThreadKiller))
         if res == 0:
             return
         elif res != 1:
             # If it returns > 1 we need to repair the damage done and try again
             # later
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(self._get_tid(), 0)
             return
 
     def stop(self):
@@ -77,6 +101,10 @@ class GenericThread(threading.Thread):
         # thread dies
         except RuntimeError:
             pass
+        except ThreadDying:
+            # ThreadDying can be thrown back by the killed thread to ask for
+            # time to clean up before exiting
+            return
 
 # Decorators in python nearly implement the decorator pattern (See
 # Wikipedia). A python decorator is a function that accepts a function as a
