@@ -16,7 +16,6 @@ import time
 
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor
-from ev3dev.auto import *
 
 import Directions
 import Colors
@@ -28,54 +27,68 @@ from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
                                 ColorDisconnectedError)
 
 ##### Setup #####
+# Globals used elsewhere in the file (The ones initalised to None are set by init)
+_ODOMETERS = None
+MOTORS = None
+_WHEEL_CIRCUM = None
+_BASE_ROT_TO_WHEEL_ROT = None
+_DEFAULT_RUN_SPEED = None
+_SCALERS = None
+_ROBOT_DIAMETER = None
+_DEFAULT_MULTIPLIER = None
 
-# Read config file (In python modules are just objects, the basic import syntax
-# just parses a file as the definition of a module and places the resulting
-# object in the global namespace. imp has hooks to allow user level access to
-# the standard import machinery, load_source interprets the given file as python
-# code and returns the resulting module object). The with statement is a context
-# manager, in the case of files the filehandle created by open is assigned to
-# the variable specified after as for the duration of the block, the filehandle
-# is gaurenteed to be closed when execution exits the block regardless of how
-# that happens. TODO: imp is deprecated in favor of importlib apparently
-with open('move.conf') as f:
-    _CONFIG = imp.load_source('config', '', f)
+def init():
+    # Pull in Globals to initalise module state
+    global _ODOMETERS, MOTORS, _WHEEL_CIRCUM, _BASE_ROT_TO_WHEEL_ROT
+    global _DEFAULT_RUN_SPEED, _SCALERS, _ROBOT_DIAMETER, _DEFAULT_MULTIPLIER
 
-# Assign parameters from the config file to global constants
-_WHEEL_CIRCUM = _CONFIG.wheel_diameter * pi
-_BASE_ROT_TO_WHEEL_ROT = (_CONFIG.robot_diameter * pi) / _WHEEL_CIRCUM
-_DEFAULT_RUN_SPEED = _CONFIG.default_run_speed
-_DEFAULT_TURN_SPEED = _CONFIG.default_turn_speed
+    # Read config file (In python modules are just objects, the basic import
+    # syntax just parses a file as the definition of a module and places the
+    # resulting object in the global namespace. imp has hooks to allow user
+    # level access to the standard import machinery, load_source interprets the
+    # given file as python code and returns the resulting module object). The
+    # with statement is a context manager, in the case of files the filehandle
+    # created by open is assigned to the variable specified after as for the
+    # duration of the block, the filehandle is gaurenteed to be closed when
+    # execution exits the block regardless of how that happens. TODO: imp is
+    # deprecated in favor of importlib apparently
+    with open('move.conf') as config_file:
+        config = imp.load_source('config', '', config_file)
 
-# Bi-directional map linking human readable motor names to their ports in the
-# brick
-_PORTMAP = DoubleMap(_CONFIG.port_map)
+    # Populate Globals
+    _WHEEL_CIRCUM = config.wheel_diameter * pi
+    _BASE_ROT_TO_WHEEL_ROT = (config.robot_diameter * pi) / _WHEEL_CIRCUM
+    _DEFAULT_RUN_SPEED = config.default_run_speed
+    _DEFAULT_TURN_SPEED = config.default_turn_speed
 
-# Named tuples are light weight immutable objects that respond to dot notation,
-# the names of the attributes are given in the second string of the constructor
-MOTORS = namedtuple('motors', 'front back left right')(
-    ev3.LargeMotor(_PORTMAP['front']), # Front
-    ev3.LargeMotor(_PORTMAP['back']),  # Back
-    ev3.LargeMotor(_PORTMAP['left']),  # Left
-    ev3.LargeMotor(_PORTMAP['right'])  # Right
-)
+    # Bi-directional map linking human readable motor names to their ports in
+    # the brick
+    portmap = DoubleMap(config.port_map)
 
-# Normalises the direction of each motor (Left to right axis drives forward,
-# front to back axis drives right)
-_SCALERS = {MOTORS.front : _CONFIG.scalers['front'],
-            MOTORS.back  : _CONFIG.scalers['back'],
-            MOTORS.left  : _CONFIG.scalers['left'],
-            MOTORS.right : _CONFIG.scalers['right']}
+    # Named tuples are light weight immutable objects that respond to dot
+    # notation, the names of the attributes are given in the second string of
+    # the constructor
+    MOTORS = namedtuple('motors', 'front back left right')(
+        ev3.LargeMotor(portmap['front']), # Front
+        ev3.LargeMotor(portmap['back']),  # Back
+        ev3.LargeMotor(portmap['left']),  # Left
+        ev3.LargeMotor(portmap['right'])  # Right
+    )
 
-_DEFAULT_MULTIPLIER = {MOTORS.front : 1,
-                       MOTORS.back  : 1,
-                       MOTORS.left  : 1,
-                       MOTORS.right : 1}
+    # Normalises the direction of each motor (Left to right axis drives forward,
+    # front to back axis drives right)
+    _SCALERS = {MOTORS.front : config.scalers['front'],
+                MOTORS.back  : config.scalers['back'],
+                MOTORS.left  : config.scalers['left'],
+                MOTORS.right : config.scalers['right']}
 
-def _get_odometers(root, portmap):
-    """Autodiscover the mapping between each motor and the file that holds it's
-       position information (Not stable across boots)."""
-    odometers = {}
+    _DEFAULT_MULTIPLIER = {MOTORS.front : 1,
+                           MOTORS.back  : 1,
+                           MOTORS.left  : 1,
+                           MOTORS.right : 1}
+
+    _ODOMETERS = {}
+    root = config.motor_root
     for motor in os.listdir(root):
         # The address file contains the real name of the motor (out*)
         with open(path.join(root, motor, 'address')) as file:
@@ -84,11 +97,8 @@ def _get_odometers(root, portmap):
             name = file.readline().rstrip()
             # Map each motor to the relavent file (getattr allows the addressing
             # of objects by string rather than dot notation)
-            odometers[getattr(MOTORS, portmap[name])] = path.join(root, motor, 'position')
-    return odometers
-_ODOMETERS = _get_odometers(_CONFIG.motor_root, _PORTMAP)
-
-### End Setup ###
+            _ODOMETERS[getattr(MOTORS, portmap[name])] = path.join(root, motor, 'position')
+init()
 
 def _read_odometer(motor):
     """Read the odometer on one motor."""
@@ -265,18 +275,18 @@ def diff_in_dist(vel_left, vel_right):
     return dist(vel_left) - dist(vel_right)
 
 def omega(vel_left, vel_right): # angle of base rotation per second in radians
-    return diff_in_dist(vel_left, vel_right)/_CONFIG.robot_diameter
+    return diff_in_dist(vel_left, vel_right)/_ROBOT_DIAMETER
 
 # The distance from the centre of rotation to the centre of the drive axis
 def IC_dist(vel_left, vel_right):
-    return (_CONFIG.robot_diameter/2)*((vel_right + vel_left)/(vel_right - vel_left))
+    return (_ROBOT_DIAMETER/2)*((vel_right + vel_left)/(vel_right - vel_left))
 
 def omega_to_axis(vel_left, vel_right):
     # Result of rotating the vector defined by IC_dist through omega
     # in euclidian space, only the x coordinate is required in cm
     # (L/2 is the original y coordinate)
     result = IC_dist(vel_left, vel_right) * cos(omega(vel_left, vel_right))
-    result -= _CONFIG.robot_diameter/2 * sin(omega(vel_left, vel_right))
+    result -= _ROBOT_DIAMETER/2 * sin(omega(vel_left, vel_right))
     return result
 
 def delta(vel_left, vel_right): # change is x coordinate is how far the front wheel
