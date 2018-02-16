@@ -35,9 +35,6 @@ class ReflectivityDisconnectedError(Exception):
 class ColorDisconnectedError(Exception):
     pass
 
-# Known Running threads (So they can be killed on with stop_motors
-THREADS = set()
-
 ##### Setup #####
 
 # Read config file (In python modules are just objects, the basic import syntax
@@ -101,9 +98,6 @@ _ODOMETERS = _get_odometers(_CONFIG.motor_root, _PORTMAP)
 
 ### End Setup ###
 
-def _register_thread(t):
-    THREADS.add(t)
-
 def _read_odometer(motor):
     """Read the odometer on one motor."""
     with open(_ODOMETERS[motor]) as file:
@@ -139,7 +133,7 @@ def _get_motor_params(direction, motors=MOTORS):
     elif direction is Directions.RIGHT:
         return (motors.front, motors.back), False
     elif direction is Directions.LEFT:
-        return ((motors.front, motors.back), True)
+        return (motors.front, motors.back), True
 
     # The rotations always receive all the motors (TODO: there is no point in
     # doing this) and a dict using the same format as _DEFAULT_MULTIPLER
@@ -306,10 +300,6 @@ def stop_motors(motors=MOTORS):
     Optional Arguments:
     motors -- The motors to stop, defaults to all of them.
     """
-    # Kill all known movement threads
-    for t in THREADS:
-        t.stop()
-
     dead_motor = motors.back # disconnected motor is the back motor by default
     bool_dead = False
     for motor in motors:
@@ -354,63 +344,58 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
     if odometry is None:
         odometry = _default_odometry
 
-    # Supresses ThreadKiller Stack Trace
-    try:
-        ticks = distance(dist)
-        traveled = 0
-        previous_time = time.time()
-        for motor in motors:
-            run_motor(motor, speed=multiplier[motor]*speed, reset = True)
-        while traveled < ticks + tolerance:
-            print(traveled)
-            print(ticks)
-            try:
-                junction_marker = _detect_color(Colors.BLACK)
-                if sonar_poll() < 12:
+    ticks = distance(dist)
+    traveled = 0
+    previous_time = time.time()
+    for motor in motors:
+        run_motor(motor, speed=multiplier[motor]*speed, reset = True)
+    while traveled < ticks + tolerance:
+        print(traveled)
+        print(ticks)
+        try:
+            junction_marker = _detect_color(Colors.BLACK)
+            if sonar_poll() < 12:
+                stop_motors()
+                break
+        except EXCEPTIONS:
+            stop_motors()
+            raise SonarDisconnectedError('Sonar/Color sensor disconnected')
+        #btn.process()
+
+        if correction is not None:
+            delta_time = time.time() - previous_time
+            previous_time = time.time()
+            correction(delta_time)
+
+        odometer_readings = tuple(map(_read_odometer, motors))
+        traveled = odometry(odometer_readings)
+
+        if rotating:
+            if traveled >= ticks - tolerance:
+                try:
+                    ref_read = read_reflect()
+                except EXCEPTIONS:
                     stop_motors()
-                    break
-            except EXCEPTIONS:
-                stop_motors()
-                raise SonarDisconnectedError('Sonar/Color sensor disconnected')
-            #btn.process()
+                    raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
+                if _MAXREF >= ref_read >= _TARGET:
+                    print("rot win")
+                    return True
 
-            if correction is not None:
-                delta_time = time.time() - previous_time
-                previous_time = time.time()
-                correction(delta_time)
-
-            odometer_readings = tuple(map(_read_odometer, motors))
-            traveled = odometry(odometer_readings)
-
-            if rotating:
-                if traveled >= ticks - tolerance:
-                    try:
-                        ref_read = read_reflect()
-                    except EXCEPTIONS:
-                        stop_motors()
-                        raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
-                    if _MAXREF >= ref_read >= _TARGET:
-                        print("rot win")
-                        return True
-
-            else:
-                if junction_marker:
-                    if traveled <= ticks - tolerance:
-                        stop_motors()
-                        print("print dist undershoot")
-                        return False
-                    else:
-                        stop_motors()
-                        print("dist win")
-                        return True
-
-            if traveled >= ticks + tolerance:
-                stop_motors()
-                print ("overshoot")
-                return False
-
-    except ThreadKiller:
-        sys.exit()
+        else:
+            if junction_marker:
+                if traveled <= ticks - tolerance:
+                    stop_motors()
+                    print("print dist undershoot")
+                    return False
+                else:
+                    stop_motors()
+                    print("dist win")
+                    return True
+                
+        if traveled >= ticks + tolerance:
+            stop_motors()
+            print ("overshoot")
+            return False
 
 def changeP(state):
     global _KP
