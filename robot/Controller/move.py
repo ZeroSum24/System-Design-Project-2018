@@ -22,21 +22,10 @@ import Directions
 import Colors
 from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
-
-# Known exceptions produced when motors or sensors disconnect
-EXCEPTIONS = (OSError, FileNotFoundError)
-
-class MotorDisconnectedError(Exception):
-    pass
-
-class SonarDisconnectedError(Exception):
-    pass
-
-class ReflectivityDisconnectedError(Exception):
-    pass
-
-class ColorDisconnectedError(Exception):
-    pass
+from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
+                                SonarDisconnectedError,
+                                ReflectivityDisconnectedError,
+                                ColorDisconnectedError)
 
 ##### Setup #####
 
