@@ -44,7 +44,7 @@ class GenericThread(threading.Thread):
             if tobj is self:
                 self._tid = tid
                 return tid
-    
+
     def _raise_exc(self):
         """Raises a ThreadKiller exception in the thread, note this is blocked
         by system calls (sleep, io, network, etc...)"""

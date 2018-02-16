@@ -314,7 +314,7 @@ def stop_motors(motors=MOTORS):
     # Kill all known movement threads
     for t in THREADS:
         t.stop()
-    
+
     dead_motor = motors.back # disconnected motor is the back motor by default
     bool_dead = False
     for motor in motors:
@@ -388,8 +388,8 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
             if traveled >= ticks:
                 stop_motors()
                 break
-      except ThreadKiller:
-      sys.exit()
+    except ThreadKiller:
+    sys.exit()
 
 def changeP(state):
     global _KP
