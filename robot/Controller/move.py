@@ -326,9 +326,6 @@ def stop_motors(motors=MOTORS):
     if bool_dead:
         raise MotorDisconnectedError("Motor " + str(dead_motor) + " disconnected")
 
-# Force the function onto a background thread, function now returns the thread
-# it is running on
-@thread
 def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                distance=None, odometry=None, correction=None):
     """Base control loop for moving, behavior is managed by arguments and
@@ -389,7 +386,7 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                 stop_motors()
                 break
     except ThreadKiller:
-    sys.exit()
+        sys.exit()
 
 def changeP(state):
     global _KP
