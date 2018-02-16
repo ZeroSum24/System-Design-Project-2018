@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Wrapper library for moving the ev3"""
 
+# pylint: disable=fixme, import-error, wildcard-import, missing-docstring,
+# pylint: disable=no-member, redefined-outer-name, invalid-name,
+# pylint: disable=global-statement, no-else-return, too-many-arguments,
+# pylint: disable=too-many-locals, too-many-branches
+
 import imp
 import os
 from os import path
@@ -8,7 +13,6 @@ from math import pi, sin, cos
 from collections import namedtuple
 from functools import partial
 import time
-import sys
 
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor
@@ -18,7 +22,6 @@ import Directions
 import Colors
 from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
-from thread_decorator import thread, ThreadKiller
 
 # Known exceptions produced when motors or sensors disconnect
 EXCEPTIONS = (OSError, FileNotFoundError)
@@ -208,7 +211,8 @@ _KP = 1.55
 _KD = 0.0
 _KI = 0.8
 
-def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, righty=MOTORS.right):
+def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back,
+                       lefty=MOTORS.left, righty=MOTORS.right):
     """Default course correction routine
 
     Required Arguments:
@@ -267,14 +271,16 @@ def d_deg(): # distance traveled per degree by a wheel
 def dist(velocity): # distance traveled by each wheel per second in cm
     return velocity * d_deg()
 
-def diff_in_dist(vel_left, vel_right): # the difference in distance traveled by the left and right wheels in cm
+# The difference in distance traveled by the left and right wheels in cm
+def diff_in_dist(vel_left, vel_right):
     return dist(vel_left) - dist(vel_right)
 
 def omega(vel_left, vel_right): # angle of base rotation per second in radians
-    return (diff_in_dist(vel_left, vel_right)/_CONFIG.robot_diameter)
+    return diff_in_dist(vel_left, vel_right)/_CONFIG.robot_diameter
 
-def IC_dist(vel_left, vel_right): # the distance from the centre of rotation to the centre of the drive axis
-    return (_CONFIG.robot_diameter/2)*( (vel_right + vel_left)/(vel_right - vel_left) )
+# The distance from the centre of rotation to the centre of the drive axis
+def IC_dist(vel_left, vel_right):
+    return (_CONFIG.robot_diameter/2)*((vel_right + vel_left)/(vel_right - vel_left))
 
 def omega_to_axis(vel_left, vel_right):
     # Result of rotating the vector defined by IC_dist through omega
@@ -288,7 +294,8 @@ def delta(vel_left, vel_right): # change is x coordinate is how far the front wh
                                 # must move perpendicular to the direction of travel (cm)
     return IC_dist(vel_left, vel_right) - omega_to_axis(vel_left, vel_right)
 
-def delta_deg(vel_left, vel_right): # converting distance to the number of degrees the wheel must move through in a second
+# Converting distance to the number of degrees the wheel must move through in a second
+def delta_deg(vel_left, vel_right):
     if abs(vel_left-vel_right) > 3:
         return 360 * delta(vel_left, vel_right)/_WHEEL_CIRCUM
     else:
@@ -348,7 +355,7 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
     traveled = 0
     previous_time = time.time()
     for motor in motors:
-        run_motor(motor, speed=multiplier[motor]*speed, reset = True)
+        run_motor(motor, speed=multiplier[motor]*speed, reset=True)
     while traveled < ticks + tolerance:
         print(traveled)
         print(ticks)
@@ -391,28 +398,28 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
                     stop_motors()
                     print("dist win")
                     return True
-                
+
         if traveled >= ticks + tolerance:
             stop_motors()
-            print ("overshoot")
+            print("overshoot")
             return False
 
-def changeP(state):
+def changeP(state): # pylint: disable=unused-argument
     global _KP
     _KP += .025
     print("p: " + str(_KP))
 
-def changeD(state):
+def changeD(state): # pylint: disable=unused-argument
     global _KD
     _KD += 0.005
     print("d: " + str(_KD))
 
-def changeI(state):
+def changeI(state): # pylint: disable=unused-argument
     global _KI
     _KI += 0.005
     print("i: " + str(_KI))
 
-def reset(state):
+def reset(state): # pylint: disable=unused-argument
     global _KP
     _KP = 1
     global _KD
@@ -515,7 +522,8 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
     """
 
     motors, multiplier = _get_motor_params(direction)
-    _base_move(angle, tolerance, motors, multiplier=multiplier, rotating = True, distance=_rotation_odometry)
+    _base_move(angle, tolerance, motors, multiplier=multiplier, rotating=True,
+               distance=_rotation_odometry)
 
 def turn_junction(angle, tolerance):
     rotate(angle, tolerance)
