@@ -8,6 +8,7 @@ from math import pi, sin, cos
 from collections import namedtuple
 from functools import partial
 import time
+import sys
 
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor
@@ -33,6 +34,9 @@ class ReflectivityDisconnectedError(Exception):
 
 class ColorDisconnectedError(Exception):
     pass
+
+# Known Running threads (So they can be killed on with stop_motors
+THREADS = set()
 
 ##### Setup #####
 
@@ -96,6 +100,9 @@ def _get_odometers(root, portmap):
 _ODOMETERS = _get_odometers(_CONFIG.motor_root, _PORTMAP)
 
 ### End Setup ###
+
+def _register_thread(t):
+    THREADS.add(t)
 
 def _read_odometer(motor):
     """Read the odometer on one motor."""
@@ -304,6 +311,10 @@ def stop_motors(motors=MOTORS):
     Optional Arguments:
     motors -- The motors to stop, defaults to all of them.
     """
+    # Kill all known movement threads
+    for t in THREADS:
+        t.stop()
+    
     dead_motor = motors.back # disconnected motor is the back motor by default
     bool_dead = False
     for motor in motors:
@@ -320,7 +331,7 @@ def stop_motors(motors=MOTORS):
 @thread
 def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                distance=None, odometry=None, correction=None):
-    """Base controll loop for moving, behavior is managed by arguments and
+    """Base control loop for moving, behavior is managed by arguments and
     customised by the movement functions below
 
     Required Arguments:
@@ -353,28 +364,32 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
     if correction is None:
         correction = lambda: None
 
-    ticks = distance(dist)
-    traveled = 0
-    previous_time = time.time()
-    for motor in motors:
-        run_motor(motor, speed=multiplier[motor]*speed)
-    while traveled < ticks:
-        delta_time = time.time() - previous_time
+    # Supresses ThreadKiller Stack Trace
+    try:
+        ticks = distance(dist)
+        traveled = 0
         previous_time = time.time()
-        try:
-            if sonar_poll() < 12:
+        for motor in motors:
+            run_motor(motor, speed=multiplier[motor]*speed)
+        while traveled < ticks:
+            delta_time = time.time() - previous_time
+            previous_time = time.time()
+            try:
+                if sonar_poll() < 12:
+                    stop_motors()
+                    break
+            except EXCEPTIONS:
+                stop_motors()
+                raise SonarDisconnectedError('Sonar disconnected')
+            btn.process()
+            correction(delta_time)
+            odometer_readings = tuple(map(_read_odometer, motors))
+            traveled = odometry(odometer_readings)
+            if traveled >= ticks:
                 stop_motors()
                 break
-        except EXCEPTIONS:
-            stop_motors()
-            raise SonarDisconnectedError('Sonar disconnected')
-        btn.process()
-        correction(delta_time)
-        odometer_readings = tuple(map(_read_odometer, motors))
-        traveled = odometry(odometer_readings)
-        if traveled >= ticks:
-            stop_motors()
-            break
+      except ThreadKiller:
+      sys.exit()
 
 def changeP(state):
     global _KP
@@ -436,9 +451,10 @@ def _generic_axis(dist, direction, correction=False):
         for motor in motors:
             multiplier[motor] = -1
         func = partial(func, multiplier=multiplier)
-    # Return the result of calling the function (Does the requested motion and
-    # returns a thread object back to the caller)
-    return func()
+    # Get the thread, register and return it
+    t = func()
+    _register_thread(t)
+    return t
 
 # The only interesting thing here is forward has course correction on by default
 # but can have it turned off by setting it's correction argument to false, the
@@ -496,7 +512,9 @@ def rotate(angle, direction=Directions.ROT_LEFT):
     """
 
     motors, multiplier = _get_motor_params(direction)
-    _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
+    t = _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
+    _register_thread(t)
+    return t
 
 if __name__ == '__main__':
     btn = ev3.Button()
