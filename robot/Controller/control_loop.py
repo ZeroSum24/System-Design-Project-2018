@@ -153,7 +153,7 @@ def choose_path(reception = False):
 		for bracket, table_no in BRACKETS:
 			list_of_paths.append(plan_path(CURRENT_POSITION, table_no))
 		global CHOSEN_PATH
-		CHOSEN_PATH = shorte`st_path(list_of_paths) # need to return the bracket number, so that we know what is left to deliver
+		CHOSEN_PATH = shotest_path(list_of_paths) # need to return the bracket number, so that we know what is left to deliver
 
 def plan_path(current, destination):
 	pass # djikstra: this can be either implemented on the brick, or fed from the server

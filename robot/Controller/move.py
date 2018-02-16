@@ -116,12 +116,7 @@ def _default_odometry(readings):
     return min(readings)
 
 def _detect_color(color=Colors.BLACK):
-    # Map returns a generator which lazily computes its values, they can't be
-    # indexed and can only be consumed once, subsequent attempts result in an
-    # exception. As read_color is stateful the tuple constructor is used to
-    # instantly consume the generator into a tuple preserving the values for
-    # safer use later
-    return tuple(map(lambda x: x is color, read_color()))
+    return read_color() is color
 
 def _get_motor_params(direction, motors=MOTORS):
     """Centeralises the access of the relavent parameters for each kind of
@@ -372,17 +367,23 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
             delta_time = time.time() - previous_time
             previous_time = time.time()
             try:
+                junction_marker = read_color(Colors.BLACK);
                 if sonar_poll() < 12:
                     stop_motors()
                     break
             except EXCEPTIONS:
                 stop_motors()
                 raise SonarDisconnectedError('Sonar disconnected')
-            btn.process()
+            #btn.process()
             correction(delta_time)
             odometer_readings = tuple(map(_read_odometer, motors))
             traveled = odometry(odometer_readings)
-            if traveled >= ticks:
+            if junction_marker:
+                if traveled <= ticks - tolerance:
+                    print("qqqqqqqqqqqqqqqqqqqqqqq")
+                    stop_motors()
+            if traveled >= ticks + tolerance:
+                print("////////////////////////")
                 stop_motors()
                 break
     except ThreadKiller:
@@ -448,10 +449,7 @@ def _generic_axis(dist, direction, correction=False):
         for motor in motors:
             multiplier[motor] = -1
         func = partial(func, multiplier=multiplier)
-    # Get the thread, register and return it
-    t = func()
-    _register_thread(t)
-    return t
+    return func()
 
 # The only interesting thing here is forward has course correction on by default
 # but can have it turned off by setting it's correction argument to false, the
@@ -509,9 +507,8 @@ def rotate(angle, direction=Directions.ROT_LEFT):
     """
 
     motors, multiplier = _get_motor_params(direction)
-    t = _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
-    _register_thread(t)
-    return t
+    _base_move(angle, motors, multiplier=multiplier, distance=_rotation_odometry)
+
 
 if __name__ == '__main__':
     btn = ev3.Button()
@@ -520,4 +517,4 @@ if __name__ == '__main__':
     btn.on_down = changeI
     btn.on_up = reset
 
-    forward(99999999).join()
+    forward(20).join()
