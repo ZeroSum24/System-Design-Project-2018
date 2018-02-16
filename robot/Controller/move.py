@@ -175,7 +175,7 @@ def _rotation_odometry(angle):
     # circumferences and floor to int
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
-def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
+def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=False):
     """Run the specified motor forever.
 
     Required Arguments:
@@ -198,7 +198,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=True):
     if scalers is None:
         scalers = _SCALERS
     try:
-        if correct:
+        if reset:
             # Zero the motor's odometer
             motor.reset()
             # Fixes the odometer reading bug
@@ -216,10 +216,10 @@ _MAXREF = 54
 _MINREF = 20
 _TARGET = 37
 _KP = 1.55
-_KD = 0.09
-_KI = 0.02
+_KD = 0.0
+_KI = 0.8
 
-def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, righty=MOTORS.right):
+def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, righty=MOTORS.right):
     """Default course correction routine
 
     Required Arguments:
@@ -231,7 +231,7 @@ def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, 
     scalers -- Dict containing scalers to influence the motor's speed, intended
                for dependency injection.
     """
-    
+
     global _last_error
     global _integral
 
@@ -242,15 +242,14 @@ def _course_correction(front=MOTORS.front, back=MOTORS.back, lefty=MOTORS.left, 
         raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
 
     error = _TARGET - (100 * (ref_read - _MINREF) / (_MAXREF - _MINREF))
-    derivative = error - _last_error
+    derivative = (error - _last_error) / delta_time
     _last_error = error
     _integral = 0.5 * _integral + error
-    course = -(_KP * error - _KD * derivative + _KI * _integral)
+    course = -(_KP * error - _KD * derivative + _KI * _integral * delta_time)
 
     for (motor, speed) in zip([lefty, righty, front, back], _steering(course, _DEFAULT_RUN_SPEED)):
         run_motor(motor, speed)
-    time.sleep(0.01) # Aprox 100 Hz
-    return
+    time.sleep(0.00)
 
 def _steering(course, speed):
     if course >= 0:
@@ -364,14 +363,17 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
         odometry = _default_odometry
     if correction is None:
         correction = lambda: None
-    
+
     # Supresses ThreadKiller Stack Trace
     try:
         ticks = distance(dist)
         traveled = 0
+        previous_time = time.time()
         for motor in motors:
             run_motor(motor, speed=multiplier[motor]*speed)
         while traveled < ticks:
+            delta_time = time.time() - previous_time
+            previous_time = time.time()
             try:
                 if sonar_poll() < 12:
                     stop_motors()
@@ -379,14 +381,15 @@ def _base_move(dist, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
             except EXCEPTIONS:
                 stop_motors()
                 raise SonarDisconnectedError('Sonar disconnected')
-            correction()
+            btn.process()
+            correction(delta_time)
             odometer_readings = tuple(map(_read_odometer, motors))
             traveled = odometry(odometer_readings)
             if traveled >= ticks:
                 stop_motors()
                 break
-    except ThreadKiller:
-        sys.exit()
+      except ThreadKiller:
+      sys.exit()
 
 def changeP(state):
     global _KP
