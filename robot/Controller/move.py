@@ -9,7 +9,7 @@
 import imp
 import os
 from os import path
-from math import pi, sin, cos
+from math import pi
 from collections import namedtuple
 from functools import partial
 import time
@@ -21,6 +21,7 @@ import Directions
 import Colors
 from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
+from PID import pid_speeds
 from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
                                 SonarDisconnectedError,
                                 ReflectivityDisconnectedError)
@@ -245,10 +246,10 @@ _KI = 0.8
 # TODO: All motors are used, just pass the MOTORS object
 def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back,
                        lefty=MOTORS.left, righty=MOTORS.right):
-    """Default course correction routine
+    """Default course correction routine, uses PID controller.
 
     Required Arguments:
-    deta_time -- The time elapsed since the last call to _course_correction.
+    delta_time -- The time elapsed since the last call to _course_correction.
 
     Optional Arguments:
     motors -- The motors available for use, intended for dependency injection.
@@ -269,66 +270,11 @@ def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back,
     _integral = 0.5 * _integral + error
     course = -(_KP * error - _KD * derivative + _KI * _integral * delta_time)
 
-    for (motor, speed) in zip([lefty, righty, front, back], _steering(course, _DEFAULT_RUN_SPEED)):
+    motors_with_speeds = zip([lefty, righty, front, back],
+                             pid_speeds(course, _DEFAULT_RUN_SPEED, _WHEEL_CIRCUM, _ROBOT_DIAMETER))
+    for (motor, speed) in motors_with_speeds:
         run_motor(motor, speed)
     time.sleep(0.00)
-
-def _steering(course, speed):
-    if course >= 0:
-        if course > 100:
-            speed_right = 0
-            speed_left = speed
-        else:
-            speed_left = speed
-            speed_right = speed - ((speed * course) / 100)
-    else:
-        if course < -100:
-            speed_left = 0
-            speed_right = speed
-        else:
-            speed_right = speed
-            speed_left = speed + ((speed * course) / 100)
-
-    speed_front = -delta_deg(speed_left, speed_right)
-    speed_back = delta_deg(speed_left, speed_right)
-
-    return [int(speed_left), int(speed_right), int(speed_front), int(speed_back)]
-
-def d_deg(): # distance traveled per degree by a wheel
-    return _WHEEL_CIRCUM/360
-
-def dist(velocity): # distance traveled by each wheel per second in cm
-    return velocity * d_deg()
-
-# The difference in distance traveled by the left and right wheels in cm
-def diff_in_dist(vel_left, vel_right):
-    return dist(vel_left) - dist(vel_right)
-
-def omega(vel_left, vel_right): # angle of base rotation per second in radians
-    return diff_in_dist(vel_left, vel_right)/_ROBOT_DIAMETER
-
-# The distance from the centre of rotation to the centre of the drive axis
-def IC_dist(vel_left, vel_right):
-    return (_ROBOT_DIAMETER/2)*((vel_right + vel_left)/(vel_right - vel_left))
-
-def omega_to_axis(vel_left, vel_right):
-    # Result of rotating the vector defined by IC_dist through omega
-    # in euclidian space, only the x coordinate is required in cm
-    # (L/2 is the original y coordinate)
-    result = IC_dist(vel_left, vel_right) * cos(omega(vel_left, vel_right))
-    result -= _ROBOT_DIAMETER/2 * sin(omega(vel_left, vel_right))
-    return result
-
-def delta(vel_left, vel_right): # change is x coordinate is how far the front wheel
-                                # must move perpendicular to the direction of travel (cm)
-    return IC_dist(vel_left, vel_right) - omega_to_axis(vel_left, vel_right)
-
-# Converting distance to the number of degrees the wheel must move through in a second
-def delta_deg(vel_left, vel_right):
-    if abs(vel_left-vel_right) > 3:
-        return 360 * delta(vel_left, vel_right)/_WHEEL_CIRCUM
-    else:
-        return 0
 
 ### End PID ###
 
@@ -403,6 +349,7 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
     while traveled < ticks + tolerance:
         print(traveled)
         print(ticks)
+        # TODO: We have a specific exception for Color disconnect
         try:
             junction_marker = _detect_color(Colors.BLACK)
             if sonar_poll() < 12:
