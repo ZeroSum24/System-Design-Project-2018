@@ -219,20 +219,19 @@ def stop_motors(motors=_MOTORS):
     Optional Arguments:
     motors -- The motors to stop, defaults to all of them.
     """
-    dead_motor = motors.back # disconnected motor is the back motor by default
-    bool_dead = False
+    dead_motor = None
     for motor in motors:
         try:
             motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
         except EXCEPTIONS:
-            bool_dead = True
             dead_motor = motor
-    if bool_dead:
+    if dead_motor:
         raise MotorDisconnectedError("Motor " + str(dead_motor) + " disconnected")
 
 ### End Motor Controls ###
 
 ##### PID #####
+
 # Persistant state for the PID routine
 _last_error = 0
 _integral = 0
@@ -270,34 +269,6 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
     time.sleep(0.00)
 
 ### End PID ###
-
-##### PID Tuning #####
-
-def changeP(state): # pylint: disable=unused-argument
-    global _KP
-    _KP += .025
-    print("p: " + str(_KP))
-
-def changeD(state): # pylint: disable=unused-argument
-    global _KD
-    _KD += 0.005
-    print("d: " + str(_KD))
-
-def changeI(state): # pylint: disable=unused-argument
-    global _KI
-    _KI += 0.005
-    print("i: " + str(_KI))
-
-def reset(state): # pylint: disable=unused-argument
-    global _KP
-    _KP = 1
-    global _KD
-    _KD = 0
-    global _KI
-    _KI = 0
-    print("p: " + str(_KP) + " d: " + str(_KD) + " i: " + str(_KI))
-
-### End PID Tuning ###
 
 ##### Movement #####
 
@@ -488,10 +459,33 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
     _base_move(angle, tolerance, motors, multiplier=multiplier, rotating=True,
                distance=_rotation_odometry)
 
-# TODO, this can just be rotate
-def turn_junction(angle, tolerance):
-    rotate(angle, tolerance)
 ### End Exports ###
+
+##### PID Tuning #####
+
+def changeP(state): # pylint: disable=unused-argument
+    global _KP
+    _KP += .025
+    print("p: " + str(_KP))
+
+def changeD(state): # pylint: disable=unused-argument
+    global _KD
+    _KD += 0.005
+    print("d: " + str(_KD))
+
+def changeI(state): # pylint: disable=unused-argument
+    global _KI
+    _KI += 0.005
+    print("i: " + str(_KI))
+
+def reset(state): # pylint: disable=unused-argument
+    global _KP
+    _KP = 1
+    global _KD
+    _KD = 0
+    global _KI
+    _KI = 0
+    print("p: " + str(_KP) + " d: " + str(_KD) + " i: " + str(_KI))
 
 if __name__ == '__main__':
     btn = ev3.Button()
@@ -501,4 +495,6 @@ if __name__ == '__main__':
     btn.on_up = reset
 
     if forward(20, 395):
-        turn_junction(50, 5)
+        rotate(50, 5)
+
+### End PID Tuning ###
