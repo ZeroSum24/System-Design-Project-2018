@@ -15,6 +15,7 @@ import State
 import UniquePriorityQueue as uniq
 from queue import Empty
 from thread_decorator import thread, ThreadKiller
+import Directions
 
 #---communications
 #------------------
@@ -53,7 +54,7 @@ BRACKETS = {1 : 0, 2 : 0, 3 : 0, 4 : 0, 5 : 0}
 
 CURRENT_POSITION = 0 # current node number
 
-CHOSEN_PATH = [40,90,40,90,40] # this is going to be a list of node distances and angles
+CHOSEN_PATH = [40,90,40,-90,40] # this is going to be a list of node distances and angles
 
 STATE = State.LOADING
 
@@ -193,8 +194,13 @@ def move_asynch(current_position, brackets, state, chosen_path): #all global ret
 					# chosen_path = choose_path()
 				else:
 					angle = chosen_path.pop()
-					print("turning")
-					turn_success = rotate(angle, 50)
+					direction = None
+					if angle < 0:
+						direction = Directions.ROT_LEFT
+					else:
+						direction = Directions.ROT_RIGHT
+					print("turning " + str(direction))
+					turn_success = rotate(abs(angle), 50, direction=direction)
 					if not turn_success:
 						print("panicking")
 						STATE_QUEUE.put(T_PANICKING)
