@@ -247,7 +247,7 @@ def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back, lefty=M
 
     for (motor, speed) in zip([lefty, righty, front, back], _steering(course, _DEFAULT_RUN_SPEED)):
         run_motor(motor, speed)
-    time.sleep(0.00)
+    #time.sleep(0.00)
 
 def _steering(course, speed):
     if course >= 0:
@@ -365,8 +365,6 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
         for motor in motors:
             run_motor(motor, speed=multiplier[motor]*speed, reset = True)
         while traveled < ticks + tolerance:
-            print(traveled)
-            print(ticks)
             try:
                 junction_marker = _detect_color(Colors.BLACK)
                 if sonar_poll() < 12:
@@ -383,7 +381,6 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
                 correction(delta_time)
 
             odometer_readings = tuple(map(_read_odometer, motors))
-            print(odometer_readings)
             traveled = odometry(odometer_readings)
 
             if rotating:
@@ -393,24 +390,21 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
                     except EXCEPTIONS:
                         stop_motors()
                         raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
-                    if _MAXREF >= ref_read >= _TARGET:
-                        print("rot win")
+                    if 100 >= ref_read >= _TARGET:
+                        stop_motors()
                         return True
 
             else:
                 if junction_marker:
                     if traveled <= ticks - tolerance:
                         stop_motors()
-                        print("print dist undershoot")
                         return False
                     else:
                         stop_motors()
-                        print("dist win")
                         return True
 
             if traveled >= ticks + tolerance:
                 stop_motors()
-                print ("overshoot")
                 return False
 
     except ThreadKiller:
@@ -534,10 +528,10 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
     """
 
     motors, multiplier = _get_motor_params(direction)
-    _base_move(angle, tolerance, motors, multiplier=multiplier, rotating = True, distance=_rotation_ticks, odometry = _rotation_odometry)
+    return _base_move(angle, tolerance, motors, multiplier=multiplier, speed = _DEFAULT_TURN_SPEED, rotating = True, distance=_rotation_ticks, odometry = _rotation_odometry)
 
 def turn_junction(angle, tolerance):
-    rotate(angle, tolerance)
+    return rotate(angle, tolerance)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 from queue import PriorityQueue
 
 class UniquePriorityQueue(PriorityQueue):
-    def __init__(self, maxsize):
+    def __init__(self, maxsize = 0):
         PriorityQueue.__init__(self, maxsize)
         self.values = set()
 

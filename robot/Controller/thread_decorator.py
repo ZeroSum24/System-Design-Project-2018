@@ -34,7 +34,6 @@ class GenericThread(threading.Thread):
     # From https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread-in-python#325528
     def _get_tid(self):
         """Get the current thread's tid (Caches due to the looping in stop)"""
-
         # If it's cached return it
         if hasattr(self, "_tid"):
             return self._tid
@@ -56,7 +55,7 @@ class GenericThread(threading.Thread):
         elif res != 1:
             # If it returns > 1 we need to repair the damage done and try again
             # later
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(self._get_tid()), 0)
             return
 
     def stop(self):
