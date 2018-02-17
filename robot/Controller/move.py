@@ -11,7 +11,6 @@ import os
 from os import path
 from math import pi
 from collections import namedtuple
-from functools import partial
 import time
 
 import ev3dev.ev3 as ev3
@@ -25,7 +24,8 @@ from PID import pid_speeds
 import Junctions
 from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
                                 SonarDisconnectedError,
-                                ReflectivityDisconnectedError)
+                                ReflectivityDisconnectedError,
+                                ColorDisconnectedError)
 
 ##### Setup #####
 
@@ -93,7 +93,7 @@ def init():
     # Named tuples are light weight immutable objects that respond to dot
     # notation, the names of the attributes are given in the second string of
     # the constructor
-    MOTORS = namedtuple('motors', 'front back left right')(
+    _MOTORS = namedtuple('motors', 'front back left right')(
         ev3.LargeMotor(portmap['front']), # Front
         ev3.LargeMotor(portmap['back']),  # Back
         ev3.LargeMotor(portmap['left']),  # Left
@@ -102,10 +102,10 @@ def init():
 
     # Normalises the direction of each motor (Left to right axis drives forward,
     # front to back axis drives right)
-    _SCALERS = {MOTORS.front : config.scalers['front'],
-                MOTORS.back  : config.scalers['back'],
-                MOTORS.left  : config.scalers['left'],
-                MOTORS.right : config.scalers['right']}
+    _SCALERS = {_MOTORS.front : config.scalers['front'],
+                _MOTORS.back  : config.scalers['back'],
+                _MOTORS.left  : config.scalers['left'],
+                _MOTORS.right : config.scalers['right']}
 
     _ODOMETERS = {}
     root = config.motor_root
@@ -117,7 +117,7 @@ def init():
             name = file.readline().rstrip()
             # Map each motor to the relavent file (getattr allows the addressing
             # of objects by string rather than dot notation)
-            _ODOMETERS[getattr(MOTORS, portmap[name])] = path.join(root, motor, 'position')
+            _ODOMETERS[getattr(_MOTORS, portmap[name])] = path.join(root, motor, 'position')
 
     # Used as a default value in the movement functions
     _DEFAULT_MULTIPLIER = {_MOTORS.front : 1,
@@ -278,7 +278,30 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
 
 ##### Movement #####
 
+def _move_distance(dist, direction):
+    ticks = _straight_line_odometry(dist)
+    traveled = 0
 
+    motors, should_reverse = _MOTOR_PARAMS[direction]
+    multiplier = -1 if should_reverse else 1
+
+    for motor in motors:
+        run_motor(_MOTORS.left, speed=multiplier*_DEFAULT_RUN_SPEED, reset=True)
+
+    while True:
+        try:
+            if sonar_poll() < _SONAR_DIST:
+                stop_motors()
+                break
+        except EXCEPTIONS:
+            stop_motors()
+            raise SonarDisconnectedError('Sonar disconnected')
+
+        odometer_readings = tuple(map(_read_odometer, motors))
+        traveled = _parse_by_average(odometer_readings)
+
+        if traveled > ticks:
+            stop_motors()
 
 ### End Movement ###
 
@@ -286,138 +309,75 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
 
 # TODO: Disable junction search when there is no correction
 def forward(dist, tolerance, junction_type=Junctions.NORMAL, correction=True):
-    upper = _straight_line_odometry(dist + (tolerance * dist))
-    lower = _straight_line_odometry(dist - (tolerance * dist))
+    if correction:
+        upper = _straight_line_odometry(dist + (tolerance * dist))
+        lower = _straight_line_odometry(dist - (tolerance * dist))
 
-    traveled = 0
-    previous_time = time.time()
+        traveled = 0
+        previous_time = time.time()
 
-    search_color = _JUNCTION_MARKERS[junction_type]
+        search_color = _JUNCTION_MARKERS[junction_type]
 
-    run_motor(MOTORS.left, reset=True)
-    run_motor(MOTORS.right, reset=True)
+        run_motor(_MOTORS.left, reset=True)
+        run_motor(_MOTORS.right, reset=True)
 
-    while True:
-        try:
-            if sonar_poll() < SONAR_DIST:
+        while True:
+            try:
+                if sonar_poll() < _SONAR_DIST:
+                    stop_motors()
+                    break
+            except EXCEPTIONS:
                 stop_motors()
-                break
-        except EXCEPTIONS:
-            stop_motors()
-            raise SonarDisconnectedError('Sonar disconnected')
+                raise SonarDisconnectedError('Sonar disconnected')
 
-        if correction:
             delta_time = time.time() - previous_time
             previous_time = time.time()
             _course_correction(delta_time)
 
-        odometer_readings = tuple(map(_read_odometer, [MOTORS.left, MOTORS.right]))
-        traveled = _parse_by_average(odometer_readings)
+            odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right]))
+            traveled = _parse_by_average(odometer_readings)
 
-        try:
-            junction_marker = _detect_color(search_color)
-        except EXCEPTIONS:
-            stop_motors()
-            raise ColorDisconnectedError('Color sensor disconnected')
-        if junction_marker:
-            if traveled <= lower:
+            try:
+                junction_marker = _detect_color(search_color)
+            except EXCEPTIONS:
+                stop_motors()
+                raise ColorDisconnectedError('Color sensor disconnected')
+            if junction_marker:
+                if traveled <= lower:
+                    stop_motors()
+                    return False
+                else:
+                    stop_motors()
+                    return True
+
+            if traveled > upper:
                 stop_motors()
                 return False
-            else:
-                stop_motors()
-                return True
-
-        if traveled > upper:
-            stop_motors()
-            return False
+    else:
+        _move_distance(dist, Directions.FORWARD)
 
 def backward(dist):
-    ticks = _straight_line_odometry(dist)
-    traveled = 0
-
-    new_multiplier = dict(_DEFAULT_MULTIPLIER)
-    new_multiplier[MOTORS.left] = -1
-    new_multiplier[MOTORS.right] = -1
-    run_motor(MOTORS.left, multiplier=new_multiplier, reset=True)
-    run_motor(MOTORS.right, multiplier=new_multiplier, reset=True)
-
-    while True:
-        try:
-            if sonar_poll() < SONAR_DIST:
-                stop_motors()
-                break
-        except EXCEPTIONS:
-            stop_motors()
-            raise SonarDisconnectedError('Sonar disconnected')
-
-        odometer_readings = tuple(map(_read_odometer, [MOTORS.left, MOTORS.right]))
-        traveled = _parse_by_average(odometer_readings)
-
-        if traveled > ticks:
-            stop_motors()
+    _move_distance(dist, Directions.BACKWARD)
 
 def left(dist):
-    ticks = _straight_line_odometry(dist)
-    traveled = 0
+    _move_distance(dist, Directions.LEFT)
 
-    new_multiplier = dict(_DEFAULT_MULTIPLIER)
-    new_multiplier[MOTORS.front] = -1
-    new_multiplier[MOTORS.back] = -1
-    run_motor(MOTORS.front, multiplier=new_multiplier, reset=True)
-    run_motor(MOTORS.back, multiplier=new_multiplier, reset=True)
-
-    while True:
-        try:
-            if sonar_poll() < SONAR_DIST:
-                stop_motors()
-                break
-        except EXCEPTIONS:
-            stop_motors()
-            raise SonarDisconnectedError('Sonar disconnected')
-
-        odometer_readings = tuple(map(_read_odometer, [MOTORS.front, MOTORS.back]))
-        traveled = _parse_by_average(odometer_readings)
-
-        if traveled > ticks:
-            stop_motors()
-
-    
 def right(dist):
-    ticks = _straight_line_odometry(dist)
-    traveled = 0
-
-    run_motor(MOTORS.front, multiplier=new_multiplier, reset=True)
-    run_motor(MOTORS.back, multiplier=new_multiplier, reset=True)
-
-    while True:
-        try:
-            if sonar_poll() < SONAR_DIST:
-                stop_motors()
-                break
-        except EXCEPTIONS:
-            stop_motors()
-            raise SonarDisconnectedError('Sonar disconnected')
-
-        odometer_readings = tuple(map(_read_odometer, [MOTORS.front, MOTORS.back]))
-        traveled = _parse_by_average(odometer_readings)
-
-        if traveled > ticks:
-            stop_motors()
+    _move_distance(dist, Directions.RIGHT)
 
 def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
-    upper = _rotation_odometry(angle + (tolerance * dist))
-    lower = _rotation_odometry(angle - (tolerance * dist))
+    upper = _rotation_odometry(angle + (tolerance * angle))
+    lower = _rotation_odometry(angle - (tolerance * angle))
 
     traveled = 0
-    previous_time = time.time()
 
     multiplier = _MOTOR_PARAMS[direction]
-    
-    for motor in MOTORS:
-        run_motor(motor, multiplier=multiplier, reset=True)
+
+    for motor in _MOTORS:
+        run_motor(motor, speed=multiplier[motor]*_DEFAULT_RUN_SPEED, reset=True)
 
     while True:
-        odometer_readings = tuple(map(_read_odometer, [MOTORS.left, MOTORS.right]))
+        odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right]))
         traveled = _parse_by_average(odometer_readings)
 
         if traveled < lower:
@@ -428,7 +388,7 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
             return False
 
         ref = read_reflect()
-        if _MAX_REF >= ref >= _TARGET:
+        if _MAXREF >= ref >= _TARGET:
             stop_motors()
             return True
 
@@ -436,22 +396,22 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
 
 ##### PID Tuning #####
 
-def changeP(state): # pylint: disable=unused-argument
+def _changeP(state): # pylint: disable=unused-argument
     global _KP
     _KP += .025
     print("p: " + str(_KP))
 
-def changeD(state): # pylint: disable=unused-argument
+def _changeD(state): # pylint: disable=unused-argument
     global _KD
     _KD += 0.005
     print("d: " + str(_KD))
 
-def changeI(state): # pylint: disable=unused-argument
+def _changeI(state): # pylint: disable=unused-argument
     global _KI
     _KI += 0.005
     print("i: " + str(_KI))
 
-def reset(state): # pylint: disable=unused-argument
+def _reset(state): # pylint: disable=unused-argument
     global _KP
     _KP = 1
     global _KD
@@ -462,10 +422,10 @@ def reset(state): # pylint: disable=unused-argument
 
 if __name__ == '__main__':
     btn = ev3.Button()
-    btn.on_left = changeP
-    btn.on_right = changeD
-    btn.on_down = changeI
-    btn.on_up = reset
+    btn.on_left = _changeP
+    btn.on_right = _changeD
+    btn.on_down = _changeI
+    btn.on_up = _reset
 
     if forward(20, 395):
         rotate(50, 5)

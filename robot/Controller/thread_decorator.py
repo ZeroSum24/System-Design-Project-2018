@@ -80,7 +80,7 @@ class GenericThread(threading.Thread):
         elif res != 1:
             # If it returns > 1 we need to repair the damage done and try again
             # later
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(self._get_tid(), 0)
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(self._get_tid()), 0)
             return
 
     def stop(self):
@@ -92,7 +92,7 @@ class GenericThread(threading.Thread):
         try:
             # Probably the thread will die here
             self._raise_exc()
-            # But loop incase it happend to be in a system call when the exeption hit
+            # Need to loop as threads are immune to exceptions during system calls
             while self.isAlive():
                 # Small sleep so we don't bombard the thread with exceptions
                 sleep(.1)
@@ -104,7 +104,7 @@ class GenericThread(threading.Thread):
         except ThreadDying:
             # ThreadDying can be thrown back by the killed thread to ask for
             # time to clean up before exiting
-            return
+            pass
 
 # Decorators in python nearly implement the decorator pattern (See
 # Wikipedia). A python decorator is a function that accepts a function as a
