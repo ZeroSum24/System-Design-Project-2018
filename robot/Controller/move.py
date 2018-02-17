@@ -289,7 +289,7 @@ def _move_distance(dist, direction):
     multiplier = -1 if should_reverse else 1
 
     for motor in motors:
-        run_motor(_MOTORS.left, speed=multiplier*_DEFAULT_RUN_SPEED, reset=True)
+        run_motor(motor, speed=multiplier*_DEFAULT_RUN_SPEED, reset=True)
 
     while True:
         try:
@@ -381,10 +381,10 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
     multiplier = _MOTOR_PARAMS[direction]
 
     for motor in _MOTORS:
-        run_motor(motor, speed=multiplier[motor]*_DEFAULT_RUN_SPEED, reset=True)
+        run_motor(motor, speed=multiplier[motor]*_DEFAULT_TURN_SPEED, reset=True)
 
     while True:
-        odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right]))
+        odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
         traveled = _parse_by_average(odometer_readings)
         print(traveled)
         print(upper)
@@ -430,7 +430,6 @@ def _reset(state): # pylint: disable=unused-argument
     print("p: " + str(_KP) + " d: " + str(_KD) + " i: " + str(_KI))
 
 if __name__ == '__main__':
-    global _PID_CALIBRATION
     _PID_CALIBRATION = True
     btn = ev3.Button()
     btn.on_left = _changeP
@@ -438,6 +437,6 @@ if __name__ == '__main__':
     btn.on_down = _changeI
     btn.on_up = _reset
 
-    forward(999999, 50)
+    forward(99999, 50)
 
 ### End PID Tuning ###
