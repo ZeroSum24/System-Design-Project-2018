@@ -164,11 +164,17 @@ def _straight_line_odometry(dist):
     # dist // (_WHEEL_CIRCUM // 360) == (360 * dist) // _WHEEL_CIRCUM
     return (360 * dist) // _WHEEL_CIRCUM
 
-def _rotation_odometry(angle):
+def _rotation_ticks(angle):
     # To convert between the angle the base should move through to the angle the
     # wheel should move through we multiply by the ratio of the two
     # circumferences and floor to int
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
+
+def _rotation_odometry(readings):
+    # To convert between the angle the base should move through to the angle the
+    # wheel should move through we multiply by the ratio of the two
+    # circumferences and floor to int
+    return sum(readings)//4
 
 def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=False):
     """Run the specified motor forever.
@@ -380,6 +386,7 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
                 correction(delta_time)
 
             odometer_readings = tuple(map(_read_odometer, motors))
+            print(odometer_readings)
             traveled = odometry(odometer_readings)
 
             if rotating:
@@ -530,7 +537,7 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
     """
 
     motors, multiplier = _get_motor_params(direction)
-    _base_move(angle, tolerance, motors, multiplier=multiplier, rotating = True, distance=_rotation_odometry)
+    _base_move(angle, tolerance, motors, multiplier=multiplier, rotating = True, distance=_rotation_ticks, odometry = _rotation_odometry)
 
 def turn_junction(angle, tolerance):
     rotate(angle, tolerance)
@@ -544,4 +551,4 @@ if __name__ == '__main__':
     btn.on_up = reset
 
     if forward(20, 395):
-        turn_junction(50, 5)
+        turn_junction(90, 5)
