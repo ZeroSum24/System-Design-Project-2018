@@ -9,7 +9,7 @@ import time
 # import ev3dev.ev3 as ev3
 # import urllib.request as request
 
-from move import forward, turn_junction
+from move import forward, rotate
 # import dispenser
 import State
 import UniquePriorityQueue as uniq
@@ -171,7 +171,8 @@ def move_asynch(current_position, brackets, state, chosen_path): #all global ret
 		# 	chosen_path = choose_path()
 		while True:
 			distance = chosen_path.pop()
-			drive_success = forward(distance, 400)
+			print("driving")
+			drive_success = forward(distance, 50)
 			if not drive_success:
 				print("panicking")
 				STATE_QUEUE.put(T_PANICKING)
@@ -192,7 +193,8 @@ def move_asynch(current_position, brackets, state, chosen_path): #all global ret
 					# chosen_path = choose_path()
 				else:
 					angle = chosen_path.pop()
-					turn_success = turn_junction(angle, 100)
+					print("turning")
+					turn_success = rotate(angle, 50)
 					if not turn_success:
 						print("panicking")
 						STATE_QUEUE.put(T_PANICKING)
