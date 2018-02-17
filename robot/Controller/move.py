@@ -30,17 +30,28 @@ from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
 
 # Globals used elsewhere in the file (The ones initalised to None are set by init)
 _ODOMETERS = None
-MOTORS = None
+_MOTORS = None
 _WHEEL_CIRCUM = None
 _BASE_ROT_TO_WHEEL_ROT = None
 _DEFAULT_RUN_SPEED = None
 _SCALERS = None
 _ROBOT_DIAMETER = None
 _DEFAULT_MULTIPLIER = None
-
+_MOTOR_PARAMS = {Directions.FORWARD   : ((_MOTORS.left, _MOTORS.right), False),
+                 Directions.BACKWARD  : ((_MOTORS.left, _MOTORS.right), True),
+                 Directions.LEFT      : ((_MOTORS.front, _MOTORS.back), True),
+                 Directions.RIGHT     : ((_MOTORS.front, _MOTORS.back), False),
+                 Directions.ROT_LEFT  : {_MOTORS.front :  1,
+                                         _MOTORS.back  : -1,
+                                         _MOTORS.left  : -1,
+                                         _MOTORS.right :  1},
+                 Directions.ROT_RIGHT : {_MOTORS.front : -1,
+                                         _MOTORS.back  :  1,
+                                         _MOTORS.left  :  1,
+                                         _MOTORS.right : -1}}
 def init():
     # Pull in Globals to initalise module state
-    global _ODOMETERS, MOTORS, _WHEEL_CIRCUM, _BASE_ROT_TO_WHEEL_ROT
+    global _ODOMETERS, _MOTORS, _WHEEL_CIRCUM, _BASE_ROT_TO_WHEEL_ROT
     global _DEFAULT_RUN_SPEED, _SCALERS, _ROBOT_DIAMETER, _DEFAULT_MULTIPLIER
 
     # Read config file (In python modules are just objects, the basic import
@@ -120,47 +131,6 @@ def _detect_color(color=Colors.BLACK):
 
 ### End Sensors ###
 
-# TODO: This can be a dict
-def _get_motor_params(direction, motors=MOTORS):
-    """Centeralises the access of the relavent parameters for each kind of
-       motion. There's likely a better way of doing this.
-
-    Reqired Arguments:
-    direction -- A member of the Directions Enum, identifies the kind of motion.
-
-    Optional Arguments:
-    motors -- The motors to return, for dependency injection.
-    """
-
-    # Forward, Backward, Left and Right recive a tuple containing the motors
-    # they should use to drive and a boolean indicating whether the default
-    # direction should be reversed
-    if direction is Directions.FORWARD:
-        return (motors.left, motors.right), False
-    elif direction is Directions.BACKWARD:
-        return (motors.left, motors.right), True
-    elif direction is Directions.RIGHT:
-        return (motors.front, motors.back), False
-    elif direction is Directions.LEFT:
-        return (motors.front, motors.back), True
-
-    # The rotations always receive all the motors (TODO: there is no point in
-    # doing this) and a dict using the same format as _DEFAULT_MULTIPLER
-    # indicating which motors should be reversed
-    elif direction is Directions.ROT_RIGHT:
-        return (motors, {motors.front :  1,
-                         motors.back  : -1,
-                         motors.left  : -1,
-                         motors.right :  1})
-    elif direction is Directions.ROT_LEFT:
-        return (motors, {motors.front : -1,
-                         motors.back  :  1,
-                         motors.left  :  1,
-                         motors.right : -1})
-    # Die noisily if a direction was missed
-    else:
-        raise ValueError('Unknown Direction: {}'.format(direction))
-
 ##### Distance Measures #####
 
 def _straight_line_odometry(dist):
@@ -213,7 +183,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=False):
         stop_motors()
         #raise MotorDisconnectedError('Motor disconnected')
 
-def stop_motors(motors=MOTORS):
+def stop_motors(motors=_MOTORS):
     """Stop specified motors.
 
     Optional Arguments:
@@ -243,9 +213,9 @@ _KP = 1.55
 _KD = 0.0
 _KI = 0.8
 
-# TODO: All motors are used, just pass the MOTORS object
-def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back,
-                       lefty=MOTORS.left, righty=MOTORS.right):
+# TODO: All motors are used, just pass the _MOTORS object
+def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
+                       lefty=_MOTORS.left, righty=_MOTORS.right):
     """Default course correction routine, uses PID controller.
 
     Required Arguments:
@@ -414,7 +384,7 @@ def _generic_axis(dist, tolerance, direction, correction=False):
     """
 
     # Get the relavent parameters
-    motors, should_reverse = _get_motor_params(direction)
+    motors, should_reverse = _MOTOR_PARAMS[direction]
 
     # Partially apply some of the arguments of _base_move now we know them
     func = partial(_base_move, dist, tolerance, motors, distance=_straight_line_odometry)
@@ -491,7 +461,7 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
                  other members are and this is never checked
     """
 
-    motors, multiplier = _get_motor_params(direction)
+    motors, multiplier = _MOTOR_PARAMS[direction]
     _base_move(angle, tolerance, motors, multiplier=multiplier, rotating=True,
                distance=_rotation_odometry)
 
