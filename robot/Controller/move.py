@@ -28,31 +28,40 @@ from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
 
 ##### Setup #####
 
-# Globals used elsewhere in the file (The ones initalised to None are set by init)
+# Globals used elsewhere in the file (Set by init)
+# Files containing odometer data, one per motor
 _ODOMETERS = None
+# Mapping of human readable motor names to their ports on the ev3
 _MOTORS = None
+# Circumference of the wheel
 _WHEEL_CIRCUM = None
+# Ratio of base rotations to wheel rotations
 _BASE_ROT_TO_WHEEL_ROT = None
+# Default speed for the robot
 _DEFAULT_RUN_SPEED = None
+# Used to normalise the motors direction (Forward and Right)
 _SCALERS = None
+# Diameter of the robot
 _ROBOT_DIAMETER = None
+# Reflectivity range for the line sensor
+_MAXREF = None
+_MINREF = None
+# Threshold between line and floor
+_TARGET = None
+# Magic constants for PID
+_KP = None
+_KD = None
+_KI = None
+# Used as a default value in the movement functions
 _DEFAULT_MULTIPLIER = None
-_MOTOR_PARAMS = {Directions.FORWARD   : ((_MOTORS.left, _MOTORS.right), False),
-                 Directions.BACKWARD  : ((_MOTORS.left, _MOTORS.right), True),
-                 Directions.LEFT      : ((_MOTORS.front, _MOTORS.back), True),
-                 Directions.RIGHT     : ((_MOTORS.front, _MOTORS.back), False),
-                 Directions.ROT_LEFT  : {_MOTORS.front :  1,
-                                         _MOTORS.back  : -1,
-                                         _MOTORS.left  : -1,
-                                         _MOTORS.right :  1},
-                 Directions.ROT_RIGHT : {_MOTORS.front : -1,
-                                         _MOTORS.back  :  1,
-                                         _MOTORS.left  :  1,
-                                         _MOTORS.right : -1}}
+# Supplies information expected by the movement functions
+_MOTOR_PARAMS = None
+
 def init():
     # Pull in Globals to initalise module state
     global _ODOMETERS, _MOTORS, _WHEEL_CIRCUM, _BASE_ROT_TO_WHEEL_ROT
     global _DEFAULT_RUN_SPEED, _SCALERS, _ROBOT_DIAMETER, _DEFAULT_MULTIPLIER
+    global _MAXREF, _MINREF, _TARGET, _KP, _KD, _KI, _MOTOR_PARAMS
 
     # Read config file (In python modules are just objects, the basic import
     # syntax just parses a file as the definition of a module and places the
@@ -94,11 +103,6 @@ def init():
                 MOTORS.left  : config.scalers['left'],
                 MOTORS.right : config.scalers['right']}
 
-    _DEFAULT_MULTIPLIER = {MOTORS.front : 1,
-                           MOTORS.back  : 1,
-                           MOTORS.left  : 1,
-                           MOTORS.right : 1}
-
     _ODOMETERS = {}
     root = config.motor_root
     for motor in os.listdir(root):
@@ -110,6 +114,32 @@ def init():
             # Map each motor to the relavent file (getattr allows the addressing
             # of objects by string rather than dot notation)
             _ODOMETERS[getattr(MOTORS, portmap[name])] = path.join(root, motor, 'position')
+
+    # Used as a default value in the movement functions
+    _DEFAULT_MULTIPLIER = {_MOTORS.front : 1,
+                           _MOTORS.back  : 1,
+                           _MOTORS.left  : 1,
+                           _MOTORS.right : 1}
+
+    # Supplies information expected by the movement functions
+    _MOTOR_PARAMS = {Directions.FORWARD   : ((_MOTORS.left, _MOTORS.right), False),
+                     Directions.BACKWARD  : ((_MOTORS.left, _MOTORS.right), True),
+                     Directions.LEFT      : ((_MOTORS.front, _MOTORS.back), True),
+                     Directions.RIGHT     : ((_MOTORS.front, _MOTORS.back), False),
+                     Directions.ROT_LEFT  : {_MOTORS.front :  1,
+                                             _MOTORS.back  : -1,
+                                             _MOTORS.left  : -1,
+                                             _MOTORS.right :  1},
+                     Directions.ROT_RIGHT : {_MOTORS.front : -1,
+                                             _MOTORS.back  :  1,
+                                             _MOTORS.left  :  1,
+                                             _MOTORS.right : -1}}
+    _MAXREF = config.max_ref
+    _MINREF = config.min_ref
+    _TARGET = config.target_ref
+    _KP = config.KP
+    _KD = config.KD
+    _KI = config.KI
 init()
 
 ### End Setup ###
@@ -203,16 +233,9 @@ def stop_motors(motors=_MOTORS):
 ### End Motor Controls ###
 
 ##### PID #####
-# TODO: Several of these can be in the config file
+# Persistant state for the PID routine
 _last_error = 0
 _integral = 0
-_MAXREF = 54
-_MINREF = 20
-_TARGET = 37
-_KP = 1.55
-_KD = 0.0
-_KI = 0.8
-
 # TODO: All motors are used, just pass the _MOTORS object
 def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
                        lefty=_MOTORS.left, righty=_MOTORS.right):
