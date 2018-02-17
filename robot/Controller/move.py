@@ -22,6 +22,7 @@ import Colors
 from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
 from PID import pid_speeds
+import Junctions
 from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
                                 SonarDisconnectedError,
                                 ReflectivityDisconnectedError)
@@ -56,12 +57,15 @@ _KI = None
 _DEFAULT_MULTIPLIER = None
 # Supplies information expected by the movement functions
 _MOTOR_PARAMS = None
+_SONAR_DIST = None
+_JUNCTION_MARKERS = None
 
 def init():
     # Pull in Globals to initalise module state
     global _ODOMETERS, _MOTORS, _WHEEL_CIRCUM, _BASE_ROT_TO_WHEEL_ROT
     global _DEFAULT_RUN_SPEED, _SCALERS, _ROBOT_DIAMETER, _DEFAULT_MULTIPLIER
-    global _MAXREF, _MINREF, _TARGET, _KP, _KD, _KI, _MOTOR_PARAMS
+    global _MAXREF, _MINREF, _TARGET, _KP, _KD, _KI, _MOTOR_PARAMS, _SONAR_DIST
+    global _JUNCTION_MARKERS
 
     # Read config file (In python modules are just objects, the basic import
     # syntax just parses a file as the definition of a module and places the
@@ -140,6 +144,8 @@ def init():
     _KP = config.KP
     _KD = config.KD
     _KI = config.KI
+    _SONAR_DIST = config.sonar_dist
+    _JUNCTION_MARKERS = config.junction_markers
 init()
 
 ### End Setup ###
@@ -272,192 +278,159 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
 
 ##### Movement #####
 
-def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
-               distance=None, odometry=None, rotating=False, correction=None):
-    """Base control loop for moving, behavior is managed by arguments and
-    customised by the movement functions below
 
-    Required Arguments:
-    dist -- The 'distance' that should be traveled, meaning of distance is
-            determined by the distance argument
-    motors -- The motors that should be used for this motion
-
-    Optional Arguments:
-    speed -- The base speed of the motors
-    multiplier -- A dict contiaining 1 or -1 for each motor, used to affect the
-                  direction of each motor individually
-    distance -- The distance measure to use, it should be a function that
-                accepts the distance to travel and returns the number of degrees
-                the drive wheels should move through. It defaults to the
-                identity function
-    odometry -- Strategy for unifying individual odometer readings into a single
-                number. It will be passed a tuple containing the reading for
-                each motor.
-    correction -- Course correction routine. It will be passed a member of the
-                  Turning Enum indicating the direction the robot is currently
-                  turning. It should also return a member of Turning.
-    """
-
-    if multiplier is None:
-        multiplier = _DEFAULT_MULTIPLIER
-    if distance is None:
-        distance = lambda x: x
-    if odometry is None:
-        odometry = _parse_by_average
-
-    ticks = distance(dist)
-    traveled = 0
-    previous_time = time.time()
-    for motor in motors:
-        run_motor(motor, speed=multiplier[motor]*speed, reset=True)
-    while traveled < ticks + tolerance:
-        print(traveled)
-        print(ticks)
-        # TODO: We have a specific exception for Color disconnect
-        try:
-            junction_marker = _detect_color(Colors.BLACK)
-            if sonar_poll() < 12:
-                stop_motors()
-                break
-        except EXCEPTIONS:
-            stop_motors()
-            raise SonarDisconnectedError('Sonar/Color sensor disconnected')
-        #btn.process()
-
-        if correction is not None:
-            delta_time = time.time() - previous_time
-            previous_time = time.time()
-            correction(delta_time)
-
-        odometer_readings = tuple(map(_read_odometer, motors))
-        traveled = odometry(odometer_readings)
-
-        if rotating:
-            if traveled >= ticks - tolerance:
-                try:
-                    ref_read = read_reflect()
-                except EXCEPTIONS:
-                    stop_motors()
-                    raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
-                if _MAXREF >= ref_read >= _TARGET:
-                    print("rot win")
-                    return True
-
-        else:
-            if junction_marker:
-                if traveled <= ticks - tolerance:
-                    stop_motors()
-                    print("print dist undershoot")
-                    return False
-                else:
-                    stop_motors()
-                    print("dist win")
-                    return True
-
-        if traveled >= ticks + tolerance:
-            stop_motors()
-            print("overshoot")
-            return False
-
-def _generic_axis(dist, tolerance, direction, correction=False):
-    # TODO: Check incomming direction enum, correction can only be true when
-    # direction is FORWARD
-    """Specialization of _base_move for axis motions (forward, backward, left
-    and right)
-
-    Required Arguments:
-    dist -- Distance in cm to move
-    direction -- Member of the Directions Enum, indicates which direction to
-                 move (Note: ROT_* members are invalid but this is never
-                 checked)
-
-    Optional Arguments:
-    correction -- If true apply course correction to this motion, defaults to
-                  false (Note: due to the placement of the sensors this is only
-                  applicable to forward motion, this is also never checked)
-    """
-
-    # Get the relavent parameters
-    motors, should_reverse = _MOTOR_PARAMS[direction]
-
-    # Partially apply some of the arguments of _base_move now we know them
-    func = partial(_base_move, dist, tolerance, motors, distance=_straight_line_odometry)
-
-    # If we need course correction add that too
-    if correction:
-        func = partial(func, correction=_course_correction)
-
-    # If we need to reverse motors make a copy of the _DEFAULT_MULTIPLIER dict,
-    # change the relavant values and add that (dict constructor does a shallow
-    # copy but as ints are immutable this is ok and cheaper than a full copy)
-    if should_reverse:
-        multiplier = dict(_DEFAULT_MULTIPLIER)
-        for motor in motors:
-            multiplier[motor] = -1
-        func = partial(func, multiplier=multiplier)
-    return func()
 
 ### End Movement ###
 
 ##### Exports #####
-# The only interesting thing here is forward has course correction on by default
-# but can have it turned off by setting it's correction argument to false, the
-# rest don't provide a means to turn course correction on. Also every function
-# here must return the result of calling the lower level move function in order
-# to pass the thread object up to where it is needed
-def forward(dist, tolerance, correction=True):
-    """Move forward.
 
-    Required Arguments:
-    dist -- distance to move in cm
+# TODO: Disable junction search when there is no correction
+def forward(dist, tolerance, junction_type=Junctions.NORMAL, correction=True):
+    upper = _straight_line_odometry(dist + (tolerance * dist))
+    lower = _straight_line_odometry(dist - (tolerance * dist))
 
-    Optional Arguments:
-    correction -- Set to False to disable course correction
-    """
+    traveled = 0
+    previous_time = time.time()
 
-    return _generic_axis(dist, tolerance, Directions.FORWARD, correction=correction)
+    search_color = _JUNCTION_MARKERS[junction_type]
 
-def backward(dist, tolerance):
-    """Move backward.
+    run_motor(MOTORS.left, reset=True)
+    run_motor(MOTORS.right, reset=True)
 
-    Required Arguments:
-    dist -- distance to move in cm
-    """
-    return _generic_axis(dist, tolerance, Directions.BACKWARD)
+    while True:
+        try:
+            if sonar_poll() < SONAR_DIST:
+                stop_motors()
+                break
+        except EXCEPTIONS:
+            stop_motors()
+            raise SonarDisconnectedError('Sonar disconnected')
 
-def left(dist, tolerance):
-    """Move left.
+        if correction:
+            delta_time = time.time() - previous_time
+            previous_time = time.time()
+            _course_correction(delta_time)
 
-    Required Arguments:
-    dist -- distance to move in cm
-    """
-    return _generic_axis(dist, tolerance, Directions.LEFT)
+        odometer_readings = tuple(map(_read_odometer, [MOTORS.left, MOTORS.right]))
+        traveled = _parse_by_average(odometer_readings)
 
-def right(dist, tolerance):
-    """Move right.
+        try:
+            junction_marker = _detect_color(search_color)
+        except EXCEPTIONS:
+            stop_motors()
+            raise ColorDisconnectedError('Color sensor disconnected')
+        if junction_marker:
+            if traveled <= lower:
+                stop_motors()
+                return False
+            else:
+                stop_motors()
+                return True
 
-    Required Arguments:
-    dist -- distance to move in cm
-    """
-    return _generic_axis(dist, tolerance, Directions.RIGHT)
+        if traveled > upper:
+            stop_motors()
+            return False
 
-# Direction of rotation defaults to left but can be set, this one calls directly
-# into _base_move
+def backward(dist):
+    ticks = _straight_line_odometry(dist)
+    traveled = 0
+
+    new_multiplier = dict(_DEFAULT_MULTIPLIER)
+    new_multiplier[MOTORS.left] = -1
+    new_multiplier[MOTORS.right] = -1
+    run_motor(MOTORS.left, multiplier=new_multiplier, reset=True)
+    run_motor(MOTORS.right, multiplier=new_multiplier, reset=True)
+
+    while True:
+        try:
+            if sonar_poll() < SONAR_DIST:
+                stop_motors()
+                break
+        except EXCEPTIONS:
+            stop_motors()
+            raise SonarDisconnectedError('Sonar disconnected')
+
+        odometer_readings = tuple(map(_read_odometer, [MOTORS.left, MOTORS.right]))
+        traveled = _parse_by_average(odometer_readings)
+
+        if traveled > ticks:
+            stop_motors()
+
+def left(dist):
+    ticks = _straight_line_odometry(dist)
+    traveled = 0
+
+    new_multiplier = dict(_DEFAULT_MULTIPLIER)
+    new_multiplier[MOTORS.front] = -1
+    new_multiplier[MOTORS.back] = -1
+    run_motor(MOTORS.front, multiplier=new_multiplier, reset=True)
+    run_motor(MOTORS.back, multiplier=new_multiplier, reset=True)
+
+    while True:
+        try:
+            if sonar_poll() < SONAR_DIST:
+                stop_motors()
+                break
+        except EXCEPTIONS:
+            stop_motors()
+            raise SonarDisconnectedError('Sonar disconnected')
+
+        odometer_readings = tuple(map(_read_odometer, [MOTORS.front, MOTORS.back]))
+        traveled = _parse_by_average(odometer_readings)
+
+        if traveled > ticks:
+            stop_motors()
+
+    
+def right(dist):
+    ticks = _straight_line_odometry(dist)
+    traveled = 0
+
+    run_motor(MOTORS.front, multiplier=new_multiplier, reset=True)
+    run_motor(MOTORS.back, multiplier=new_multiplier, reset=True)
+
+    while True:
+        try:
+            if sonar_poll() < SONAR_DIST:
+                stop_motors()
+                break
+        except EXCEPTIONS:
+            stop_motors()
+            raise SonarDisconnectedError('Sonar disconnected')
+
+        odometer_readings = tuple(map(_read_odometer, [MOTORS.front, MOTORS.back]))
+        traveled = _parse_by_average(odometer_readings)
+
+        if traveled > ticks:
+            stop_motors()
+
 def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
-    """Rotate inplace.
+    upper = _rotation_odometry(angle + (tolerance * dist))
+    lower = _rotation_odometry(angle - (tolerance * dist))
 
-    Required Arguments:
-    angle -- Angle to rotate through, in degrees
+    traveled = 0
+    previous_time = time.time()
 
-    Optional Arguments:
-    direction -- Member of the Directions Enum, the direction to rotate it
-                 defaults to ROT_LEFT. ROT_RIGHT is also applicable, no
-                 other members are and this is never checked
-    """
+    multiplier = _MOTOR_PARAMS[direction]
+    
+    for motor in MOTORS:
+        run_motor(motor, multiplier=multiplier, reset=True)
 
-    motors, multiplier = _MOTOR_PARAMS[direction]
-    _base_move(angle, tolerance, motors, multiplier=multiplier, rotating=True,
-               distance=_rotation_odometry)
+    while True:
+        odometer_readings = tuple(map(_read_odometer, [MOTORS.left, MOTORS.right]))
+        traveled = _parse_by_average(odometer_readings)
+
+        if traveled < lower:
+            continue
+
+        if traveled > upper:
+            stop_motors()
+            return False
+
+        ref = read_reflect()
+        if _MAX_REF >= ref >= _TARGET:
+            stop_motors()
+            return True
 
 ### End Exports ###
 
