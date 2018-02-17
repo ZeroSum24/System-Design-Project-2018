@@ -40,6 +40,8 @@ _WHEEL_CIRCUM = None
 _BASE_ROT_TO_WHEEL_ROT = None
 # Default speed for the robot
 _DEFAULT_RUN_SPEED = None
+# Default turning speed for the robot
+_DEFAULT_TURN_SPEED = None
 # Used to normalise the motors direction (Forward and Right)
 _SCALERS = None
 # Diameter of the robot
@@ -65,9 +67,9 @@ _PID_CALIBRATION = False
 def init():
     # Pull in Globals to initalise module state
     global _ODOMETERS, _MOTORS, _WHEEL_CIRCUM, _BASE_ROT_TO_WHEEL_ROT
-    global _DEFAULT_RUN_SPEED, _SCALERS, _ROBOT_DIAMETER, _DEFAULT_MULTIPLIER
-    global _MAXREF, _MINREF, _TARGET, _KP, _KD, _KI, _MOTOR_PARAMS, _SONAR_DIST
-    global _JUNCTION_MARKERS
+    global _DEFAULT_RUN_SPEED, _DEFAULT_TURN_SPEED, _SCALERS, _ROBOT_DIAMETER
+    global _DEFAULT_MULTIPLIER, _MAXREF, _MINREF, _TARGET, _KP, _KD, _KI
+    global  _MOTOR_PARAMS, _SONAR_DIST, _JUNCTION_MARKERS
 
     # Read config file (In python modules are just objects, the basic import
     # syntax just parses a file as the definition of a module and places the
@@ -386,8 +388,6 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
     while True:
         odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
         traveled = _parse_by_average(odometer_readings)
-        print(traveled)
-        print(upper)
 
         if traveled < lower:
             continue

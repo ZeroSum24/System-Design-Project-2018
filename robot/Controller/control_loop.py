@@ -9,13 +9,14 @@ import time
 # import ev3dev.ev3 as ev3
 # import urllib.request as request
 
-from move import forward, rotate
+from move import forward, rotate, left, right
 # import dispenser
 import State
 import UniquePriorityQueue as uniq
 from queue import Empty
 from thread_decorator import thread, ThreadKiller
 import Directions
+import Junctions
 
 #---communications
 #------------------
@@ -54,7 +55,7 @@ BRACKETS = {1 : 0, 2 : 0, 3 : 0, 4 : 0, 5 : 0}
 
 CURRENT_POSITION = 0 # current node number
 
-CHOSEN_PATH = [40,90,40,-90,40] # this is going to be a list of node distances and angles
+CHOSEN_PATH = [40,90,40,90,40] # this is going to be a list of node distances and angles
 
 STATE = State.LOADING
 
@@ -173,34 +174,45 @@ def move_asynch(current_position, brackets, state, chosen_path): #all global ret
 		while True:
 			distance = chosen_path.pop()
 			print("driving")
-			drive_success = forward(distance, 50)
+
+			if len(chosen_path) == 0: # approaching desk or reception
+				drive_success = forward(distance, 50, junction_type=Junctions.DESK)
+			else:
+				drive_success = forward(distance, 50)
+
 			if not drive_success:
 				print("panicking")
 				STATE_QUEUE.put(T_PANICKING)
 				break
+
 			else:
-				# if infers reception from brackets and chosen_path and state
-				# 	STATE_QUEUE.put(T_LOADING)
-				# 	return
-				if len(chosen_path) == 0:
-					print("stopping")
-					STATE_QUEUE.put(T_STOPPING)
-					break
+				if len(chosen_path) == 0 and state == State.DELIVERING: # at desk
+					print("dispensing")
+					left(10)
+					right(10)
 					# dispenser.dump(bracket) # need to establish some mapping
 					# brackets[bracket] = 0 # a QUEUE!!!!
 					# move.turn_around()
 					# # if all brackets are assigned to 0, enter RETURNING state
 					# 	return
 					# chosen_path = choose_path()
+					break
+
+				elif len(chosen_path) == 0 and state == State.RETURNING: # at reception
+					print("loading")
+					STATE_QUEUE.put(T_LOADING)
+					break
+
 				else:
 					angle = chosen_path.pop()
-					direction = None
 					if angle < 0:
 						direction = Directions.ROT_LEFT
 					else:
 						direction = Directions.ROT_RIGHT
 					print("turning " + str(direction))
+
 					turn_success = rotate(abs(angle), 50, direction=direction)
+
 					if not turn_success:
 						print("panicking")
 						STATE_QUEUE.put(T_PANICKING)
