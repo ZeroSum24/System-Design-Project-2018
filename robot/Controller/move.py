@@ -23,10 +23,10 @@ from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
 from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
                                 SonarDisconnectedError,
-                                ReflectivityDisconnectedError,
-                                ColorDisconnectedError)
+                                ReflectivityDisconnectedError)
 
 ##### Setup #####
+
 # Globals used elsewhere in the file (The ones initalised to None are set by init)
 _ODOMETERS = None
 MOTORS = None
@@ -100,20 +100,26 @@ def init():
             _ODOMETERS[getattr(MOTORS, portmap[name])] = path.join(root, motor, 'position')
 init()
 
+### End Setup ###
+
+##### Sensors #####
+
 def _read_odometer(motor):
     """Read the odometer on one motor."""
     with open(_ODOMETERS[motor]) as file:
         # abs as actual direction of rotation is irrelevent
         return abs(int(file.readline()))
 
-def _default_odometry(readings):
-    """By default the actual distance traveled is conservativly estimated as
-       the minimum of all supplied readings."""
-    return sum(readings)//2
+def _parse_by_average(readings):
+    """Average seperate odometer readings to estimate distace traveled."""
+    return sum(readings) // len(readings)
 
 def _detect_color(color=Colors.BLACK):
     return read_color() is color
 
+### End Sensors ###
+
+# TODO: This can be a dict
 def _get_motor_params(direction, motors=MOTORS):
     """Centeralises the access of the relavent parameters for each kind of
        motion. There's likely a better way of doing this.
@@ -154,6 +160,8 @@ def _get_motor_params(direction, motors=MOTORS):
     else:
         raise ValueError('Unknown Direction: {}'.format(direction))
 
+##### Distance Measures #####
+
 def _straight_line_odometry(dist):
     # The distance covered by one degree of rotation of a wheel is
     # _WHEEL_CIRCUM // 360. Thus the total number of degrees of rotation is
@@ -166,6 +174,9 @@ def _rotation_odometry(angle):
     # circumferences and floor to int
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
+### End Distance Measures ###
+
+##### Motor Controls #####
 def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=False):
     """Run the specified motor forever.
 
@@ -201,6 +212,27 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=False):
         stop_motors()
         #raise MotorDisconnectedError('Motor disconnected')
 
+def stop_motors(motors=MOTORS):
+    """Stop specified motors.
+
+    Optional Arguments:
+    motors -- The motors to stop, defaults to all of them.
+    """
+    dead_motor = motors.back # disconnected motor is the back motor by default
+    bool_dead = False
+    for motor in motors:
+        try:
+            motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
+        except EXCEPTIONS:
+            bool_dead = True
+            dead_motor = motor
+    if bool_dead:
+        raise MotorDisconnectedError("Motor " + str(dead_motor) + " disconnected")
+
+### End Motor Controls ###
+
+##### PID #####
+# TODO: Several of these can be in the config file
 _last_error = 0
 _integral = 0
 _MAXREF = 54
@@ -210,18 +242,16 @@ _KP = 1.55
 _KD = 0.0
 _KI = 0.8
 
+# TODO: All motors are used, just pass the MOTORS object
 def _course_correction(delta_time, front=MOTORS.front, back=MOTORS.back,
                        lefty=MOTORS.left, righty=MOTORS.right):
     """Default course correction routine
 
     Required Arguments:
-    correction_flag -- A member of the Turning enum, indicates which direction
-                       if any the robot is currently turning.
+    deta_time -- The time elapsed since the last call to _course_correction.
 
     Optional Arguments:
     motors -- The motors available for use, intended for dependency injection.
-    scalers -- Dict containing scalers to influence the motor's speed, intended
-               for dependency injection.
     """
 
     global _last_error
@@ -300,22 +330,37 @@ def delta_deg(vel_left, vel_right):
     else:
         return 0
 
-def stop_motors(motors=MOTORS):
-    """Stop specified motors.
+### End PID ###
 
-    Optional Arguments:
-    motors -- The motors to stop, defaults to all of them.
-    """
-    dead_motor = motors.back # disconnected motor is the back motor by default
-    bool_dead = False
-    for motor in motors:
-        try:
-            motor.stop(stop_action=Motor.STOP_ACTION_BRAKE)
-        except EXCEPTIONS:
-            bool_dead = True
-            dead_motor = motor
-    if bool_dead:
-        raise MotorDisconnectedError("Motor " + str(dead_motor) + " disconnected")
+##### PID Tuning #####
+
+def changeP(state): # pylint: disable=unused-argument
+    global _KP
+    _KP += .025
+    print("p: " + str(_KP))
+
+def changeD(state): # pylint: disable=unused-argument
+    global _KD
+    _KD += 0.005
+    print("d: " + str(_KD))
+
+def changeI(state): # pylint: disable=unused-argument
+    global _KI
+    _KI += 0.005
+    print("i: " + str(_KI))
+
+def reset(state): # pylint: disable=unused-argument
+    global _KP
+    _KP = 1
+    global _KD
+    _KD = 0
+    global _KI
+    _KI = 0
+    print("p: " + str(_KP) + " d: " + str(_KD) + " i: " + str(_KI))
+
+### End PID Tuning ###
+
+##### Movement #####
 
 def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=None,
                distance=None, odometry=None, rotating=False, correction=None):
@@ -336,8 +381,8 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
                 the drive wheels should move through. It defaults to the
                 identity function
     odometry -- Strategy for unifying individual odometer readings into a single
-                number. It will be passes a tuple containing the reading for
-                each motor.d
+                number. It will be passed a tuple containing the reading for
+                each motor.
     correction -- Course correction routine. It will be passed a member of the
                   Turning Enum indicating the direction the robot is currently
                   turning. It should also return a member of Turning.
@@ -348,7 +393,7 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
     if distance is None:
         distance = lambda x: x
     if odometry is None:
-        odometry = _default_odometry
+        odometry = _parse_by_average
 
     ticks = distance(dist)
     traveled = 0
@@ -403,30 +448,6 @@ def _base_move(dist, tolerance, motors, speed=_DEFAULT_RUN_SPEED, multiplier=Non
             print("overshoot")
             return False
 
-def changeP(state): # pylint: disable=unused-argument
-    global _KP
-    _KP += .025
-    print("p: " + str(_KP))
-
-def changeD(state): # pylint: disable=unused-argument
-    global _KD
-    _KD += 0.005
-    print("d: " + str(_KD))
-
-def changeI(state): # pylint: disable=unused-argument
-    global _KI
-    _KI += 0.005
-    print("i: " + str(_KI))
-
-def reset(state): # pylint: disable=unused-argument
-    global _KP
-    _KP = 1
-    global _KD
-    _KD = 0
-    global _KI
-    _KI = 0
-    print("p: " + str(_KP) + " d: " + str(_KD) + " i: " + str(_KI))
-
 def _generic_axis(dist, tolerance, direction, correction=False):
     # TODO: Check incomming direction enum, correction can only be true when
     # direction is FORWARD
@@ -465,6 +486,9 @@ def _generic_axis(dist, tolerance, direction, correction=False):
         func = partial(func, multiplier=multiplier)
     return func()
 
+### End Movement ###
+
+##### Exports #####
 # The only interesting thing here is forward has course correction on by default
 # but can have it turned off by setting it's correction argument to false, the
 # rest don't provide a means to turn course correction on. Also every function
@@ -524,9 +548,10 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
     _base_move(angle, tolerance, motors, multiplier=multiplier, rotating=True,
                distance=_rotation_odometry)
 
+# TODO, this can just be rotate
 def turn_junction(angle, tolerance):
     rotate(angle, tolerance)
-
+### End Exports ###
 
 if __name__ == '__main__':
     btn = ev3.Button()
