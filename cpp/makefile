@@ -1,50 +1,16 @@
 # Builds and tests specifically the pathfinder C++ code.
 
-# Unfortunatly make has no logical or so this mess has to be used to set various
-# environment variables of the build system depending on the
-# target. $(MAKECMDGOALS) contains a list of targets make is aiming for)
-
-# Standard build Ubuntu 16.04, python 3.5
-build_standard =
-# For the robot, Debian Jessie, Cross compiled for armel, python 3.4
-build_robot =
-
-# Test against the empty string to handle the default target
-ifeq ($(MAKECMDGOALS),)
-# Any string can go here
-build_standard = yes
-endif
-ifeq ($(MAKECMDGOALS),all)
-build_standard = yes
-endif
-ifeq ($(MAKECMDGOALS),test)
-build_standard = yes
-endif
-ifeq ($(MAKECMDGOALS),robot)
-build_robot = yes
-endif
+# Path where libgraph.so should end up, relative to the cpp directory
+MODULE_DIR = ../spam/spam
 
 # C++ compiler
-ifdef build_standard
 CC = g++
-endif
-ifdef build_robot
-CC = arm-linux-gnueabi-g++
-endif
 
 # All warnings, c++11 features, produce position independent code (Required for
 # building a shared library)
 CFLAGS = -Wall -std=c++11 -fPIC
 
-# Regular include directory
-INCLUDES = -I./include/
-# Add the required python headers directory
-ifdef build_standard
-INCLUDES += -I/usr/include/python3.5m/
-endif
-ifdef build_robot
-INCLUDES += -I/usr/include/python3.4m/
-endif
+INCLUDES = -I./include/ -I/usr/include/python3.5m/
 
 # Test include directory
 TEST_INCLUDES = -I./test/include/
@@ -73,7 +39,7 @@ robot: $(MAIN)
 
 $(MAIN): $(OBJS)
 	$(CC) -shared $(CFLAGS) $(INCLUDES) -o $(MAIN) $(OBJS)
-	cp $(MAIN) ../robot/Controller/$(MAIN)
+	cp $(MAIN) $(MODULE_DIR)/$(MAIN)
 
 # Rule for converting .cpp files into .o
 .cpp.o:
@@ -85,7 +51,7 @@ clean:
 	$(RM) $(OBJS)
 	$(RM) $(TEST_OBJS)
 	$(RM) $(MAIN)
-	$(RM) ../robot/Controller/$(MAIN)
+	$(RM) $(MODULE_DIR)/$(MAIN)
 	$(RM) $(TEST)
 
 # Build and run the test executable and python tests
