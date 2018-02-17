@@ -9,7 +9,7 @@ from queue import ProrityQueue
 import ev3dev.ev3 as ev3
 import urllib.request as request
 
-from move import forward, select_junction, initialize_motors
+from move import forward, turn_junction
 import dispenser
 import State
 import UniquePriorityQueue as uniq
@@ -53,12 +53,10 @@ CURRENT_POSITION = 0 # current node number
 
 CHOSEN_PATH = [] # this is going to be a list of node distances and angles
 
-MOVING_FLAG = False # flag indicating whether the robot is moving
-
 STATE = State.LOADING
 
-STATE_QUEUE = uniq.UniquePriorityQueue(4) # give it the size of possible state changes + 1
-										  # otherwise the last entry will be blocked
+STATE_QUEUE = uniq.UniquePriorityQueue()
+
 # the lower the number, the higher the priority
 T_LOADING = (3, State.LOADING)
 T_DELIVERING = (3, State.DELIVERING)
@@ -66,39 +64,39 @@ T_RETURNING = (2, State.RETURNING)
 T_STOPPING = (1, State.STOPPING)
 T_PANICKING = (3, State.PANICKING)
 
-def setup_procedure():
-	move.initialize_motors()
-	initialize_2nd_brick()
-	initialize_connection()
-
-def initialize_2nd_brick():
-	pass # RPyC setup here
-
-def initialize_connection():
-	try:
-		pass # do all the required connection setup here
-		get_current_instruction()
-	except IOError:
-		pass # display a "cannot connect" message to the user
-	poll_for_instructions()
-
-def get_current_instruction():
-	global STATE_QUEUE
-	# global BRACKETS
-	# global CURRENT_POSITION
-	# global TARGET_POSITION these also have to be queues
-	pass # get the current instruction and set the STATE accordingly
-
-@thread
-def poll_for_instructions(): # this can also be an interrupt-based listener, not a polling one
-	while True:
-		try:
-			get_current_instruction()
-		except IOError:
-			initialize_connection() # not a deamon, so continues existing after this dies
-			return
-		get_current_instruction()
-		time.sleep(2) # wait 2s between pooling intervals
+# def setup_procedure():
+# 	move.initialize_motors()
+# 	initialize_2nd_brick()
+# 	initialize_connection()
+#
+# def initialize_2nd_brick():
+# 	pass # RPyC setup here
+#
+# def initialize_connection():
+# 	try:
+# 		pass # do all the required connection setup here
+# 		get_current_instruction()
+# 	except IOError:
+# 		pass # display a "cannot connect" message to the user
+# 	poll_for_instructions()
+#
+# def get_current_instruction():
+# 	global STATE_QUEUE
+# 	# global BRACKETS
+# 	# global CURRENT_POSITION
+# 	# global TARGET_POSITION these also have to be queues
+# 	pass # get the current instruction and set the STATE accordingly
+#
+# @thread
+# def poll_for_instructions(): # this can also be an interrupt-based listener, not a polling one
+# 	while True:
+# 		try:
+# 			get_current_instruction()
+# 		except IOError:
+# 			initialize_connection() # not a deamon, so continues existing after this dies
+# 			return
+# 		get_current_instruction()
+# 		time.sleep(2) # wait 2s between pooling intervals
 
 def control_loop():
 	global STATE
@@ -106,9 +104,9 @@ def control_loop():
 		if STATE == State.LOADING:
 			STATE = loading_loop() # these are going to be blocking
 		elif STATE == State.DELIVERING:
-			STATE = delivery_loop()
+			STATE = movement_loop()
 		elif STATE == State.RETURNING:
-			STATE = delivery_loop() # same function as above
+			STATE = movement_loop() # same function as above
 		elif STATE == State.STOPPING:
 			STATE = stop_loop()
 		elif STATE == State.PANICING:
@@ -131,18 +129,19 @@ def check_state(current_state):
 		else:
 			return None
 
-def delivery_loop():
-	global MOVING_FLAG
+def movement_loop():
+	moving_flag = False
+	move_thread = None
 	while True:
 		new_state = check_state(STATE)
 		if new_state != None:
-			MOVING_FLAG = False
-			# tear apart the move() thread
+			if move_thread is not None:
+				move_thread.stop()
 			return new_state
 
-		if not MOVING_FLAG:
-			MOVING_FLAG = True
-			move(CURRENT_POSITION, BRACKETS, STATE)
+		if not moving_flag:
+			moving_flag = True
+			move_thread = move_asynch(CURRENT_POSITION, BRACKETS, STATE)
 
 
 def choose_path(reception = False):
@@ -162,7 +161,7 @@ def shortest_path(paths):
 	pass # returns the shortest path from the path list
 
 @thread
-def move(current_position, brackets, state): #all global returns will have to be passed in queues
+def move_asynch(current_position, brackets, state): #all global returns will have to be passed in queues
 	if state == State.RETURNING:
 		choose_path(reception = True)
 	else:
@@ -206,5 +205,5 @@ def stop_loop():
 
 
 if __name__ = "__main__":
-	setup_procedure()
+	#setup_procedure()
 	control_loop()

@@ -171,9 +171,6 @@ def _rotation_ticks(angle):
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
 def _rotation_odometry(readings):
-    # To convert between the angle the base should move through to the angle the
-    # wheel should move through we multiply by the ratio of the two
-    # circumferences and floor to int
     return sum(readings)//4
 
 def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=False):
