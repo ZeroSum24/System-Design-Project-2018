@@ -9,7 +9,11 @@ from sys import argv
 from flask_sqlalchemy import SQLAlchemy
 from spam.database import db_session
 from spam.database import init_db
+from spam import db
 from spam.models import Staff, Location, Problem
+
+# Definition of environment variable for Notifications
+UNSEEN_NOTIFICATIONS=0
 
 # spam = Flask(__name__) # create the spamlication instance :)
 # #spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
@@ -92,22 +96,54 @@ def mail_delivery():
         # for u,a in db_session.query(Staff.name, Location.physical).filter(Staff.id==Location.staff_id).all():
         #     l.append(u)
         #     l.append(a)
-        return render_template('echo_submit.html', submit=submit, desks=get_desks_list())
+        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=UNSEEN_NOTIFICATIONS)
     #else
-    return render_template('recipients.html', error=error, desks=get_desks_list())
+    return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=UNSEEN_NOTIFICATIONS)
 
-@spam.route('/report')
+@spam.route('/report', methods=['GET', 'POST'])
 def report():
-    return render_template('report.html', desks=get_desks_list())
+    if request.method == 'POST':
+      try:
+        origin= Staff.query.filter_by(email = request.form['email_problem']).one()
+      except:
+        return render_template("report.html",desks=get_desks_list(), result=-1)
+      problem = Problem(origin=origin.id, message=request.form['description_problem'])
+      db.session.add(problem)
+      db.session.commit()
+      UNSEEN_NOTIFICATIONS += 1
+      return render_template("report.html",desks=get_desks_list(), result=1)
+    else:
+      return render_template('report.html', desks=get_desks_list(), result=0)
 
 @spam.route('/test')
 def test():
     from spam.database import db_session
-    from spam.models import User
-    u = User('admin', 'admin@localhost')
-    db_session.add(u)
+    from spam.models import Staff, Location, Problem
+
+    l1 = Location(map_node='A', location_name='Desk Apple', is_desk=True)
+    l2 = Location(map_node='B', location_name='Desk Bumblebee', is_desk=True)
+    l3 = Location(map_node='C', location_name='Junction A', is_desk=False)
+
+    u1 = Staff('Administrator', 'admin@localhost.com')
+    u2 = Staff('Joao Catarino', 'joao@somewhere.com', 1)
+    u3 = Staff('Rosina', 'roz@thisorthat.com', 2)
+
+    p1 = Problem(origin=2, message="My mail didn't arrive please solve it.")
+    p2 = Problem(origin=1, message="Robot is out of lines.", is_urgent=True)
+
+    db_session.add(l1)
+    db_session.add(l2)
+    db_session.add(l3)
     db_session.commit()
 
+    db_session.add(u1)
+    db_session.add(u2)
+    db_session.add(u3)
+    db_session.commit()
+
+    db_session.add(p1)
+    db_session.add(p2)
+    db_session.commit()
 
 
 #TODO: need database editing thingymijig

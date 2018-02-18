@@ -38,9 +38,10 @@ class Location(db.Model):
     #uselist=false restricts to one-one
     staff = db.relationship('Staff', backref='staff')
 
-    def __init__(self, map_node=None, location_name=None):
+    def __init__(self, map_node=None, location_name=None, is_desk=True):
         self.map_node = map_node
         self.location_name = location_name
+        self.is_desk = is_desk
 
     def __repr__(self):
         return '<Location %r>' % (self.location_name)
@@ -53,14 +54,19 @@ class Problem(db.Model):
     # The desctription of the problem
     message = db.Column(String(200), nullable=False)
     # The time that it was submitted
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow())
     # Whether it has been resolved
     solved = db.Column(Boolean, default=False)
+    # Identifies the notifications considered urgent.
+    # All notifications coming from the robot should be marked urgent.
+    is_urgent = db.Column(Boolean, default=False)
 
-    def __init__(self, origin=None, message=None):
+    def __init__(self, origin=None, message=None, is_urgent=False, solved=False, timestamp=datetime.utcnow()):
         self.origin = origin
         self.message = message
-        self.solved= False
+        self.timestamp = timestamp
+        self.is_urgent = is_urgent
+        self.solved= solved
 
     def __repr__(self):
         return '<Problem %r>' % (self.id)
