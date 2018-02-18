@@ -83,6 +83,12 @@ def logout():
     flash('You were logged out')
     return redirect(url_for('login'))
 
+
+@spam.route('/notifications')
+def notifications():
+    UNSEEN_NOTIFICATIONS = 0
+    return render_template('notifications.html')
+
 @spam.route('/settings')
 def settings():
     return redirect('/admin')

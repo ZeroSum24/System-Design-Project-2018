@@ -22,7 +22,7 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item active">
-          <a class="nav-link" href="#">Mail Delivery <span class="sr-only">(current)</span></a>
+          <a class="nav-link" href="{{ url_for('mail_delivery') }}">Mail Delivery <span class="sr-only">(current)</span></a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="#">Status</a>
@@ -40,13 +40,13 @@
 
       </ul>
       {% if unseen_notifications == 0 %}
-      <button type="button" class="btn btn-dark" style="background-color: #647687; border-color:#647687;">
+      <a role="button" href="{{ url_for('notifications') }}" class="btn btn-dark" style="background-color: #647687; border-color:#647687;">
         Notifications
-      </button>
+      </a>
       {% else %}
-      <button type="button" class="btn btn-dark" style="background-color: #647687; border-color:#647687;">
+      <a role="button" href="{{ url_for('notifications') }}" class="btn btn-dark" style="background-color: #647687; border-color:#647687;">
         Notifications <span class="badge badge-warning">{{ unseen_notifications }}</span>
-      </button>
+      </a>
       {% endif %}
 
       <span class="badge badge-pill badge-success">Robot Connected</span>
