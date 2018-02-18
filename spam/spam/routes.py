@@ -118,9 +118,13 @@ def settings():
 def mail_delivery():
     error = None
     if request.method == 'POST':
-        # for u,a in db_session.query(Staff.name, Location.physical).filter(Staff.id==Location.staff_id).all():
-        #     l.append(u)
-        #     l.append(a)
+        submit=[]
+        for i in range(1,6):
+            try:
+                where_to = request.form.get('inputSlot'+str(i))
+                submit.append(Location.query.filter(Location.id == where_to).one())
+            except:
+                pass
         return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification())
     #else
     return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification())
@@ -194,5 +198,5 @@ def get_desks_list():
     desks=[]
     for location in Location.query.all():
         if location.is_desk:
-            desks.append(location.location_name)
+            desks.append(location)
     return desks
