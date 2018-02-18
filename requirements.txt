@@ -1,1 +1,5 @@
-# External python modules can be specified here 
+flask
+Flask-WTF
+sqlalchemy
+Flask-Migrate
+Jinja2
