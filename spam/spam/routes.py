@@ -87,7 +87,17 @@ def logout():
 @spam.route('/notifications')
 def notifications():
     UNSEEN_NOTIFICATIONS = 0
-    return render_template('notifications.html')
+    signal_to_solve = request.args.get('solve_id', default = -1, type = int)
+
+    if signal_to_solve != -1:
+        problem_to_solve = db.session.query(Problem).filter(Problem.id == signal_to_solve).one()
+        problem_to_solve.solved = True
+        db.session.commit()
+
+    notifications= Problem.query.filter(Problem.solved == False).all()
+    for notification in notifications:
+        notification.origin = Staff.query.filter(Staff.id == notification.origin).one().name
+    return render_template('notifications.html', notifications=notifications)
 
 @spam.route('/settings')
 def settings():
