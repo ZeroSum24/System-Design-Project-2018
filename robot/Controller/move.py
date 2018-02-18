@@ -20,7 +20,7 @@ import Directions
 import Colors
 from double_map import DoubleMap
 from sensors import read_color, sonar_poll, read_reflect
-from PID import pid_speeds
+from PID import pid_speeds, _delta_deg, _omega
 import Junctions
 from DisconnectedErrors import (EXCEPTIONS, MotorDisconnectedError,
                                 SonarDisconnectedError,
@@ -166,6 +166,13 @@ def _read_odometer(motor):
 def _parse_by_average(readings):
     """Average seperate odometer readings to estimate distace traveled."""
     return sum(readings) // len(readings)
+
+def _parse_to_omega(left_motor, right_motor):
+    """Return the angle (in degrees) through which the robot has turned per second"""
+    l = _read_odometer(left_motor)
+    r = _read_odometer(right_motor)
+    result = abs(_omega(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER) * 180 / pi)
+    return result
 
 def _detect_color(color=Colors.BLACK):
     return read_color() is color
@@ -401,6 +408,28 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
             stop_motors()
             return True
 
+def test_angle_accuracy():
+    primary_speed = _DEFAULT_RUN_SPEED
+    r = primary_speed
+    l = 0
+    non_driver_speed = _delta_deg(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER)
+
+    run_motor(_MOTORS.front, r, reset = True)
+    run_motor(_MOTORS.back, l, reset = True)
+    run_motor(_MOTORS.left, non_driver_speed)
+    run_motor(_MOTORS.right, -non_driver_speed)
+
+    previous_time = time.time()
+    base_angle_so_far = 0.0
+    while base_angle_so_far < 90:
+        delta_time = time.time() - previous_time
+        previous_time = time.time()
+        base_angle_so_far += abs(_omega(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER)*delta_time*180/pi)
+        print(str(base_angle_so_far) + "<< time-based")
+        print(str(_parse_to_omega(_MOTORS.back, _MOTORS.front)) + "<< odometry-based")
+        time.sleep(0.05)
+    stop_motors()
+
 ### End Exports ###
 
 ##### PID Tuning #####
@@ -436,7 +465,7 @@ if __name__ == '__main__':
     btn.on_right = _changeD
     btn.on_down = _changeI
     btn.on_up = _reset
-
-    forward(99999, 50)
+    test_angle_accuracy()
+    #forward(99999, 50)
 
 ### End PID Tuning ###

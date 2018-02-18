@@ -19,8 +19,9 @@ def pid_speeds(course, speed, wheel_circum, robot_diameter):
             speed_right = speed
             speed_left = speed + ((speed * course) / 100)
 
-    speed_front = -_delta_deg(speed_left, speed_right, wheel_circum, robot_diameter)
-    speed_back = _delta_deg(speed_left, speed_right, wheel_circum, robot_diameter)
+    non_driver_speed = _delta_deg(speed_left, speed_right, wheel_circum, robot_diameter)
+    speed_front = -non_driver_speed
+    speed_back = non_driver_speed
 
     return [int(speed_left), int(speed_right), int(speed_front), int(speed_back)]
 
@@ -61,7 +62,7 @@ def _delta(vel_left, vel_right, wheel_circum, robot_diameter):
 def _delta_deg(vel_left, vel_right, wheel_circum, robot_diameter):
     """The number of degrees the front and back wheels must move through in a
     second."""
-    if abs(vel_left-vel_right) > 3:
+    if abs(vel_left-vel_right) > 3: # avoiding division by 0 in _IC_dist
         return 360 * _delta(vel_left, vel_right, wheel_circum, robot_diameter)/wheel_circum
     else:
         return 0
