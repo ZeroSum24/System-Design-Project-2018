@@ -29,7 +29,7 @@
     <select name="desk_problem" class="form-control" id="desk_problem">
       <option>Select a desk</option>
       {% for desk in desks %}
-      <option>{{ desk }}</option>
+      <option>{{ desk.location_name }}</option>
       {% endfor %}
     </select>
   </div>
