@@ -83,15 +83,14 @@ def logout():
     flash('You were logged out')
     return redirect(url_for('login'))
 
+@spam.route('/settings')
+def settings():
+    return redirect('/admin')
+
 #TODO: match these up with index.html
 @spam.route('/view', methods=['GET', 'POST'])
 def mail_delivery():
     error = None
-
-    desks=[]
-    for location in Location.query.all():
-        desks.append(location.location_name)
-
     if request.method == 'POST':
         # for u,a in db_session.query(Staff.name, Location.physical).filter(Staff.id==Location.staff_id).all():
         #     l.append(u)

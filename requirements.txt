@@ -3,3 +3,5 @@ Flask-WTF
 sqlalchemy
 Flask-Migrate
 Jinja2
+flask-admin
+Flask-SQLAlchemy
