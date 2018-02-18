@@ -9,7 +9,7 @@
 import imp
 import os
 from os import path
-from math import pi
+from math import pi, cos, sin
 from collections import namedtuple
 import time
 
@@ -409,9 +409,10 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
             return True
 
 def test_angle_accuracy():
-    primary_speed = _DEFAULT_RUN_SPEED
-    r = primary_speed
-    l = 0
+    primary_speed = -_DEFAULT_RUN_SPEED # overshoots when this value is negative,
+                                        # regardless whether turning right or left
+    r = primary_speed//2                # turning left/right is done by swapping
+    l = primary_speed                   # which primary speed is divided
     non_driver_speed = _delta_deg(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER)
 
     run_motor(_MOTORS.front, r, reset = True)
@@ -428,6 +429,75 @@ def test_angle_accuracy():
         print(str(base_angle_so_far) + "<< time-based")
         print(str(_parse_to_omega(_MOTORS.back, _MOTORS.front)) + "<< odometry-based")
         time.sleep(0.05)
+    stop_motors()
+
+def desk_approach():
+    primary_speed = _DEFAULT_RUN_SPEED
+    non_driver_speed = _delta_deg(primary_speed//3, primary_speed, _WHEEL_CIRCUM, _ROBOT_DIAMETER)
+
+    run_motor(_MOTORS.front, -primary_speed, reset = True)
+    run_motor(_MOTORS.back, -primary_speed//3, reset = True)
+    run_motor(_MOTORS.left, -non_driver_speed)
+    run_motor(_MOTORS.right, non_driver_speed)
+
+    while _parse_to_omega(_MOTORS.back, _MOTORS.front) < 45:
+        time.sleep(0.05)
+
+    run_motor(_MOTORS.left, primary_speed, reset = True)
+    run_motor(_MOTORS.right, primary_speed//3, reset = True)
+    run_motor(_MOTORS.front, non_driver_speed)
+    run_motor(_MOTORS.back, -non_driver_speed)
+
+    while _parse_to_omega(_MOTORS.right, _MOTORS.left) < 45:
+        time.sleep(0.05)
+
+    run_motor(_MOTORS.left, -primary_speed, reset = True)
+    run_motor(_MOTORS.right, -primary_speed//3, reset = True)
+    run_motor(_MOTORS.front, -non_driver_speed)
+    run_motor(_MOTORS.back, non_driver_speed)
+
+    while _parse_to_omega(_MOTORS.right, _MOTORS.left) < 45:
+        time.sleep(0.05)
+
+    run_motor(_MOTORS.front, primary_speed, reset = True)
+    run_motor(_MOTORS.back, primary_speed//3, reset = True)
+    run_motor(_MOTORS.left, non_driver_speed)
+    run_motor(_MOTORS.right, -non_driver_speed)
+
+    while _parse_to_omega(_MOTORS.back, _MOTORS.front) < 45:
+        time.sleep(0.05)
+
+    stop_motors()
+
+def diagonal(angle):
+    primary_speed = _DEFAULT_RUN_SPEED*cos(angle*180/pi)
+    secondary_speed = _DEFAULT_RUN_SPEED*sin(angle*180/pi)
+
+    run_motor(_MOTORS.front, secondary_speed, reset = True)
+    run_motor(_MOTORS.back, secondary_speed, reset = True)
+    run_motor(_MOTORS.left, primary_speed, reset = True)
+    run_motor(_MOTORS.right, primary_speed, reset = True)
+
+    time.sleep(2)
+    stop_motors()
+
+def rot_timed(direction=Directions.ROT_LEFT):
+    angle=90
+    ticks = _rotation_odometry(angle)
+    traveled = 0
+
+    multiplier = _MOTOR_PARAMS[direction]
+    turning_speed = _DEFAULT_RUN_SPEED//2
+
+    for motor in _MOTORS:
+        run_motor(motor, speed=multiplier[motor]*turning_speed, reset=True)
+
+    while True:
+        odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
+        traveled = _parse_by_average(odometer_readings)
+
+        if traveled > ticks:
+            break
     stop_motors()
 
 ### End Exports ###
@@ -465,7 +535,10 @@ if __name__ == '__main__':
     btn.on_right = _changeD
     btn.on_down = _changeI
     btn.on_up = _reset
-    test_angle_accuracy()
+    desk_approach()
+    #test_angle_accuracy()
+    #diagonal()
     #forward(99999, 50)
+    #rot_timed()
 
 ### End PID Tuning ###
