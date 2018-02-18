@@ -12,8 +12,6 @@ from spam.database import init_db
 from spam import db
 from spam.models import Staff, Location, Problem
 
-# Definition of environment variable for Notifications
-UNSEEN_NOTIFICATIONS=0
 
 # spam = Flask(__name__) # create the spamlication instance :)
 # #spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
@@ -31,6 +29,18 @@ UNSEEN_NOTIFICATIONS=0
 # ))
 # spam.config.from_envvar('SPAM_SETTINGS', silent=True)
 db = SQLAlchemy(spam)
+
+# Definition of environment variable for Notifications
+unseen_notifications=0
+
+def add_unseen_notification():
+    global unseen_notifications
+    unseen_notifications += 1
+def get_unseen_notification():
+    return unseen_notifications
+def zero_unseen_notification():
+    global unseen_notifications
+    unseen_notifications = 0
 
 #database functions
 # def connect_db():
@@ -86,7 +96,7 @@ def logout():
 
 @spam.route('/notifications')
 def notifications():
-    UNSEEN_NOTIFICATIONS = 0
+    zero_unseen_notification()
     signal_to_solve = request.args.get('solve_id', default = -1, type = int)
 
     if signal_to_solve != -1:
@@ -111,9 +121,9 @@ def mail_delivery():
         # for u,a in db_session.query(Staff.name, Location.physical).filter(Staff.id==Location.staff_id).all():
         #     l.append(u)
         #     l.append(a)
-        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=UNSEEN_NOTIFICATIONS)
+        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification())
     #else
-    return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=UNSEEN_NOTIFICATIONS)
+    return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification())
 
 @spam.route('/report', methods=['GET', 'POST'])
 def report():
@@ -125,7 +135,7 @@ def report():
       problem = Problem(origin=origin.id, message=request.form['description_problem'])
       db.session.add(problem)
       db.session.commit()
-      UNSEEN_NOTIFICATIONS += 1
+      add_unseen_notification()
       return render_template("report.html",desks=get_desks_list(), result=1)
     else:
       return render_template('report.html', desks=get_desks_list(), result=0)
