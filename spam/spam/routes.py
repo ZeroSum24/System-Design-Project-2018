@@ -11,6 +11,7 @@ from spam.database import db_session
 from spam.database import init_db
 from spam import db
 from spam.models import Staff, Location, Problem
+import router
 
 
 # spam = Flask(__name__) # create the spamlication instance :)
@@ -119,12 +120,24 @@ def mail_delivery():
     error = None
     if request.method == 'POST':
         submit=[]
+        path_planning={}
         for i in range(1,6):
             try:
                 where_to = request.form.get('inputSlot'+str(i))
+                if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
+                    path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[i]
+                else:
+                    path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(i)
+
                 submit.append(Location.query.filter(Location.id == where_to).one())
             except:
+                # When nothing is selected
                 pass
+        #Use path planner
+        print ("This is path planning:")
+        print (path_planning)
+        print(router.build_route(path_planning))
+
         return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification())
     #else
     return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification())
