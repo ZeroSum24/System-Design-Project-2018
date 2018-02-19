@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from graph import Edge, Graph
+from spam.graph import Edge, Graph
 import itertools
-from Commands import *
+from spam.Commands import *
 
 _MAP = {'S' : {'A' : (5, 90, 270),
                'C' : (10, 0, 180)},
