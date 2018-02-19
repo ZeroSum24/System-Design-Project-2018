@@ -33,7 +33,7 @@ mqtt = Mqtt(spam)
 battery_info = 0
 location_info = "Loading Bay"
 connection_status = False
-path_planning = []
+path_planning_result = []
 
 db = SQLAlchemy(spam)
 

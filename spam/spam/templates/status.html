@@ -21,6 +21,12 @@
           </td>
         </tr>
         <tr>
+          <td>Delivery Status</td>
+          <td>
+            <span class="badge badge-pill badge-success">Robot Delivering</span>
+          </td>
+        </tr>
+        <tr>
           <td>Robot Location</td>
           <td>Going from A to B.</td>
         </tr>
@@ -40,7 +46,7 @@
       <div class="col-sm-10">
         <!--TODO: check this works with the action-->
         <div style="padding-top:10px">
-          <a href="{{ url_for('mail_delivery') }}" class="btn btn-primary" role="button">Reload Status</a>
+          <a href="{{ url_for('status') }}" class="btn btn-primary" role="button">Reload Status</a>
         </div>
       </div>
     </div>
