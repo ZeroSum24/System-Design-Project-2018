@@ -89,8 +89,6 @@ class GenericThread(threading.Thread):
             return
         # Kill the thread
         try:
-            # Probably the thread will die here
-            self._raise_exc()
             # Need to loop as threads are immune to exceptions during system calls
             while self.isAlive():
                 # Small sleep so we don't bombard the thread with exceptions
