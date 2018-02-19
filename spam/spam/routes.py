@@ -12,10 +12,9 @@ from spam.database import init_db
 from spam import db
 from spam.models import Staff, Location, Problem
 from spam import router
-
-
-# spam = Flask(__name__) # create the spamlication instance :)
-# #spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
+from flask_mqtt import Mqtt
+#spam = Flask(__name__) # create the spamlication instance :)
+#spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
 # # got rid of envar override because yolo
 # spam.config.from_object(__name__) # load config from this file , spam.py
 #
@@ -29,6 +28,13 @@ from spam import router
 #     DEBUG = True
 # ))
 # spam.config.from_envvar('SPAM_SETTINGS', silent=True)
+
+mqtt = Mqtt(app)
+battery_info = 0
+location_info = "Loading Bay"
+connection_status = False
+path_planning = []
+
 db = SQLAlchemy(spam)
 
 # Definition of environment variable for Notifications
@@ -187,17 +193,52 @@ def test():
     db_session.add(p2)
     db_session.commit()
 
+@app.route('/status')
+def status():
+    return render_template('status.html')
 
-#TODO: need database editing thingymijig
-        #technically extension, but hey, once I get the db working it'll be fine
-#<a class="nav-link" href="#">Status</a>
-#<a class="nav-link" href="#">Settings</a>
-#<a class="nav-link" href="#">Help</a>
-#<a class="nav-link" href="#">Logout</a>
+@mqtt.on_connect()
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code "+str(rc))
+    client.subscribe("topic/connection_established")
+    client.subscribe("topic/battery")
+    client.subscribe("topic/location")
 
-#TODO: get a bluetooth connection cycle going - probably
-    #<span class="badge badge-pill badge-success">Robot Connected</span>
-#TODO: get external post requests working
+@mqtt.on_message()
+def on_message(client, userdata, msg):
+    #This should recieve the message from the ev3 and from the status
+    #page update the information for both location and battery regardless of
+    #which one has changed
+    print("Msg Recieved Cap")
+    if msg.topic == "connection_established":
+    #Msg is published to the UI to establish ev3 connection has been brokered
+        connection_status = True
+        print("Connected -- Woap Woap")
+    elif msg.topic == "location":
+        location_info = msg.decode()
+    elif msg.topic == "battery":
+        battery_info = msg.decode()
+    return render_template('echo_ev3.html', ev3_info=[connection_status, location_info, battery_info])
+
+def database_map_nodes_lookup():
+    # looks up the map nodes from the databse and adds in the map nodes from
+    # the database. Poll the database for these map nodes
+
+    #add look-up part
+    map_nodes = []
+    return build_route(map_nodes)
+
+@mqtt.on_log()
+def handle_logging(client, userdata, level, buf):
+    print(level, buf)
+
+def publish_path_planning(path_str):
+    mqtt.publish("path_directions", path_str)
+
+def publish_emergency_commands(emrg_cmd_str):
+    mqtt.publish("emergency_commands", emrg_cmd_str)
+
+
 @spam.route('/slots', methods=['GET', 'POST'])
 def receive_http():
     error=None
