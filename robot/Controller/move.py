@@ -193,6 +193,12 @@ def _rotation_odometry(angle):
     # circumferences and floor to int
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
+def _rev_rotation_odometry(angle):
+    # To convert between the angle the base should move through to the angle the
+    # wheel should move through we multiply by the ratio of the two
+    # circumferences and floor to int
+    return angle / _BASE_ROT_TO_WHEEL_ROT
+
 ### End Distance Measures ###
 
 ##### Motor Controls #####
@@ -469,28 +475,26 @@ def desk_approach():
 
     stop_motors()
 
-def diagonal(angle):
-    primary_speed = _DEFAULT_RUN_SPEED*cos(angle*180/pi)
-    secondary_speed = _DEFAULT_RUN_SPEED*sin(angle*180/pi)
+def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back, lefty=_MOTORS.left, righty=_MOTORS.right):
+    primary_speed = speed*cos(angle*pi/180)
+    secondary_speed = speed*sin(angle*pi/180)
 
-    run_motor(_MOTORS.front, secondary_speed, reset = True)
-    run_motor(_MOTORS.back, secondary_speed, reset = True)
-    run_motor(_MOTORS.left, primary_speed, reset = True)
-    run_motor(_MOTORS.right, primary_speed, reset = True)
+    return {front  : secondary_speed,
+            back   : secondary_speed,
+            lefty  : primary_speed,
+            righty : primary_speed}
 
-    time.sleep(2)
-    stop_motors()
-
-def rot_timed(direction=Directions.ROT_LEFT):
+def straight_approach(direction=Directions.ROT_LEFT):
     angle=90
     ticks = _rotation_odometry(angle)
     traveled = 0
 
     multiplier = _MOTOR_PARAMS[direction]
     turning_speed = _DEFAULT_RUN_SPEED//2
+    driver_speed = diagonal_speeds(-90, _DEFAULT_RUN_SPEED-turning_speed)
 
     for motor in _MOTORS:
-        run_motor(motor, speed=multiplier[motor]*turning_speed, reset=True)
+        run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor], reset=True)
 
     while True:
         odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
@@ -498,6 +502,13 @@ def rot_timed(direction=Directions.ROT_LEFT):
 
         if traveled > ticks:
             break
+
+        angle_so_far = _rev_rotation_odometry(traveled)
+
+        driver_speed = diagonal_speeds(angle_so_far-90, _DEFAULT_RUN_SPEED-turning_speed)
+        for motor in _MOTORS:
+            run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor])
+
     stop_motors()
 
 ### End Exports ###
@@ -535,10 +546,10 @@ if __name__ == '__main__':
     btn.on_right = _changeD
     btn.on_down = _changeI
     btn.on_up = _reset
-    desk_approach()
+    #desk_approach()
     #test_angle_accuracy()
-    #diagonal()
     #forward(99999, 50)
     #rot_timed()
+    straight_approach()
 
 ### End PID Tuning ###
