@@ -72,5 +72,3 @@ def build_route(points):
     full_route = sum(routes, [])
     full_route.append(Report(start))
     return full_route
-
-print(build_route({'K' : [1], 'I' : [2], 'H' : [3], 'J' : [4]}))
