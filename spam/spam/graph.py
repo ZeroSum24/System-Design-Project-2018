@@ -7,7 +7,7 @@ from ctypes import *
 # interface required for this to work removes all typechecking from either side
 # so the objects below are required for safety, also using objects makes the
 # code using the library cheaper
-_COBJ = cdll.LoadLibrary('./libgraph.so')
+_COBJ = cdll.LoadLibrary('./spam/libgraph.so')
 
 class Edge:
     # Methods to allocate and deallocate the underlying C++ object (See __init__
