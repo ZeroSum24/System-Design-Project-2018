@@ -417,8 +417,8 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
 def test_angle_accuracy():
     primary_speed = -_DEFAULT_RUN_SPEED # overshoots when this value is negative,
                                         # regardless whether turning right or left
-    r = primary_speed//2                # turning left/right is done by swapping
-    l = primary_speed                   # which primary speed is divided
+    r = primary_speed                # turning left/right is done by swapping
+    l = primary_speed//2                   # which primary speed is divided
     non_driver_speed = _delta_deg(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER)
 
     run_motor(_MOTORS.front, r, reset = True)
@@ -484,14 +484,28 @@ def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back, lefty=
             lefty  : primary_speed,
             righty : primary_speed}
 
-def straight_approach(direction=Directions.ROT_LEFT):
-    angle=90
+def straight_approach():
+    approach(direction=Directions.ROT_RIGHT)
+    approach(reverse=True, direction = Directions.ROT_RIGHT)
+
+def approach(angle=90, direction=Directions.ROT_LEFT, reverse = False):
     ticks = _rotation_odometry(angle)
     traveled = 0
 
+    if reverse: # in case the robot is reversing
+        angle+=90 # the angle needs to be phase shifted
+        if direction == Directions.ROT_LEFT: # and the direction needs to be reversed
+            direction = Directions.ROT_RIGHT
+        else:
+            direction = Directions.ROT_LEFT
+
     multiplier = _MOTOR_PARAMS[direction]
     turning_speed = _DEFAULT_RUN_SPEED//2
-    driver_speed = diagonal_speeds(-90, _DEFAULT_RUN_SPEED-turning_speed)
+    if direction == Directions.ROT_LEFT:
+        start_angle = -angle
+    else:
+        start_angle = angle
+    driver_speed = diagonal_speeds(start_angle, _DEFAULT_RUN_SPEED-turning_speed)
 
     for motor in _MOTORS:
         run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor], reset=True)
@@ -504,8 +518,10 @@ def straight_approach(direction=Directions.ROT_LEFT):
             break
 
         angle_so_far = _rev_rotation_odometry(traveled)
+        if direction == Directions.ROT_RIGHT:
+            angle_so_far = -angle_so_far
+        driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_RUN_SPEED-turning_speed)
 
-        driver_speed = diagonal_speeds(angle_so_far-90, _DEFAULT_RUN_SPEED-turning_speed)
         for motor in _MOTORS:
             run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor])
 
