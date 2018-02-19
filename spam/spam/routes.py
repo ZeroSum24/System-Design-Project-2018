@@ -11,7 +11,7 @@ from spam.database import db_session
 from spam.database import init_db
 from spam import db
 from spam.models import Staff, Location, Problem
-import router
+from spam import router
 
 
 # spam = Flask(__name__) # create the spamlication instance :)
