@@ -1,3 +1,4 @@
+
 import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -10,7 +11,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
     DEBUG = True
-    MQTT_BROKER_IP = "18.219.135.123"  # use the free broker from HIVEMQ
+    MQTT_BROKER_IP = "34.251.169.152"  # use the free broker from HIVEMQ
     MQTT_BROKER_PORT = 1883  # default port for non-tls connection
     MQTT_USERNAME = ''  # set the username here if you need authentication for the broker
     MQTT_PASSWORD = ''  # set the password here if the broker demands authentication

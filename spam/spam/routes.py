@@ -29,7 +29,7 @@ from flask_mqtt import Mqtt
 # ))
 # spam.config.from_envvar('SPAM_SETTINGS', silent=True)
 
-mqtt = Mqtt(app)
+mqtt = Mqtt(spam)
 battery_info = 0
 location_info = "Loading Bay"
 connection_status = False
@@ -193,7 +193,7 @@ def test():
     db_session.add(p2)
     db_session.commit()
 
-@app.route('/status')
+@spam.route('/status')
 def status():
     return render_template('status.html')
 
