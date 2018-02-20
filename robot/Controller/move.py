@@ -184,7 +184,7 @@ def get_odometry(rotating=False):
     else:
         odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right]))
         return _rev_straight_line_odometry(_parse_by_average(odometer_readings))
-        
+
 ### End Sensors ###
 
 ##### Distance Measures #####
@@ -209,7 +209,7 @@ def _rev_rotation_odometry(angle):
 
 def _rev_straight_line_odometry(dist):
     return (dist * _WHEEL_CIRCUM) // 360
-    
+
 ### End Distance Measures ###
 
 ##### Motor Controls #####
@@ -495,10 +495,6 @@ def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back, lefty=
             lefty  : primary_speed,
             righty : primary_speed}
 
-def straight_approach():
-    approach()
-    approach(reverse=True, direction = Directions.ROT_RIGHT)
-
 def approach(angle=90, direction=Directions.ROT_LEFT, reverse = False):
     # rotation odometry is enough here, as the diagonal movement
     # adds speed in the same direction on opposite wheels, making them
@@ -589,7 +585,5 @@ if __name__ == '__main__':
     #desk_approach()
     #test_angle_accuracy()
     forward(99999, 50)
-    #rot_timed()
-    #straight_approach()
 
 ### End PID Tuning ###

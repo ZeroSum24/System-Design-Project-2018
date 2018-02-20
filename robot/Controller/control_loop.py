@@ -9,53 +9,24 @@ import time
 # import ev3dev.ev3 as ev3
 # import urllib.request as request
 
-from move import forward, rotate, left, right
+from move import forward, rotate, left, right, approach, stop_motors, get_odometry
 # import dispenser
 import State
 import UniquePriorityQueue as uniq
 from queue import Empty
-from thread_decorator import thread, ThreadKiller
+from thread_decorator import thread, ThreadKiller, acknowledge
 import Directions
 import Junctions
+import paho.mqtt.client as mqtt
+import pickle
+from threading import Lock
+from Commands import Report, Move, Rotate, Dump
 
-#---communications
-#------------------
+CHOSEN_PATH = None
+chosen_path_lock = Lock()
 
-#Internet connection needs to be established first, this has to be check by the ev3 (this has to be re-checked if the connection is lost)
-
-#Set-up communication at the beginning of the control loop. Polling for access to the website before the robot progress commences
-
-#--intra-brick-network
-#------------------
-
-#---barcode scanning
-#------------------
-
-#[Placeholder ATM] for the third client demo
-
-#---path planning
-#------------------
-
-#{(recieves the path plan for the robot (on the output of the Deliver Mail button))}
-
-#---move code
-#------------------
-
-#{The dispensing code will have to be integrated with line sensing which is managed by the move code currently}
-#{Website sends post requests which directly effect the robot's movement}
-
-#---dispensing code
-#------------------
-
-
-
-
-# temporary bracket-desk mapping, could indicate empty with 0 and have desk number otherwise
-BRACKETS = {1 : 0, 2 : 0, 3 : 0, 4 : 0, 5 : 0}
-
-CURRENT_POSITION = 0 # current node number
-
-CHOSEN_PATH = [40,90,40,90,40] # this is going to be a list of node distances and angles
+FINAL_CMD = []
+final_cmd_lock = Lock()
 
 STATE = State.LOADING
 
@@ -68,11 +39,49 @@ T_RETURNING = (2, State.RETURNING)
 T_STOPPING = (1, State.STOPPING)
 T_PANICKING = (3, State.PANICKING)
 
-# def setup_procedure():
-# 	move.initialize_motors()
-# 	initialize_2nd_brick()
-# 	initialize_connection()
-#
+CLIENT = mqtt.Client()
+CLIENT.on_connect = on_connect
+CLIENT.on_message = on_message
+
+def setup_procedure():
+	CLIENT.connect("34.242.137.167", 1883, 60)
+	battery_alive_thread()
+	instruction_thread()
+	# initialize_2nd_brick()
+
+def on_connect(client, userdata, rc):
+	client.subscribe("path_direction")
+	client.subscribe("emergency_command")
+
+def on_message(client, userdata, msg):
+	if msg.topic == "path_direction":
+		with chosen_path_lock:
+			global CHOSEN_PATH
+			CHOSEN_PATH = pickle.loads(msg.payload.decode())
+	elif msg.topic == "emergency_command":
+		string = msg.payload.decode()
+		if string == "Resume":
+			STATE_QUEUE.put(T_DELIVERING)
+		elif string == "Stop":
+			STATE_QUEUE.put(T_STOPPING)
+		elif string == "Callback":
+			STATE_QUEUE.put(T_RETURNING)
+
+@thread
+def instruction_thread():
+	CLIENT.loop_forever()
+
+@thread
+def battery_alive_thread():
+	while True:
+		CLIENT.publish("battery_info_volts", payload=get_voltage())
+		time.sleep(5)
+
+def get_voltage():
+    with open('/sys/class/power_supply/legoev3-battery/voltage_now') as fin:
+        voltage = fin.readline()
+    return voltage
+
 # def initialize_2nd_brick():
 # 	pass # RPyC setup here
 #
@@ -83,24 +92,6 @@ T_PANICKING = (3, State.PANICKING)
 # 	except IOError:
 # 		pass # display a "cannot connect" message to the user
 # 	poll_for_instructions()
-#
-# def get_current_instruction():
-# 	global STATE_QUEUE
-# 	# global BRACKETS
-# 	# global CURRENT_POSITION
-# 	# global TARGET_POSITION these also have to be queues
-# 	pass # get the current instruction and set the STATE accordingly
-#
-# @thread
-# def poll_for_instructions(): # this can also be an interrupt-based listener, not a polling one
-# 	while True:
-# 		try:
-# 			get_current_instruction()
-# 		except IOError:
-# 			initialize_connection() # not a deamon, so continues existing after this dies
-# 			return
-# 		get_current_instruction()
-# 		time.sleep(2) # wait 2s between pooling intervals
 
 def control_loop():
 	global STATE
@@ -110,14 +101,25 @@ def control_loop():
 		elif STATE == State.DELIVERING:
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
+			get_path()
 			STATE = movement_loop() # same function as above
 		elif STATE == State.STOPPING:
 			STATE = stop_loop()
 		elif STATE == State.PANICKING:
 			STATE = panic_loop()
 
+def get_path():
+	global CHOSEN_PATH
+	CHOSEN_PATH = None
+	while True:
+		with chosen_path_lock:
+			if CHOSEN_PATH is not None:
+				break
+
 def loading_loop():
 	# pool for "go-ahead" button
+	get_path()
+	CLIENT.publish("delivery_status", str(State.DELIVERING))
 	return State.DELIVERING
 
 def check_state(current_state):
@@ -129,6 +131,7 @@ def check_state(current_state):
 		if state[1] != current_state:
 			with STATE_QUEUE.mutex:
 				STATE_QUEUE.queue.clear()
+			CLIENT.publish("delivery_status", str(state[1]))
 			return state[1]
 		else:
 			return None
@@ -145,7 +148,10 @@ def movement_loop():
 
 		if not moving_flag:
 			moving_flag = True
-			move_thread = move_asynch(CURRENT_POSITION, BRACKETS, STATE, CHOSEN_PATH)
+			global FINAL_CMD
+			chosen_path = FINAL_CMD + CHOSEN_PATH
+			FINAL_CMD = []
+			move_thread = move_asynch(chosen_path, STATE)
 
 
 # def choose_path(reception = False):
@@ -165,75 +171,106 @@ def movement_loop():
 # 	pass # returns the shortest path from the path list
 
 @thread
-def move_asynch(current_position, brackets, state, chosen_path): #all global returns will have to be passed in queues
+def move_asynch(chosen_path, state): #all global returns will have to be passed in queues
+	instruction = None
 	try:
 		# if state == State.RETURNING:
 		# 	chosen_path = choose_path(reception = True)
 		# else:
 		# 	chosen_path = choose_path()
 		while True:
-			distance = chosen_path.pop()
-			print("driving")
 
-			if len(chosen_path) == 0: # approaching desk or reception
-				drive_success = forward(distance, 50, junction_type=Junctions.DESK)
-			else:
-				drive_success = forward(distance, 50)
+			instruction = chosen_path.pop(0)
+			success = True
 
-			if not drive_success:
+			if isinstance(instruction, Move):
+				success = forward(instruction.dist, instruction.tolerance)
+
+			elif isinstance(instruction, Dump):
+				#dispenser.dump(instruction.slot)
+
+			elif isinstance(instruction, Rotate):
+				if instruction.angle <= 180:
+					direction = Directions.ROT_RIGHT
+					angle = instruction.angle
+				else:
+					direction = Directions.ROT_LEFT
+					angle = instruction.angle - 180
+				success = rotate(angle, instruction.tolerance, direction=direction)
+
+			elif isinstance(instruction, ToDesk):
+				if instruction.is_left:
+					direction = Directions.ROT_LEFT
+				else:
+					direction = Directions.ROT_RIGHT
+				approach(direction=direction)
+
+			elif isinstance(instruction, FromDesk):
+				if instruction.is_left:
+					direction = Directions.ROT_LEFT
+				else:
+					direction = Directions.ROT_RIGHT
+				approach(direction=direction, reverse=True)
+
+			elif isinstance(instruction, Report):
+				CLIENT.publish("location_info", payload=instruction.where)
+
+			if not success:
 				print("panicking")
 				STATE_QUEUE.put(T_PANICKING)
 				break
 
-			else:
-				if len(chosen_path) == 0 and state == State.DELIVERING: # at desk
-					print("dispensing")
-					left(10)
-					right(10)
-					# dispenser.dump(bracket) # need to establish some mapping
-					# brackets[bracket] = 0 # a QUEUE!!!!
-					# move.turn_around()
-					# # if all brackets are assigned to 0, enter RETURNING state
-					# 	return
-					# chosen_path = choose_path()
+			if len(chosen_path) == 0:
+				if state == State.DELIVERING:
+					STATE_QUEUE.put(T_RETURNING)
 					break
-
-				elif len(chosen_path) == 0 and state == State.RETURNING: # at reception
-					print("loading")
+				elif state == State.RETURNING:
 					STATE_QUEUE.put(T_LOADING)
 					break
-
-				else:
-					angle = chosen_path.pop()
-					if angle < 0:
-						direction = Directions.ROT_LEFT
-					else:
-						direction = Directions.ROT_RIGHT
-					print("turning " + str(direction))
-
-					turn_success = rotate(abs(angle), 50, direction=direction)
-
-					if not turn_success:
-						print("panicking")
-						STATE_QUEUE.put(T_PANICKING)
-						break
-					else:
-						if len(chosen_path) == 0:
-							print("stopping")
-							STATE_QUEUE.put(T_STOPPING)
-							break
 		while True:
 			pass
-	except ThreadKiller:
+
+	except ThreadKiller as e:
+		acknowledge(e)
+		stop_motors()
+
+		final = []
+
+		if isinstance(instruction, Move):
+			final = [Move(instruction.dist - get_odometry(), 50)]
+
+		elif isinstance(instruction, Rotate):
+			if instruction.angle <= 180:
+				final = [Rotate(instruction.angle - get_odometry(rotating=True), 50)]
+			else:
+				final = [Rotate(instruction.angle + get_odometry(rotating=True), 50)]
+
+		elif isinstance(instruction, FromDesk):
+			get_odometry(rotating=True)
+			final = [FromDesk(instruction.is_left, instruction.angle - get_odometry(rotating=True))]
+
+		elif isinstance(instruction, ToDesk):
+			get_odometry(rotating=True)
+			final = [ToDesk(instruction.is_left, instruction.angle - get_odometry(rotating=True)),
+			         chosen_path.pop(0), chosen_path.pop(0)] # atm it dispenses the letter even after recall
+
+		with final_cmd_lock:
+			global FINAL_CMD
+			FINAL_CMD = final
+
+		with chosen_path_lock:
+			global CHOSEN_PATH
+			CHOSEN_PATH = chosen_path
+
 		sys.exit()
 
 
 def panic_loop():
-	send_position_to_server()
-	return
-
-def send_position_to_server():
-	pass
+	CLIENT.publish("problem", "I panicked. In need of assistance. Sorry.")
+	while True:
+		new_state = check_state(STATE)
+		if new_state != None:
+			return new_state
 
 def stop_loop():
 	# wait for further instuctons
@@ -244,5 +281,5 @@ def stop_loop():
 
 
 if __name__ == "__main__":
-	#setup_procedure()
+	setup_procedure()
 	control_loop()
