@@ -29,15 +29,18 @@
         <tr>
           <td>Delivery Status</td>
           <td>
+            # Delivery Status should assume one of these >> "Delivering", "Returning", "Loading", "Stopping", "Panicking"
 
-            {% if delivery_status == "Parked" %}
-            <span class="badge badge-pill badge-info">Robot Parked</span>
+            {% if delivery_status == "Panicking" %}
+            <span class="badge badge-pill badge-danger">Robot Panicked</span>
+            {% elif delivery_status == "Stopping" %}
+            <span class="badge badge-pill badge-warning">Robot Stopped</span>
+            {% elif delivery_status == "Loading" %}
+            <span class="badge badge-pill badge-success">Robot Parked</span>
             {% elif delivery_status == "Returning" %}
             <span class="badge badge-pill badge-success">Robot Returning</span>
             {% elif delivery_status == "Delivering" %}
             <span class="badge badge-pill badge-success">Robot Delivering</span>
-            {% elif delivery_status == "Interrupted" %}
-            <span class="badge badge-pill badge-danger">Robot Interrupted</span>
             {% else %}
             <span class="badge badge-pill badge-danger">Error >> {{ delivery_status }}</span>
             {% endif %}

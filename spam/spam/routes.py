@@ -14,6 +14,18 @@ from spam.models import Staff, Location, Problem
 from spam import router
 from flask_mqtt import Mqtt
 import pickle
+from threading import Lock
+from time import sleep
+from spam.thread_decorator import thread
+
+
+@thread
+def polling_loop():
+    while True:
+        sleep(5)
+        with lock:
+            connected = seen
+            seen = False
 
 #spam = Flask(__name__) # create the spamlication instance :)
 #spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
@@ -33,14 +45,17 @@ import pickle
 
 mqtt = Mqtt(spam)
 db = SQLAlchemy(spam)
+polling_loop()
 
 # GLOBAL VARIABLES
 battery_info_volts = 40
-# Delivery Status should assume one of these >> "Delivering", "Returning", "Parked", "Interrupted"
+# Delivery Status should assume one of these >> "Delivering", "Returning", "Loading", "Stopping", "Panicking"
 delivery_status = "Delivering"
 location_info = "Going from C to D"
 connection_status = False
 path_planning_result = []
+lock = Lock()
+seen = False
 # Definition of environment variable for Notifications
 unseen_notifications=0
 
@@ -228,8 +243,9 @@ def on_message(client, userdata, msg):
     print("Msg Recieved Cap")
     if msg.topic == "connection_status":
     #Msg is published to the UI to establish ev3 connection has been brokered
-        global connection_status
-        connection_status = True
+        global seen
+        with lock:
+            seen = True
         print("Connected -- Woap Woap")
     elif msg.topic == "location_info":
         global location_info
@@ -290,4 +306,12 @@ def get_desks_list():
     return desks
 
 def battery_calculate(voltage_level):
-    return int(voltage_level)
+    max_volt = 8300000
+    min_volt = 6500000
+    if max_volt > voltage_reading > min_volt:
+        percent = (voltage_reading - min_volt) / (max_volt - min_volt) * 100
+    elif voltage_reading >= max_volt:
+        percent = 100
+    else:
+        percent = 0
+    return int(percent)
