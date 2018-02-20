@@ -177,6 +177,14 @@ def _parse_to_omega(left_motor, right_motor):
 def _detect_color(color=Colors.BLACK):
     return read_color() is color
 
+def get_odometry(rotating=False):
+    if rotating:
+        odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
+        return _rev_rotation_odometry(_parse_by_average(odometer_readings))
+    else:
+        odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right]))
+        return _rev_straight_line_odometry(_parse_by_average(odometer_readings))
+        
 ### End Sensors ###
 
 ##### Distance Measures #####
@@ -199,6 +207,9 @@ def _rev_rotation_odometry(angle):
     # circumferences and floor to int
     return angle / _BASE_ROT_TO_WHEEL_ROT
 
+def _rev_straight_line_odometry(dist):
+    return (dist * _WHEEL_CIRCUM) // 360
+    
 ### End Distance Measures ###
 
 ##### Motor Controls #####
