@@ -20,8 +20,8 @@ def pid_speeds(course, speed, wheel_circum, robot_diameter):
             speed_left = speed + ((speed * course) / 100)
 
     non_driver_speed = _delta_deg(speed_left, speed_right, wheel_circum, robot_diameter)
-    speed_front = -non_driver_speed
-    speed_back = non_driver_speed
+    speed_front = non_driver_speed
+    speed_back = -non_driver_speed
 
     return [int(speed_left), int(speed_right), int(speed_front), int(speed_back)]
 
