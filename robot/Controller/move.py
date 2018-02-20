@@ -284,7 +284,7 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
     derivative = (error - _last_error) / delta_time
     _last_error = error
     _integral = 0.5 * _integral + error
-    course = -(_KP * error - _KD * derivative + _KI * _integral * delta_time)
+    course = _KP * error - _KD * derivative + _KI * _integral * delta_time
 
     motors_with_speeds = zip([lefty, righty, front, back],
                              pid_speeds(course, _DEFAULT_RUN_SPEED, _WHEEL_CIRCUM, _ROBOT_DIAMETER))
@@ -443,22 +443,22 @@ def desk_approach():
 
     run_motor(_MOTORS.front, -primary_speed, reset = True)
     run_motor(_MOTORS.back, -primary_speed//3, reset = True)
-    run_motor(_MOTORS.left, -non_driver_speed)
-    run_motor(_MOTORS.right, non_driver_speed)
+    run_motor(_MOTORS.left, non_driver_speed)
+    run_motor(_MOTORS.right, -non_driver_speed)
 
     while _parse_to_omega(_MOTORS.back, _MOTORS.front) < 45:
         time.sleep(0.05)
 
-    run_motor(_MOTORS.left, primary_speed, reset = True)
-    run_motor(_MOTORS.right, primary_speed//3, reset = True)
+    run_motor(_MOTORS.left, primary_speed//3, reset = True)
+    run_motor(_MOTORS.right, primary_speed, reset = True)
     run_motor(_MOTORS.front, non_driver_speed)
     run_motor(_MOTORS.back, -non_driver_speed)
 
     while _parse_to_omega(_MOTORS.right, _MOTORS.left) < 45:
         time.sleep(0.05)
 
-    run_motor(_MOTORS.left, -primary_speed, reset = True)
-    run_motor(_MOTORS.right, -primary_speed//3, reset = True)
+    run_motor(_MOTORS.left, -primary_speed//3, reset = True)
+    run_motor(_MOTORS.right, -primary_speed, reset = True)
     run_motor(_MOTORS.front, -non_driver_speed)
     run_motor(_MOTORS.back, non_driver_speed)
 
@@ -467,8 +467,8 @@ def desk_approach():
 
     run_motor(_MOTORS.front, primary_speed, reset = True)
     run_motor(_MOTORS.back, primary_speed//3, reset = True)
-    run_motor(_MOTORS.left, non_driver_speed)
-    run_motor(_MOTORS.right, -non_driver_speed)
+    run_motor(_MOTORS.left, -non_driver_speed)
+    run_motor(_MOTORS.right, non_driver_speed)
 
     while _parse_to_omega(_MOTORS.back, _MOTORS.front) < 45:
         time.sleep(0.05)
@@ -577,8 +577,8 @@ if __name__ == '__main__':
     btn.on_up = _reset
     #desk_approach()
     #test_angle_accuracy()
-    #forward(99999, 50)
+    forward(99999, 50)
     #rot_timed()
-    straight_approach()
+    #straight_approach()
 
 ### End PID Tuning ###
