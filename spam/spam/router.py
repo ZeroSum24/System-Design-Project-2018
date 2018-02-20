@@ -23,11 +23,11 @@ _MAP = {'S' : {'A' : (5, 90, 270),
         'F' : {'G' : (5, 90, 270),
                'H' : (0, 180, 0)}}
 
-def _build_graph(mapp=_MAP):
+def _build_graph():
     edges = []
     for start in mapp:
         for end in mapp[start]:
-            edges.append(Edge(start, end, mapp[start][end][0]))
+            edges.append(Edge(start, end, _MAP[start][end][0]))
     return Graph(edges)
 
 # From the itertools docs
@@ -46,11 +46,11 @@ def _path_dist(path):
         dist += _get_edge_stats(*pair)[0]
     return dist
 
-def _get_edge_stats(start, end, mapp=_MAP):
+def _get_edge_stats(start, end):
     try:
-        dist, src_ang, dest_ang = mapp[start][end]
+        dist, src_ang, dest_ang = _MAP[start][end]
     except KeyError:
-        dist, dest_ang, src_ang = mapp[end][start]
+        dist, dest_ang, src_ang = _MAP[end][start]
     return dist, src_ang, dest_ang
 
 def build_route(points):
