@@ -30,8 +30,10 @@ from flask_mqtt import Mqtt
 # spam.config.from_envvar('SPAM_SETTINGS', silent=True)
 
 mqtt = Mqtt(spam)
-battery_info = 0
-location_info = "Loading Bay"
+battery_info_volts = 40
+# Delivery Status should assume one of these >> "Delivering", "Returning", "Parked", "Interrupted"
+delivery_status = "Delivering"
+location_info = "Going from C to D"
 connection_status = False
 path_planning_result = []
 
@@ -114,7 +116,7 @@ def notifications():
     notifications= Problem.query.filter(Problem.solved == False).all()
     for notification in notifications:
         notification.origin = Staff.query.filter(Staff.id == notification.origin).one().name
-    return render_template('notifications.html', notifications=notifications)
+    return render_template('notifications.html', notifications=notifications, battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
 
 @spam.route('/settings')
 def settings():
@@ -142,11 +144,11 @@ def mail_delivery():
         #Use path planner
         print ("This is path planning:")
         print (path_planning)
-        print(router.build_route(path_planning))
+        publish_path_planning(router.build_route(path_planning))
 
-        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification())
+        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
     #else
-    return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification())
+    return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
 
 @spam.route('/report', methods=['GET', 'POST'])
 def report():
@@ -195,30 +197,36 @@ def test():
 
 @spam.route('/status')
 def status():
-    return render_template('status.html')
+    return render_template('status.html', battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status)
 
 @mqtt.on_connect()
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    client.subscribe("topic/connection_established")
-    client.subscribe("topic/battery")
-    client.subscribe("topic/location")
+    client.subscribe("topic/connection_status")
+    client.subscribe("topic/battery_info_volts")
+    client.subscribe("topic/location_info")
+    client.subscribe("topic/delivery_status")
 
+#Receiving information from the robot.
 @mqtt.on_message()
 def on_message(client, userdata, msg):
     #This should recieve the message from the ev3 and from the status
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    if msg.topic == "connection_established":
+    if msg.topic == "connection_status":
     #Msg is published to the UI to establish ev3 connection has been brokered
         connection_status = True
         print("Connected -- Woap Woap")
-    elif msg.topic == "location":
-        location_info = msg.decode()
-    elif msg.topic == "battery":
-        battery_info = msg.decode()
-    return render_template('echo_ev3.html', ev3_info=[connection_status, location_info, battery_info])
+    elif msg.topic == "location_info":
+        location_info = msg.payload.decode()
+        print("location_info updated")
+    elif msg.topic == "battery_info_volts":
+        battery_info_volts = float(msg.payload.decode())
+        print("battery_info_volts updated")
+    elif msg.topic == "delivery_status":
+        delivery_status = msg.payload.decode()
+        print("delivery_status updated")
 
 def database_map_nodes_lookup():
     # looks up the map nodes from the databse and adds in the map nodes from
@@ -232,11 +240,15 @@ def database_map_nodes_lookup():
 def handle_logging(client, userdata, level, buf):
     print(level, buf)
 
-def publish_path_planning(path_str):
-    mqtt.publish("path_directions", path_str)
+#Functions that send information to the robot
+def publish_path_planning(path_direction):
+    path_direction = '->'.join(list1)
+    mqtt.publish("path_direction", path_direction)
+    print(path_direction)
 
-def publish_emergency_commands(emrg_cmd_str):
-    mqtt.publish("emergency_commands", emrg_cmd_str)
+def publish_emergency_commands(emergency_command):
+    mqtt.publish("emergency_command", emergency_command)
+    print(emergency_command)
 
 
 @spam.route('/slots', methods=['GET', 'POST'])
@@ -254,3 +266,6 @@ def get_desks_list():
         if location.is_desk:
             desks.append(location)
     return desks
+
+def battery_calculate(voltage_level):
+    return int(voltage_level)

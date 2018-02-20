@@ -1,4 +1,6 @@
-{% extends "index.html" %} {% block body %}
+{% extends "index.html" %}
+
+{% block body %}
 
 <div class="jumbotron">
 
@@ -17,26 +19,41 @@
         <tr>
           <td>Connection Status</td>
           <td>
+            {% if connection_status %}
             <span class="badge badge-pill badge-success">Robot Connected</span>
+            {% else %}
+            <span class="badge badge-pill badge-danger">Robot Disconnected</span>
+            {% endif %}
           </td>
         </tr>
         <tr>
           <td>Delivery Status</td>
           <td>
+
+            {% if delivery_status == "Parked" %}
+            <span class="badge badge-pill badge-info">Robot Parked</span>
+            {% elif delivery_status == "Returning" %}
+            <span class="badge badge-pill badge-success">Robot Returning</span>
+            {% elif delivery_status == "Delivering" %}
             <span class="badge badge-pill badge-success">Robot Delivering</span>
+            {% elif delivery_status == "Interrupted" %}
+            <span class="badge badge-pill badge-danger">Robot Interrupted</span>
+            {% else %}
+            <span class="badge badge-pill badge-danger">Error >> {{ delivery_status }}</span>
+            {% endif %}
           </td>
         </tr>
         <tr>
           <td>Robot Location</td>
-          <td>Going from A to B.</td>
+          <td>{{ location_info }}</td>
         </tr>
         <tr>
           <td>Robot Battery</td>
           <td>
             <div class="progress">
-              <div class="progress-bar bg-success" role="progressbar" style="width: 70%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ battery_level }}%" aria-valuenow="{{ battery_level }}" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
-            70%
+            {{ battery_level }}%
           </td>
         </tr>
       </tbody>
@@ -52,4 +69,4 @@
     </div>
     </div>
 
-    {% endblock %}
+    {% endblock body %}
