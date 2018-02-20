@@ -30,15 +30,15 @@ from flask_mqtt import Mqtt
 # spam.config.from_envvar('SPAM_SETTINGS', silent=True)
 
 mqtt = Mqtt(spam)
+db = SQLAlchemy(spam)
+
+# GLOBAL VARIABLES
 battery_info_volts = 40
 # Delivery Status should assume one of these >> "Delivering", "Returning", "Parked", "Interrupted"
 delivery_status = "Delivering"
 location_info = "Going from C to D"
 connection_status = False
 path_planning_result = []
-
-db = SQLAlchemy(spam)
-
 # Definition of environment variable for Notifications
 unseen_notifications=0
 
@@ -105,6 +105,8 @@ def logout():
 
 @spam.route('/notifications')
 def notifications():
+    global connection_status
+    global battery_info_volts
     zero_unseen_notification()
     signal_to_solve = request.args.get('solve_id', default = -1, type = int)
 
@@ -126,6 +128,8 @@ def settings():
 @spam.route('/view', methods=['GET', 'POST'])
 def mail_delivery():
     error = None
+    global connection_status
+    global battery_info_volts
     if request.method == 'POST':
         submit=[]
         path_planning={}
@@ -197,15 +201,19 @@ def test():
 
 @spam.route('/status')
 def status():
+    global connection_status
+    global location_info
+    global battery_info_volts
+    global delivery_status
     return render_template('status.html', battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status)
 
 @mqtt.on_connect()
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    client.subscribe("topic/connection_status")
-    client.subscribe("topic/battery_info_volts")
-    client.subscribe("topic/location_info")
-    client.subscribe("topic/delivery_status")
+    client.subscribe("connection_status")
+    client.subscribe("battery_info_volts")
+    client.subscribe("location_info")
+    client.subscribe("delivery_status")
 
 #Receiving information from the robot.
 @mqtt.on_message()
@@ -216,15 +224,19 @@ def on_message(client, userdata, msg):
     print("Msg Recieved Cap")
     if msg.topic == "connection_status":
     #Msg is published to the UI to establish ev3 connection has been brokered
+        global connection_status
         connection_status = True
         print("Connected -- Woap Woap")
     elif msg.topic == "location_info":
+        global location_info
         location_info = msg.payload.decode()
         print("location_info updated")
     elif msg.topic == "battery_info_volts":
+        global battery_info_volts
         battery_info_volts = float(msg.payload.decode())
         print("battery_info_volts updated")
     elif msg.topic == "delivery_status":
+        global delivery_status
         delivery_status = msg.payload.decode()
         print("delivery_status updated")
 
