@@ -43,7 +43,7 @@ db = SQLAlchemy(spam)
 battery_info_volts = 40
 # Delivery Status should assume one of these >> "Delivering", "Returning", "Loading", "Stopping", "Panicking"
 delivery_status = "Delivering"
-location_info = "Going from C to D"
+location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
 lock = Lock()
