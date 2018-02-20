@@ -11,7 +11,8 @@ from os import chdir
 try:
     chdir("./spam")
 except FileNotFoundError:
-    _COBJ = cdll.LoadLibrary('./libgraph.so')
+    pass
+_COBJ = cdll.LoadLibrary('./libgraph.so')
 
 class Edge:
     # Methods to allocate and deallocate the underlying C++ object (See __init__
