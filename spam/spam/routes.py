@@ -245,7 +245,7 @@ def on_message(client, userdata, msg):
         print("delivery_status updated")
     elif msg.topic == "problem":
         add_unseen_notification()
-        problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com"), message=msg.payload.decode(), is_urgent=True)
+        problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com").one().id(), message=msg.payload.decode(), is_urgent=True)
         db.session.add(problem)
         db.session.commit()
         print("Problem reported by robot.")
