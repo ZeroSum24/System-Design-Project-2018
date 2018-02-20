@@ -254,7 +254,7 @@ def handle_logging(client, userdata, level, buf):
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
-    path_direction = '->'.join(list1)
+    path_direction = '->'.join(path_direction)
     mqtt.publish("path_direction", path_direction)
     print(path_direction)
 
