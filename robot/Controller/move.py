@@ -137,12 +137,12 @@ def init():
                      Directions.RIGHT     : ((_MOTORS.front, _MOTORS.back), False),
                      Directions.ROT_RIGHT : {_MOTORS.front :  1,
                                              _MOTORS.back  : -1,
-                                             _MOTORS.left  : -1,
-                                             _MOTORS.right :  1},
-                     Directions.ROT_LEFT : {_MOTORS.front : -1,
-                                             _MOTORS.back  :  1,
                                              _MOTORS.left  :  1,
-                                             _MOTORS.right : -1}}
+                                             _MOTORS.right : -1},
+                     Directions.ROT_LEFT : {_MOTORS.front : -1,
+                                            _MOTORS.back  :  1,
+                                            _MOTORS.left  : -1,
+                                            _MOTORS.right :  1}}
     _MAXREF = config.max_ref
     _MINREF = config.min_ref
     _TARGET = config.target_ref
@@ -330,7 +330,7 @@ def _move_distance(dist, direction):
 def forward(dist, tolerance, junction_type=Junctions.NORMAL, correction=True):
     if correction:
         upper = int(_straight_line_odometry(dist + (tolerance/100 * dist)))
-        lower = int(_straight_line_odometry(dist - (tolerance * dist)))
+        lower = int(_straight_line_odometry(dist - (tolerance/100 * dist)))
 
         traveled = 0
         previous_time = time.time()
