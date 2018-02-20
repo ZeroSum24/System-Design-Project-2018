@@ -305,7 +305,7 @@ def get_desks_list():
             desks.append(location)
     return desks
 
-def battery_calculate(voltage_level):
+def battery_calculate(voltage_reading):
     max_volt = 8300000
     min_volt = 6500000
     if max_volt > voltage_reading > min_volt:
