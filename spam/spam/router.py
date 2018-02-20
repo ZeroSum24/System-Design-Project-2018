@@ -25,8 +25,8 @@ _MAP = {'S' : {'A' : (5, 90, 270),
 
 def _build_graph():
     edges = []
-    for start in mapp:
-        for end in mapp[start]:
+    for start in _MAP:
+        for end in _MAP[start]:
             edges.append(Edge(start, end, _MAP[start][end][0]))
     return Graph(edges)
 
@@ -39,6 +39,14 @@ def _pairwise(iterable):
     next(b, None)
     # Zip them together
     return zip(a, b)
+
+def _triwise(iterable):
+    # Basically the same as above
+    a, b, c = itertools.tee(iterable, 3)
+    next(b, None)
+    next(c, None)
+    next(c, None)
+    return zip(a, b, c)
 
 def _path_dist(path):
     dist = 0
@@ -81,12 +89,12 @@ def build_route(points):
             route.append(Report(src))
             # Rotate to the correct angle to exit relative to where we are
             # currently facing
-            route.append(Rotate((src_ang-facing)%360, 0.3))
+            route.append(Rotate((src_ang-facing)%360, 30))
             # Calculate the direction we will be facing upon reaching the next
             # node
             facing = (dest_ang + 180) % 360
             # Move move the required distance down the line
-            route.append(Move(dist, 0.3))
+            route.append(Move(dist, 30))
         # At the end of the route dump the required slots
         # Figure out which direction to dump in
         # Only src_ang is relevant here, the others are just for homogeny
@@ -103,6 +111,20 @@ def build_route(points):
     full_route = sum(routes, [])
     # Report the final location
     full_route.append(Report(start))
+    # Merge adjacent Dump and Rotate instructions
+    to_remove = set()
+    for first, _, second in _triwise(full_route):
+        # Check we have a Dump followed by a Rotate (There will be a Report in
+        # the middle
+        if isinstance(first, Dump) and isinstance(second, Rotate):
+            # Log the Rotate for removal
+            to_remove.add(second)
+            # second.angle will only contain 0 or 180, if it's 180 the robot
+            # needs to turn around
+            first.turn = (second.angle == 180)
+    # Remove the now useless Rotate instructions
+    for instruction in to_remove:
+        full_route.remove(instruction)
     return full_route
 
 # If FLASK_DEBUG isn't defined in the environment build a graph, if it is make

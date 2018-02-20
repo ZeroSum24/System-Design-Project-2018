@@ -31,6 +31,8 @@ class Dump(Instruction):
         Instruction.__init__(self)
         self.slot = slots
         self.is_right = is_right
+        self.turn = False
     def __repr__(self):
         direction = 'right' if self.is_right else 'left'
-        return 'Dump Slot {} to the {}'.format(self.slot, direction)
+        turn = ' then turn around' if self.turn else ''
+        return 'Dump Slot(s) {} to the {}{}'.format(self.slot, direction, turn)
