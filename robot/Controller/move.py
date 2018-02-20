@@ -485,27 +485,39 @@ def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back, lefty=
             righty : primary_speed}
 
 def straight_approach():
-    approach(direction=Directions.ROT_RIGHT)
+    approach()
     approach(reverse=True, direction = Directions.ROT_RIGHT)
 
 def approach(angle=90, direction=Directions.ROT_LEFT, reverse = False):
+    # rotation odometry is enough here, as the diagonal movement
+    # adds speed in the same direction on opposite wheels, making them
+    # cancel out in the _parse_by_average calculation
     ticks = _rotation_odometry(angle)
     traveled = 0
 
-    if reverse: # in case the robot is reversing
-        angle+=90 # the angle needs to be phase shifted
-        if direction == Directions.ROT_LEFT: # and the direction needs to be reversed
+    if reverse: # in case the robot is reversing the angle needs to be phase
+                # shifted for the diagonal_speeds calculation; this will result
+                # in mirroring the movement backwards - simple sign change is not
+                # enough
+        angle+=90
+        if direction == Directions.ROT_LEFT: # this ensures that if you do
+                                             # forward-left followed by reverse
+                                             # left, you will end up in the
+                                             # original orientation on the line
             direction = Directions.ROT_RIGHT
         else:
             direction = Directions.ROT_LEFT
 
     multiplier = _MOTOR_PARAMS[direction]
-    turning_speed = _DEFAULT_RUN_SPEED//2
+    turning_speed = _DEFAULT_TURN_SPEED//2 # the turning and driver_speeds are
+                                           # halved, so their sum is capped at
+                                           # _DEFAULT_TURN_SPEED
+    # the angle needs a sign change for diagonal_speeds depending on direction
     if direction == Directions.ROT_LEFT:
         start_angle = -angle
     else:
         start_angle = angle
-    driver_speed = diagonal_speeds(start_angle, _DEFAULT_RUN_SPEED-turning_speed)
+    driver_speed = diagonal_speeds(start_angle, _DEFAULT_TURN_SPEED-turning_speed)
 
     for motor in _MOTORS:
         run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor], reset=True)
@@ -518,9 +530,10 @@ def approach(angle=90, direction=Directions.ROT_LEFT, reverse = False):
             break
 
         angle_so_far = _rev_rotation_odometry(traveled)
+        # the angle needs a sign change for diagonal_speeds depending on direction
         if direction == Directions.ROT_RIGHT:
             angle_so_far = -angle_so_far
-        driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_RUN_SPEED-turning_speed)
+        driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_TURN_SPEED-turning_speed)
 
         for motor in _MOTORS:
             run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor])
