@@ -216,6 +216,8 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("battery_info_volts")
     client.subscribe("location_info")
     client.subscribe("delivery_status")
+    client.subscribe("problem")
+
 
 #Receiving information from the robot.
 @mqtt.on_message()
@@ -241,6 +243,12 @@ def on_message(client, userdata, msg):
         global delivery_status
         delivery_status = msg.payload.decode()
         print("delivery_status updated")
+    elif msg.topic == "problem":
+        add_unseen_notification()
+        problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com"), message=msg.payload.decode(), is_urgent=True)
+        db.session.add(problem)
+        db.session.commit()
+        print("Problem reported by robot.")
 
 def database_map_nodes_lookup():
     # looks up the map nodes from the databse and adds in the map nodes from
