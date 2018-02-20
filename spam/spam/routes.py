@@ -13,6 +13,8 @@ from spam import db
 from spam.models import Staff, Location, Problem
 from spam import router
 from flask_mqtt import Mqtt
+import pickle
+
 #spam = Flask(__name__) # create the spamlication instance :)
 #spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
 # # got rid of envar override because yolo
@@ -254,7 +256,7 @@ def handle_logging(client, userdata, level, buf):
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
-    path_direction = '->'.join(path_direction)
+    path_direction = pickle.dumps(path_direction)
     mqtt.publish("path_direction", path_direction)
     print(path_direction)
 
