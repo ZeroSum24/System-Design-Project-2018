@@ -19,13 +19,6 @@ from time import sleep
 from spam.thread_decorator import thread
 
 
-@thread
-def polling_loop():
-    while True:
-        sleep(5)
-        with lock:
-            connected = seen
-            seen = False
 
 #spam = Flask(__name__) # create the spamlication instance :)
 #spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
@@ -45,7 +38,6 @@ def polling_loop():
 
 mqtt = Mqtt(spam)
 db = SQLAlchemy(spam)
-polling_loop()
 
 # GLOBAL VARIABLES
 battery_info_volts = 40
@@ -74,6 +66,18 @@ def zero_unseen_notification():
 #     rv = sqlite3.connect(spam.config['DATABASE'])
 #     rv.row_factory = sqlite3.Row
 #     return rv
+
+@thread
+def polling_loop():
+    while True:
+        sleep(5)
+        with lock:
+            global connection_status
+            global seen
+            connection_status = seen
+            seen = False
+polling_loop()
+
 
 #this cli contexct is for the flask shell
 @spam.cli.command('initdb')
