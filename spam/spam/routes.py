@@ -231,7 +231,6 @@ def status():
 @mqtt.on_connect()
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    client.subscribe("connection_status")
     client.subscribe("battery_info_volts")
     client.subscribe("location_info")
     client.subscribe("delivery_status")
@@ -245,17 +244,14 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    if msg.topic == "connection_status":
-    #Msg is published to the UI to establish ev3 connection has been brokered
-        global seen
-        with lock:
-            seen = True
-        print("Connected -- Woap Woap")
-    elif msg.topic == "location_info":
+    if msg.topic == "location_info":
         global location_info
         location_info = msg.payload.decode()
         print("location_info updated")
     elif msg.topic == "battery_info_volts":
+        global seen
+        with lock:
+            seen = True
         global battery_info_volts
         battery_info_volts = float(msg.payload.decode())
         print("battery_info_volts updated")

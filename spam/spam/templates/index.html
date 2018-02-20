@@ -17,8 +17,8 @@
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
     <span class="navbar-toggler-icon"></span>
   </button>
-  <!--TODO: get routes and html for these -->
-  <!--TODO: refine these -->
+    <!--TODO: get routes and html for these -->
+    <!--TODO: refine these -->
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item active">
@@ -32,28 +32,20 @@
         </li>
         <li class="nav-item">
           {% if not session.logged_in %}
-            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-          {% else %}
-            <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-          {% endif %}
+          <a class="nav-link" href="{{ url_for('login') }}">Login</a> {% else %}
+          <a class="nav-link" href="{{ url_for('logout') }}">Logout</a> {% endif %}
         </li>
 
       </ul>
       {% if unseen_notifications == 0 %}
       <a role="button" href="{{ url_for('notifications') }}" class="btn btn-dark" style="background-color: #647687; border-color:#647687;">
         Notifications
-      </a>
-      {% else %}
+      </a> {% else %}
       <a role="button" href="{{ url_for('notifications') }}" class="btn btn-dark" style="background-color: #647687; border-color:#647687;">
         Notifications <span class="badge badge-warning">{{ unseen_notifications }}</span>
-      </a>
-      {% endif %}
-
-      {% if connection_status %}
-      <a href="{{ url_for('status') }}" class="badge badge-pill badge-success">Robot Connected ({{ battery_level }}%)</a>
-      {% else %}
-      <a href="{{ url_for('status') }}" class="badge badge-pill badge-danger">Robot Disconnected</a>
-      {% endif %}
+      </a> {% endif %} {% if connection_status %}
+      <a href="{{ url_for('status') }}" class="badge badge-pill badge-success">Robot Connected ({{ battery_level }}%)</a> {% else %}
+      <a href="{{ url_for('status') }}" class="badge badge-pill badge-danger">Robot Disconnected</a> {% endif %}
     </div>
   </nav>
 
@@ -64,8 +56,8 @@
     <div class="form-group row">
 
 
-      <div style= "padding-right:10px; padding-left: 15px;">
-        <button type="submit" class="btn btn-success" data-toggle="modal" data-target="#startModalConfirmation">Start</button>
+      <div style="padding-right:10px; padding-left: 15px;">
+        <button type="submit" class="btn btn-success" data-toggle="modal" data-target="#startModalConfirmation">Resume</button>
 
         <!-- Modal -->
         <div class="modal fade" id="startModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
@@ -88,35 +80,35 @@
           </div>
         </div>
 
-        </div>
+      </div>
 
-        <div style="padding-right:10px;">
-          <button type="submit" class="btn btn-danger" data-toggle="modal" data-target="#stopModalConfirmation">Stop</button>
+      <div style="padding-right:10px;">
+        <button type="submit" class="btn btn-danger" data-toggle="modal" data-target="#stopModalConfirmation">Stop</button>
 
-          <!-- Modal -->
-          <div class="modal fade" id="stopModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="stopButtonTitle">Stop Robot</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <!-- Modal -->
+        <div class="modal fade" id="stopModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="stopButtonTitle">Stop Robot</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                   </button>
-                </div>
-                <div class="modal-body">
-                  Are you sure you want to stop the robot in this state ?
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-danger">Stop Now!</button>
-                </div>
+              </div>
+              <div class="modal-body">
+                Are you sure you want to stop the robot in this state ?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger">Stop Now!</button>
               </div>
             </div>
           </div>
-
         </div>
 
-      <div style= "padding-right:10px;">
+      </div>
+
+      <div style="padding-right:10px;">
         <button type="submit" class="btn btn-warning" data-toggle="modal" data-target="#callbackModalConfirmation">Callback</button>
 
         <!-- Modal -->
@@ -142,43 +134,17 @@
 
       </div>
 
-      <div>
-        <div style= "padding-right:10px;">
-          <button type="submit" class="btn btn-info" data-toggle="modal" data-target="#resetModalConfirmation">Reset</button>
-
-          <!-- Modal -->
-          <div class="modal fade" id="resetModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="resetButtonTitle">Reset Robot</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                  </button>
-                </div>
-                <div class="modal-body">
-                  Are you sure you want to reset the robot?
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                  <button type="button" class="btn btn-info">Reset</button>
-                </div>
-              </div>
-            </div>
-          </div>
-    </div>
-
-    <!--TODO: remove the flashed message-->
-    {% for message in get_flashed_messages() %}
-      <div class=flash>{{ message }}</div>
-    {% endfor %}
+        <!--TODO: remove the flashed message-->
+        {% for message in get_flashed_messages() %}
+        <div class=flash>{{ message }}</div>
+        {% endfor %}
 
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        <!-- Optional JavaScript -->
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </body>
 
 </html>

@@ -29,8 +29,6 @@
         <tr>
           <td>Delivery Status</td>
           <td>
-            # Delivery Status should assume one of these >> "Delivering", "Returning", "Loading", "Stopping", "Panicking"
-
             {% if delivery_status == "Panicking" %}
             <span class="badge badge-pill badge-danger">Robot Panicked</span>
             {% elif delivery_status == "Stopping" %}
