@@ -26,7 +26,7 @@ class Rotate(Instruction):
     def __repr__(self):
         return 'Rotate {}'.format(self.angle)
 
-class ToDesk(Intstruction):
+class ToDesk(Instruction):
     def __init__(self, is_left, angle=90):
         Instruction.__init__(self)
         self.is_left = is_left
