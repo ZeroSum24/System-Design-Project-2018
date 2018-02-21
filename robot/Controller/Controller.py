@@ -17,7 +17,7 @@ class _Service(rpyc.Service):
         incoming.put(ip)
     def exposed_reverse_responce(self, string):
         incoming.put(string)
-        
+
 @thread
 def _server():
     # Using an instance of Service causes every connection to get the same
