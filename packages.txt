@@ -6,3 +6,4 @@ make
 g++
 emacs24
 python3-dev
+htop
