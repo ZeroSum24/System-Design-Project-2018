@@ -101,8 +101,14 @@ def build_route(points):
         dist, src_ang, dest_ang = _get_edge_stats(start, desk)
         # Will be 90 for right and 270 for left
         to_rotate = (src_ang - facing) % 360
-        # Generate the dump command
-        route.append(Dump(points[desk], to_rotate == 90))
+        # Generate the dump commands
+        # True if we are going left. Actually for use in the ToDesk command,
+        # also embedded in the FromDesk command temporarily for use in the
+        # optimisation step
+        is_left = to_rotate == 270
+        route.append(ToDesk(is_left))
+        route.append(Dump(points[desk]))
+        route.append(FromDesk(is_left))
         # Remove the desk from the set so we don't go back
         del points[desk]
         # Save the route segment
@@ -111,17 +117,24 @@ def build_route(points):
     full_route = sum(routes, [])
     # Report the final location
     full_route.append(Report(start))
-    # Merge adjacent Dump and Rotate instructions
+    # Optimisation step. Currently the booleans in the ToDesk and FromDesk
+    # commands are the same, this causes the robot to enter and exit the desk on
+    # the same arc. FromDesk is always followed by a Report then a Rotate, the
+    # angle in the Rotate is exclusivly 0 or 180 as desks are always encountered
+    # outside of junctions. Should the robot need to rotate 180 at the Rotate
+    # command this can instead be encoded by flipping the boolean in FromDesk to
+    # make the robot leave the desk on the opposite arc to the one it entered
+    # on, the rotates can then be dropped
     to_remove = set()
     for first, _, second in _triwise(full_route):
-        # Check we have a Dump followed by a Rotate (There will be a Report in
-        # the middle
-        if isinstance(first, Dump) and isinstance(second, Rotate):
+        # Check we have a FromDesk followed by a Rotate (Ignoring the Report in
+        # the middle)
+        if isinstance(first, FromDesk) and isinstance(second, Rotate):
             # Log the Rotate for removal
             to_remove.add(second)
-            # second.angle will only contain 0 or 180, if it's 180 the robot
-            # needs to turn around
-            first.turn = (second.angle == 180)
+            # Fun trick, in python ^ is bitwise xor on ints and logical xor on
+            # bools. This flips the boolean iff second.angle == 180 is true
+            first.is_left ^= second.angle == 180
     # Remove the now useless Rotate instructions
     for instruction in to_remove:
         full_route.remove(instruction)

@@ -26,13 +26,25 @@ class Rotate(Instruction):
     def __repr__(self):
         return 'Rotate {}'.format(self.angle)
 
-class Dump(Instruction):
-    def __init__(self, slots, is_right):
+class ToDesk(Intstruction):
+    def __init__(self, is_left, angle=90):
         Instruction.__init__(self)
-        self.slot = slots
-        self.is_right = is_right
-        self.turn = False
+        self.is_left = is_left
+        self.angle = angle
     def __repr__(self):
-        direction = 'right' if self.is_right else 'left'
-        turn = ' then turn around' if self.turn else ''
-        return 'Dump Slot(s) {} to the {}{}'.format(self.slot, direction, turn)
+        return 'Go to desk on left' if self.is_left else 'Go to desk on right'
+
+class FromDesk(Instruction):
+    def __init__(self, is_left, angle=90):
+        Instruction.__init__(self)
+        self.is_left = is_left
+        self.angle = angle
+    def __repr__(self):
+        return 'Go from desk on left' if self.is_left else 'Go from desk on right'
+
+class Dump(Instruction):
+    def __init__(self, slots):
+        Instruction.__init__(self)
+        self.slots = slots
+    def __repr__(self):
+        return 'Dump Slot(s) {} '.format(self.slots)
