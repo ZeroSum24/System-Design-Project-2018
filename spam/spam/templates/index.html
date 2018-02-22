@@ -55,6 +55,19 @@
     <h1>Emergency Commands</h1>
     <div class="form-group row">
 
+      {% if connection_status %}
+
+      <div style="padding-right:10px; padding-left: 15px;">
+        <button type="submit" class="btn btn-success disabled" data-toggle="modal" data-target="#startModalConfirmation">Resume</button>
+      </div>
+      <div style="padding-right:10px; padding-left: 15px;">
+        <button type="submit" class="btn btn-danger disabled" data-toggle="modal" data-target="#stopModalConfirmation">Stop</button>
+      </div>
+      <div style="padding-right:10px; padding-left: 15px;">
+        <button type="submit" class="btn btn-warning disabled" data-toggle="modal" data-target="#callbackModalConfirmation">Callback</button>
+      </div>
+
+      {% else %}
 
       <div style="padding-right:10px; padding-left: 15px;">
         <button type="submit" class="btn btn-success" data-toggle="modal" data-target="#startModalConfirmation">Resume</button>
@@ -131,7 +144,7 @@
             </div>
           </div>
         </div>
-
+      {% endif %}
       </div>
 
         <!--TODO: remove the flashed message-->
