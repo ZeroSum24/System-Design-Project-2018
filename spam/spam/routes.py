@@ -41,8 +41,8 @@ db = SQLAlchemy(spam)
 
 # GLOBAL VARIABLES
 battery_info_volts = 40
-# Delivery Status should assume one of these >> "Delivering", "Returning", "Loading", "Stopping", "Panicking"
-delivery_status = "Delivering"
+# Delivery Status should assume one of these >> "State.DELIVERING", "State.RETURNING", "State.LOADING", "State.STOPPING", "State.PANICKING"
+delivery_status = "State.LOADING"
 location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
@@ -238,6 +238,9 @@ def on_message(client, userdata, msg):
     elif msg.topic == "delivery_status":
         global delivery_status
         delivery_status = msg.payload.decode()
+        if delivery_status == "State.RETURNING":
+            path_planning_result = router.build_route({"S" : []}, location_info)
+            publish_path_planning(path_planning_result)
         print("delivery_status updated")
     elif msg.topic == "problem":
         add_unseen_notification()
