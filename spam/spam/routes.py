@@ -293,14 +293,6 @@ def publish_emergency_commands(emergency_command):
     print(emergency_command)
 
 
-@spam.route('/slots', methods=['GET', 'POST'])
-def receive_http():
-    error=None
-    if request.method == 'POST':
-        return render_template('login.html', error=error)
-    #else
-    return render_template('login.html', error=error)
-
 # Function that produces a list of Desk names by going into the database.
 def get_desks_list():
     desks=[]
