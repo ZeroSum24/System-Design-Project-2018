@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from Slave import controller, incomming
+from Slave import controller, incoming
 from queue import Empty
 from dispenser import dump
 

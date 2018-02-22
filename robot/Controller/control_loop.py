@@ -21,7 +21,7 @@ import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
 from threading import Lock
-from Controller import slave, incoming
+#from Controller import slave, incoming
 
 CHOSEN_PATH = None
 chosen_path_lock = Lock()
@@ -67,7 +67,7 @@ def on_message(client, userdata, msg):
 	if msg.topic == "path_direction":
 		with chosen_path_lock:
 			global CHOSEN_PATH
-			CHOSEN_PATH = [FromDesk(True, 90)] #generate_named_tuples(json.loads(msg.payload.decode()))
+			CHOSEN_PATH = generate_named_tuples(json.loads(msg.payload.decode()))
 	elif msg.topic == "emergency_command":
 		string = msg.payload.decode()
 		if string == "Resume":
@@ -180,7 +180,6 @@ def movement_loop():
 			with final_cmd_lock:
 				chosen_path = FINAL_CMD + CHOSEN_PATH
 				FINAL_CMD = []
-				print(chosen_path)
 			move_thread = move_asynch(chosen_path, STATE)
 
 
@@ -219,8 +218,8 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 			elif isinstance(instruction, Dump):
 				print("dumping")
-				slave.dump(1)
-				incoming.get()
+				#slave.dump(1)
+				#incoming.get()
 				#dispenser.dump(instruction.slot)
 
 			elif isinstance(instruction, Rotate):
@@ -280,7 +279,8 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 			final = [Move(instruction.dist - get_odometry(), 50)]
 
 		elif isinstance(instruction, Dump):
-			incoming.get()
+			pass
+			#incoming.get()
 
 		elif isinstance(instruction, Rotate):
 			if instruction.angle <= 180:
@@ -310,10 +310,11 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 def panic_loop():
 	CLIENT.publish("problem", "I panicked. In need of assistance. Sorry.")
-	while True:
-		new_state = check_state(STATE)
-		if new_state != None:
-			return new_state
+	# while True:
+	# 	new_state = check_state(STATE)
+	# 	if new_state != None:
+	# 		return new_state
+	return State.LOADING
 
 def stop_loop():
 	# wait for further instuctons

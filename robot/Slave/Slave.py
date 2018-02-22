@@ -6,9 +6,10 @@ from thread_decorator import thread
 import rpyc
 from rpyc.utils.server import ThreadedServer
 from queue import Queue
+import catcher
 
 def run(*cmd):
-    proc = Popen(cmd, universal_newlines=True, stdout=PIPE)
+    proc = Popen(cmd, universal_newlines=True, stdout=PIPE, stderr=PIPE)
     stdout, stderr = proc.communicate()
     return stdout
 
@@ -26,6 +27,7 @@ def _server():
     server.start()
 
 def _get_ips():
+    print("Finding own IP and Bcast")
     net_dump = run('sudo', 'ifconfig')
     # Generator comprehension to allow lazy evaluation of intermediate results,
     # strip all leading and trailing whitespace from each line
@@ -48,6 +50,7 @@ def _get_ips():
     slave_ip = addresses['addr']
     bcast = addresses['Bcast']
 
+    print("Searching for controller's IP")
     # ping the broardcast address, seems to force arp cache repopulation
     run('sudo', 'ping', '-c', '1', '-b', bcast)
     # Read the arp cache
@@ -64,6 +67,7 @@ def _get_ips():
     # Assuming the line is what we expect the ip should be in brackets
     match = re.match(r'^.*\((.*)\).*$', ips_raw[0])
     if match:
+        print("Found controllers IP")
         # If the match was successful, pull out the ip
         controller_ip = match.group(1)
         return slave_ip, controller_ip
@@ -81,6 +85,7 @@ incoming = Queue()
 _server()
 _slave_ip, _controller_ip = _get_ips()
 
+print("Waiting for controller to come alive")
 # Attempt a connection to the controller's server and get the remote object
 while True:
     try:

@@ -27,9 +27,11 @@ def _server():
     server.start()
 _server()
 
+print("Waiting for slave to come alive")
 # Block until the slave sends an ip
 _slave_ip = incoming.get()
 
+print("Connecting to slave")
 # Open a connection back to the slave (This should never fail as the slave
 # creates it's server before sending the ip)
 _conn = rpyc.connect(_slave_ip, 8888)
