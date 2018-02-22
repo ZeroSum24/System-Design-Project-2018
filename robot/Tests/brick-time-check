@@ -9,10 +9,11 @@ CLIENT.connect("34.242.137.167", 1883, 60)
 
 
 def check_send_time():
-    CLIENT.publish("test_data_send", payload=pickle.dumps(datetime.utcnow()))
-    sleep(2)
+    now = datetime.utcnow()
+    CLIENT.publish("test_data_send", payload=pickle.dumps(now))
+    sleep(0.1)
 
-for i in range(20):
+for i in range(10000):
     print(i)
     check_send_time()
 
