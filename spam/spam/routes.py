@@ -70,7 +70,7 @@ def zero_unseen_notification():
 @thread
 def polling_loop():
     while True:
-        sleep(5)
+        sleep(7)
         with lock:
             global connection_status
             global seen
