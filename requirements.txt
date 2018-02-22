@@ -6,3 +6,4 @@ Jinja2
 flask-admin
 Flask-SQLAlchemy
 flask_mqtt
+paho-mqtt
