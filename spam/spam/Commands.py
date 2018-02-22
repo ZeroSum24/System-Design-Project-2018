@@ -15,12 +15,8 @@ class Move(Instruction):
         Instruction.__init__(self)
         self.dist = dist
         self.tolerance = tolerance
-        self.is_desk = False
     def __repr__(self):
-        if self.is_desk:
-            return 'Move {} to desk'.format(self.dist)
-        else:
-            return 'Move {} to junction'.format(self.dist)
+        return 'Move {}'.format(self.dist)
 
 class Rotate(Instruction):
     def __init__(self, angle, tolerance):
@@ -30,9 +26,25 @@ class Rotate(Instruction):
     def __repr__(self):
         return 'Rotate {}'.format(self.angle)
 
-class Dump(Instruction):
-    def __init__(self, slot):
+class ToDesk(Instruction):
+    def __init__(self, is_left, angle=90):
         Instruction.__init__(self)
-        self.slot = slot
+        self.is_left = is_left
+        self.angle = angle
     def __repr__(self):
-        return 'Dump Slot {}'.format(self.slot)
+        return 'Go to desk on left' if self.is_left else 'Go to desk on right'
+
+class FromDesk(Instruction):
+    def __init__(self, is_left, angle=90):
+        Instruction.__init__(self)
+        self.is_left = is_left
+        self.angle = angle
+    def __repr__(self):
+        return 'Go from desk on left' if self.is_left else 'Go from desk on right'
+
+class Dump(Instruction):
+    def __init__(self, slots):
+        Instruction.__init__(self)
+        self.slots = slots
+    def __repr__(self):
+        return 'Dump Slot(s) {} '.format(self.slots)
