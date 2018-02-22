@@ -13,7 +13,7 @@ from spam import db
 from spam.models import Staff, Location, Problem
 from spam import router
 from flask_mqtt import Mqtt
-import pickle
+import json
 from threading import Lock
 from time import sleep
 from spam.thread_decorator import thread
@@ -284,7 +284,7 @@ def handle_logging(client, userdata, level, buf):
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
-    path_direction = pickle.dumps(path_direction)
+    path_direction = json.dumps(path_direction)
     mqtt.publish("path_direction", path_direction)
     print(path_direction)
 
