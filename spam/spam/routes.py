@@ -196,36 +196,6 @@ def report():
     else:
       return render_template('report.html', desks=get_desks_list(), result=0)
 
-@spam.route('/test')
-def test():
-    from spam.database import db_session
-    from spam.models import Staff, Location, Problem
-
-    l1 = Location(map_node='A', location_name='Desk Apple', is_desk=True)
-    l2 = Location(map_node='B', location_name='Desk Bumblebee', is_desk=True)
-    l3 = Location(map_node='C', location_name='Junction A', is_desk=False)
-
-    u1 = Staff('Administrator', 'admin@localhost.com')
-    u2 = Staff('Joao Catarino', 'joao@somewhere.com', 1)
-    u3 = Staff('Rosina', 'roz@thisorthat.com', 2)
-
-    p1 = Problem(origin=2, message="My mail didn't arrive please solve it.")
-    p2 = Problem(origin=1, message="Robot is out of lines.", is_urgent=True)
-
-    db_session.add(l1)
-    db_session.add(l2)
-    db_session.add(l3)
-    db_session.commit()
-
-    db_session.add(u1)
-    db_session.add(u2)
-    db_session.add(u3)
-    db_session.commit()
-
-    db_session.add(p1)
-    db_session.add(p2)
-    db_session.commit()
-
 @spam.route('/status')
 def status():
     global connection_status
@@ -298,14 +268,6 @@ def publish_emergency_commands(emergency_command):
     mqtt.publish("emergency_command", emergency_command)
     print(emergency_command)
 
-
-@spam.route('/slots', methods=['GET', 'POST'])
-def receive_http():
-    error=None
-    if request.method == 'POST':
-        return render_template('login.html', error=error)
-    #else
-    return render_template('login.html', error=error)
 
 # Function that produces a list of Desk names by going into the database.
 def get_desks_list():
