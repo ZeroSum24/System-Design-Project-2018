@@ -10,5 +10,6 @@ while True:
     except Empty:
         pass
     else:
-        dump(slot)
+        for slot in slots:
+            dump(slot)
         controller.dumped()

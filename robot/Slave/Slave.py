@@ -13,8 +13,8 @@ def run(*cmd):
     return stdout
 
 class _Service(rpyc.Service):
-    def dump(self, slot):
-        incoming.put(slot)
+    def dump(self, slots):
+        incoming.put(slots)
 
 
 @thread
