@@ -15,7 +15,7 @@ def run(*cmd):
 class _Service(rpyc.Service):
     def dump(self, slot):
         incoming.put(slot)
-        
+
 
 @thread
 def _server():

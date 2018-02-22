@@ -2,8 +2,6 @@
 
 from Controller import slave, incomming
 
-import dispenser
-
 slave.dump(1)
 if incomming.get():
     slave.dump(2)
