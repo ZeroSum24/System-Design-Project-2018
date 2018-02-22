@@ -40,16 +40,17 @@ T_STOPPING = (1, State.STOPPING)
 T_PANICKING = (3, State.PANICKING)
 
 CLIENT = mqtt.Client()
-CLIENT.on_connect = on_connect
-CLIENT.on_message = on_message
 
 def setup_procedure():
+	CLIENT.on_connect = on_connect
+	CLIENT.on_message = on_message
 	CLIENT.connect("34.242.137.167", 1883, 60)
+	CLIENT.publish("delivery_status", str(State.LOADING))
 	battery_alive_thread()
 	instruction_thread()
 	# initialize_2nd_brick()
 
-def on_connect(client, userdata, rc):
+def on_connect(client, userdata,  flags, rc):
 	client.subscribe("path_direction")
 	client.subscribe("emergency_command")
 
@@ -57,7 +58,7 @@ def on_message(client, userdata, msg):
 	if msg.topic == "path_direction":
 		with chosen_path_lock:
 			global CHOSEN_PATH
-			CHOSEN_PATH = pickle.loads(msg.payload.decode())
+			CHOSEN_PATH = [Move(100,10)] #pickle.loads(msg.payload.decode())
 	elif msg.topic == "emergency_command":
 		string = msg.payload.decode()
 		if string == "Resume":
@@ -187,6 +188,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				success = forward(instruction.dist, instruction.tolerance)
 
 			elif isinstance(instruction, Dump):
+				pass
 				#dispenser.dump(instruction.slot)
 
 			elif isinstance(instruction, Rotate):
