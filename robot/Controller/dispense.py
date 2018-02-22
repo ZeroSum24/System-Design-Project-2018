@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
+
+from Controller import slave, incomming
+
 import dispenser
 
-dispenser.dump(1)
-dispenser.dump(2)
-dispenser.stop(3)
-dispenser.dump(4)
-dispenser.dump(5)
+slave.dump(1)
+if incomming.get():
+    slave.dump(2)
+    if incomming.get():
+        slave.stop(3)
+        if incomming.get():
+            slave.dump(4)
+            if incomming.get():
+                slave.dump(5)

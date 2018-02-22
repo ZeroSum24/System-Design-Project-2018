@@ -13,8 +13,9 @@ def run(*cmd):
     return stdout
 
 class _Service(rpyc.Service):
-    def exposed_reverse(self, string):
-        controller.reverse_responce(string[::-1])
+    def dump(self, slot):
+        incoming.put(slot)
+        
 
 @thread
 def _server():

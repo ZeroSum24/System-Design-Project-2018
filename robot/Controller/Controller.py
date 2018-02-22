@@ -15,8 +15,8 @@ class _Service(rpyc.Service):
     def exposed_send_ip(self, ip):
         # When we get an ip put it on the queue
         incoming.put(ip)
-    def exposed_reverse_responce(self, string):
-        incoming.put(string)
+    def dumped(self):
+        incoming.put(True)
 
 @thread
 def _server():
