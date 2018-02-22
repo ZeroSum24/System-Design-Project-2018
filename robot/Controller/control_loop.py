@@ -18,9 +18,9 @@ from thread_decorator import thread, ThreadKiller, acknowledge
 import Directions
 import Junctions
 import paho.mqtt.client as mqtt
-import pickle
+import json
+from collections import namedtuple
 from threading import Lock
-from Commands import Report, Move, Rotate, Dump
 
 CHOSEN_PATH = None
 chosen_path_lock = Lock()
@@ -39,11 +39,19 @@ T_RETURNING = (2, State.RETURNING)
 T_STOPPING = (1, State.STOPPING)
 T_PANICKING = (3, State.PANICKING)
 
+Report = namedtuple('Report', 'where')
+Move = namedtuple('Move', 'dist tolerance')
+Rotate = namedtuple('Rotate', 'angle tolerance')
+Dump = namedtuple('Dump', 'slots')
+ToDesk = namedtuple('ToDesk', 'is_left angle')
+FromDesk = namedtuple('FromDesk', 'is_left angle')
+
 CLIENT = mqtt.Client()
 
 def setup_procedure():
 	CLIENT.on_connect = on_connect
 	CLIENT.on_message = on_message
+	# TODO do IO exceptions
 	CLIENT.connect("34.242.137.167", 1883, 60)
 	CLIENT.publish("delivery_status", str(State.LOADING))
 	battery_alive_thread()
@@ -58,7 +66,7 @@ def on_message(client, userdata, msg):
 	if msg.topic == "path_direction":
 		with chosen_path_lock:
 			global CHOSEN_PATH
-			CHOSEN_PATH = [Move(100,10)] #pickle.loads(msg.payload.decode())
+			CHOSEN_PATH = [FromDesk(True, 90)] #generate_named_tuples(json.loads(msg.payload.decode()))
 	elif msg.topic == "emergency_command":
 		string = msg.payload.decode()
 		if string == "Resume":
@@ -67,6 +75,23 @@ def on_message(client, userdata, msg):
 			STATE_QUEUE.put(T_STOPPING)
 		elif string == "Callback":
 			STATE_QUEUE.put(T_RETURNING)
+
+def generate_named_tuples(list):
+	new_list = []
+	for i, listee in enumerate(list):
+		if listee[0] == "Report":
+			new_list.append(Report(listee[1]))
+		elif listee[0] == "Move":
+			new_list.append(Move(listee[1], listee[2]))
+		elif listee[0] == "Rotate":
+			new_list.append(Rotate(listee[1], listee[2]))
+		elif listee[0] == "Dump":
+			new_list.append(Dump(listee[1]))
+		elif listee[0] == "ToDesk":
+			new_list.append(ToDesk(listee[1], listee[2]))
+		elif listee[0] == "FromDesk":
+			new_list.append(FromDesk(listee[1], listee[2]))
+	return new_list
 
 @thread
 def instruction_thread():
@@ -111,7 +136,8 @@ def control_loop():
 
 def get_path():
 	global CHOSEN_PATH
-	CHOSEN_PATH = None
+	with chosen_path_lock:
+		CHOSEN_PATH = None
 	while True:
 		with chosen_path_lock:
 			if CHOSEN_PATH is not None:
@@ -150,8 +176,10 @@ def movement_loop():
 		if not moving_flag:
 			moving_flag = True
 			global FINAL_CMD
-			chosen_path = FINAL_CMD + CHOSEN_PATH
-			FINAL_CMD = []
+			with final_cmd_lock:
+				chosen_path = FINAL_CMD + CHOSEN_PATH
+				FINAL_CMD = []
+				print(chosen_path)
 			move_thread = move_asynch(chosen_path, STATE)
 
 
@@ -185,13 +213,16 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 			success = True
 
 			if isinstance(instruction, Move):
+				print("moving")
 				success = forward(instruction.dist, instruction.tolerance)
 
 			elif isinstance(instruction, Dump):
+				print("dumping")
 				pass
 				#dispenser.dump(instruction.slot)
 
 			elif isinstance(instruction, Rotate):
+				print("reporting")
 				if instruction.angle <= 180:
 					direction = Directions.ROT_RIGHT
 					angle = instruction.angle
@@ -201,20 +232,25 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				success = rotate(angle, instruction.tolerance, direction=direction)
 
 			elif isinstance(instruction, ToDesk):
+				print("approaching desk")
+				angle = instruction.angle
 				if instruction.is_left:
 					direction = Directions.ROT_LEFT
 				else:
 					direction = Directions.ROT_RIGHT
-				approach(direction=direction)
+				approach(angle=angle, direction=direction)
 
 			elif isinstance(instruction, FromDesk):
+				print("leaving desk")
+				angle = instruction.angle
 				if instruction.is_left:
 					direction = Directions.ROT_LEFT
 				else:
 					direction = Directions.ROT_RIGHT
-				approach(direction=direction, reverse=True)
+				approach(angle=angle, direction=direction, reverse=True)
 
 			elif isinstance(instruction, Report):
+				print("reporting")
 				CLIENT.publish("location_info", payload=instruction.where)
 
 			if not success:
