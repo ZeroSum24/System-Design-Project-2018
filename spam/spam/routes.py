@@ -151,6 +151,7 @@ def mail_delivery():
     error = None
     global connection_status
     global battery_info_volts
+    global path_planning_result
     if request.method == 'POST':
         submit=[]
         path_planning={}
@@ -169,7 +170,8 @@ def mail_delivery():
         #Use path planner
         print ("This is path planning:")
         print (path_planning)
-        publish_path_planning(router.build_route(path_planning))
+        path_planning_result = router.build_route(path_planning)
+        publish_path_planning(path_planning_result)
 
         return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
     #else
@@ -250,7 +252,11 @@ def on_message(client, userdata, msg):
     print("Msg Recieved Cap")
     if msg.topic == "location_info":
         global location_info
+        global path_planning_result
         location_info = msg.payload.decode()
+        instruction_info = path_planning_result.pop(0)
+        while (instruction_info != ("Report", location_info)):
+            instruction_info.pop(0)
         print("location_info updated")
     elif msg.topic == "battery_info_volts":
         global seen
