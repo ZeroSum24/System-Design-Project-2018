@@ -310,7 +310,7 @@ def get_desks_list():
     return desks
 
 def battery_calculate(voltage_reading):
-    max_volt = 8300000
+    max_volt = 9000000
     min_volt = 6500000
     if max_volt > voltage_reading > min_volt:
         percent = (voltage_reading - min_volt) / (max_volt - min_volt) * 100
