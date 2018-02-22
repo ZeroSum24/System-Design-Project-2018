@@ -173,7 +173,11 @@ def mail_delivery():
 
         return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
     #else
-    return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
+    else:
+        command = request.args.get('emergency_command', default = "", type = str)
+        if command != "":
+            mqtt.publish("emergency_command",command)
+        return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
 
 @spam.route('/report', methods=['GET', 'POST'])
 def report():
