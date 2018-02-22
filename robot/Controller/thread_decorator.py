@@ -15,7 +15,7 @@ class ThreadDying(Exception):
 def acknowledge(exception):
     """Raises a ThreadDying exception in a thread in responce to a recived
     ThreadKiller Exception"""
-    
+
     # Only allow ThreadKiller to be acknowleged in this way
     if not isinstance(exception, ThreadKiller):
         return
@@ -66,7 +66,7 @@ class GenericThread(threading.Thread):
             if tobj is self:
                 self._tid = tid
                 return tid
-    
+
     def _raise_exc(self):
         """Raises a ThreadKiller exception in the thread, note this is blocked
         by system calls (sleep, io, network, etc...)"""
@@ -101,7 +101,8 @@ class GenericThread(threading.Thread):
         except ThreadDying:
             # ThreadDying can be thrown back by the killed thread to ask for
             # time to clean up before exiting
-            pass
+            while self.isAlive():
+                pass
 
 # Decorators in python nearly implement the decorator pattern (See
 # Wikipedia). A python decorator is a function that accepts a function as a
