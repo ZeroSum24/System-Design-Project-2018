@@ -74,7 +74,7 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <a name="Resume" type="button" class="btn btn-success" href="{{ url_for('mail_delivery') }}" method=get role="button" data-dismiss="modal">Start</a>
+                <a type="button" class="btn btn-success" href="{{ url_for('mail_delivery') }}?emergency_command=Resume" method=get role="button" data-dismiss="modal">Start</a>
               </div>
             </div>
           </div>
