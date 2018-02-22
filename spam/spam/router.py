@@ -61,13 +61,13 @@ def _get_edge_stats(start, end):
         dist, dest_ang, src_ang = _MAP[end][start]
     return dist, src_ang, dest_ang
 
-def build_route(points):
+def build_route(points, start_at='S'):
     # Avoid mutating the argument
     points = dict(points)
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
-    start = 'S'
+    start = start_at
     # Always start facing 0 degrees
     facing = 0
     while points:
