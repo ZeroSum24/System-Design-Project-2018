@@ -1,22 +1,36 @@
 import pickle
-from datetime import datetime
+from time import sleep
+from datetime import datetime, timestamp
 import paho.mqtt.client as mqtt
+import matplotlib.pyplot as plt
 
-CLIENT = mqtt.Client()
-CLIENT.connect("34.242.137.167", 1883, 60)
-CLIENT.subscribe("test_data_send")
+list1 = []
 
 def calculate_time_diff(time_sent):
-    now = datetime.datetime.utcnow()
-    calculated_time = now - pickle.loads(time_sent)
-    print(":)")
+    global list1
+    now = datetime.utcnow()
+    calculated_time = now - time_sent
+    print("Time now: " + str(now))
+    print("Time recieved: " + str(time_sent))
+    print("Difference: " + str(float(calculated_time.timestamp())))
+    list1.append(float(calculated_time.timestamp()))
     return calculated_time
 
-
 def on_message(client, userdata, msg):
-    print("if statement")
     if msg.topic == "test_data_send":
-        calculate_time_diff(msg.payload.decode)
+        calculate_time_diff(pickle.loads(msg.payload))
 
-for i in range(999999999):
-    CLIENT.on_message = on_message
+def on_connect(client, userdata, flags, rc):
+    client.subscribe("test_data_send")
+    client.on_message=on_message
+
+client = mqtt.Client()
+client.connect("34.242.137.167", 1883, 60)
+client.on_connect = on_connect
+client.on_message = on_message
+
+for i in range(45):
+    client.loop()
+
+plt.hist(list1)
+plt.show()
