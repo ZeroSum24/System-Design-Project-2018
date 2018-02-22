@@ -6,7 +6,7 @@ from dispenser import dump
 
 while True:
     try:
-        slot = incomming.get_nowait()
+        slot = incoming.get_nowait()
     except Empty:
         pass
     else:
