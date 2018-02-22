@@ -153,7 +153,7 @@ def build_route(points, start_at='S'):
     # Remove the now useless Rotate instructions
     for instruction in to_remove:
         full_route.remove(instruction)
-    return tuple(map(tuple, full_route))
+    return list(map(tuple, full_route))
 
 # If FLASK_DEBUG isn't defined in the environment build a graph, if it is make
 # build_route a nop
