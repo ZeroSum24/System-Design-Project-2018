@@ -21,6 +21,7 @@ import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
 from threading import Lock
+from Controller import slave, incoming
 
 CHOSEN_PATH = None
 chosen_path_lock = Lock()
@@ -58,7 +59,7 @@ def setup_procedure():
 	instruction_thread()
 	# initialize_2nd_brick()
 
-def on_connect(client, userdata,  flags, rc):
+def on_connect(client, userdata, flags, rc):
 	client.subscribe("path_direction")
 	client.subscribe("emergency_command")
 
@@ -218,7 +219,8 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 			elif isinstance(instruction, Dump):
 				print("dumping")
-				pass
+				slave.dump(1)
+				incoming.get()
 				#dispenser.dump(instruction.slot)
 
 			elif isinstance(instruction, Rotate):
@@ -276,6 +278,9 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 		if isinstance(instruction, Move):
 			final = [Move(instruction.dist - get_odometry(), 50)]
+
+		elif isinstance(instruction, Dump):
+			incoming.get()
 
 		elif isinstance(instruction, Rotate):
 			if instruction.angle <= 180:
