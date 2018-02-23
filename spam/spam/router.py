@@ -114,6 +114,7 @@ def build_route(points, start_at='S'):
             # Move move the required distance down the line
             route.append(('Move', dist, 30))
         dist, src_ang, dest_ang = _get_edge_stats(start, desk)
+        print(route)
         if to_desks:
             # Will be 90 for right and 270 for left
             to_rotate = (src_ang - facing) % 360
@@ -137,6 +138,7 @@ def build_route(points, start_at='S'):
         # Save the route segment
         routes.append(route)
     # Flatten the list
+    print(routes)
     full_route = sum(routes, [])
     # Report the final location
     full_route.append(('Report', start))
