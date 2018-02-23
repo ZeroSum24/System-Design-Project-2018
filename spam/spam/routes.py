@@ -179,7 +179,7 @@ def mail_delivery():
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
             mqtt.publish("emergency_command",command)
-        return render_template('recipients.html', error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
+        return render_template('recipients.html', active="Mail Delivery" error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
 
 @spam.route('/report', methods=['GET', 'POST'])
 def report():
@@ -202,7 +202,7 @@ def status():
     global location_info
     global battery_info_volts
     global delivery_status
-    return render_template('status.html', battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status)
+    return render_template('status.html', active="Status", battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status)
 
 @mqtt.on_connect()
 def on_connect(client, userdata, flags, rc):
@@ -278,7 +278,7 @@ def publish_emergency_commands(emergency_command):
         location = instruction[1]
         path_planning_result = router.build_route('S', location)
         publish_path_planning(path_planning_result)
-        
+
 # Function that produces a list of Desk names by going into the database.
 def get_desks_list():
     desks=[]
