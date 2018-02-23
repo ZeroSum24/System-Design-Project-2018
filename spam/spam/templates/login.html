@@ -28,13 +28,13 @@
   </form>
 </div>
 <div class="row form-signin" text-center>
-  <a href="{{ url_for('report') }}" class="btn btn-lg btn-outline-light btn-block" role="button">Report Problem</a>
-
   {% if error %}
   <div class="alert alert-warning" role="alert" style="margin-top:10px; width:100%">
     <strong>Error:</strong> {{ error }}
   </div>
   {% endif %}
+
+  <a href="{{ url_for('report') }}" class="btn btn-lg btn-outline-light btn-block" role="button">Report Problem</a>
 
 </div>
 </div>
