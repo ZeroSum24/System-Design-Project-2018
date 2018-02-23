@@ -10,7 +10,7 @@ except ImportError:
 import itertools
 from os import environ
 
-_MAP = {'S' : {'A' : (36, 0, 180)},
+_MAP = {'S' : {'A' : (48, 0, 180)},
         'A' : {'B' : (84, 0, 180),
                'M' : (71, 90, 270)},
         'B' : {'O' : (0, 270, 90),
@@ -156,6 +156,8 @@ def build_route(points, start_at='S'):
             # Fun trick, in python ^ is bitwise xor on ints and logical xor on
             # bools. This flips the boolean iff second.angle == 180 is true
             first[1] ^= second[1] == 180
+        if first[0] == 'Rotate' and first[1] == 0:
+            to_remove.add(first)
     # Remove the now useless Rotate instructions
     for instruction in to_remove:
         full_route.remove(instruction)
