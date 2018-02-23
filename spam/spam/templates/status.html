@@ -1,6 +1,4 @@
-{% extends "index.html" %}
-
-{% block body %}
+{% extends "index.html" %} {% block body %}
 
 <div class="jumbotron">
 
@@ -20,10 +18,8 @@
           <td>Connection Status</td>
           <td>
             {% if connection_status %}
-            <span class="badge badge-pill badge-success">Robot Connected</span>
-            {% else %}
-            <span class="badge badge-pill badge-danger">Robot Disconnected</span>
-            {% endif %}
+            <span class="badge badge-pill badge-success">Robot Connected</span> {% else %}
+            <span class="badge badge-pill badge-danger">Robot Disconnected</span> {% endif %}
           </td>
         </tr>
 
@@ -33,18 +29,12 @@
           <td>Delivery Status</td>
           <td>
             {% if delivery_status == "State.PANICKING" %}
-            <span class="badge badge-pill badge-danger">Robot Panicked</span>
-            {% elif delivery_status == "State.STOPPING" %}
-            <span class="badge badge-pill badge-warning">Robot Stopped</span>
-            {% elif delivery_status == "State.LOADING" %}
-            <span class="badge badge-pill badge-success">Robot Parked</span>
-            {% elif delivery_status == "State.RETURNING" %}
-            <span class="badge badge-pill badge-success">Robot Returning</span>
-            {% elif delivery_status == "State.DELIVERING" %}
-            <span class="badge badge-pill badge-success">Robot Delivering</span>
-            {% else %}
-            <span class="badge badge-pill badge-danger">Error >> {{ delivery_status }}</span>
-            {% endif %}
+            <span class="badge badge-pill badge-danger">Robot Panicked</span> {% elif delivery_status == "State.STOPPING" %}
+            <span class="badge badge-pill badge-warning">Robot Stopped</span> {% elif delivery_status == "State.LOADING" %}
+            <span class="badge badge-pill badge-success">Robot Parked</span> {% elif delivery_status == "State.RETURNING" %}
+            <span class="badge badge-pill badge-success">Robot Returning</span> {% elif delivery_status == "State.DELIVERING" %}
+            <span class="badge badge-pill badge-success">Robot Delivering</span> {% else %}
+            <span class="badge badge-pill badge-danger">Error >> {{ delivery_status }}</span> {% endif %}
           </td>
         </tr>
         <tr>
@@ -75,7 +65,7 @@
       </div>
     </div>
     </div>
-
+</div>
 
 
     {% endblock body %}
