@@ -139,7 +139,7 @@ def notifications():
     notifications= Problem.query.filter(Problem.solved == False).all()
     for notification in notifications:
         notification.origin = Staff.query.filter(Staff.id == notification.origin).one().name
-    return render_template('notifications.html', notifications=notifications, battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
+    return render_template('notifications.html', notifications=notifications, battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, unseen_notifications=get_unseen_notification())
 
 @spam.route('/settings')
 def settings():
