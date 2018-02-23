@@ -26,10 +26,9 @@
     <input type="password" id="inputPassword" name="inputPassword" class="form-control" placeholder="Password" required>
     <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
   </form>
-  <!--TODO: fix this wonky added bit-->
-  {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
 </div>
 <div class="row form-signin" text-center>
+  {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
   <a href="{{ url_for('report') }}" class="btn btn-lg btn-outline-light btn-block" role="button">Report Problem</a>
 </div>
 </div>
