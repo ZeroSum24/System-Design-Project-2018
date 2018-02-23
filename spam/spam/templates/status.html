@@ -32,15 +32,15 @@
         <tr>
           <td>Delivery Status</td>
           <td>
-            {% if delivery_status == "Panicking" %}
+            {% if delivery_status == "State.PANICKING" %}
             <span class="badge badge-pill badge-danger">Robot Panicked</span>
-            {% elif delivery_status == "Stopping" %}
+            {% elif delivery_status == "State.STOPPING" %}
             <span class="badge badge-pill badge-warning">Robot Stopped</span>
-            {% elif delivery_status == "Loading" %}
+            {% elif delivery_status == "State.LOADING" %}
             <span class="badge badge-pill badge-success">Robot Parked</span>
-            {% elif delivery_status == "Returning" %}
+            {% elif delivery_status == "State.RETURNING" %}
             <span class="badge badge-pill badge-success">Robot Returning</span>
-            {% elif delivery_status == "Delivering" %}
+            {% elif delivery_status == "State.DELIVERING" %}
             <span class="badge badge-pill badge-success">Robot Delivering</span>
             {% else %}
             <span class="badge badge-pill badge-danger">Error >> {{ delivery_status }}</span>
