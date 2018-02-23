@@ -113,11 +113,8 @@ def build_route(points, start_at='S'):
             facing = (dest_ang + 180) % 360
             # Move move the required distance down the line
             route.append(('Move', dist, 30))
+        dist, src_ang, dest_ang = _get_edge_stats(start, desk)
         if to_desks:
-            # At the end of the route dump the required slots
-            # Figure out which direction to dump in
-            # Only src_ang is relevant here, the others are just for homogeny
-            dist, src_ang, dest_ang = _get_edge_stats(start, desk)
             # Will be 90 for right and 270 for left
             to_rotate = (src_ang - facing) % 360
             # Generate the dump commands
@@ -127,11 +124,16 @@ def build_route(points, start_at='S'):
             is_left = to_rotate == 270
             route.append(('ToDesk', is_left, 90))
             route.append(('Dump', points[desk]))
-            route.append(['FromDesk', is_left, 90])
+            route.append(['FromDesk', is_left, 90, 30])
             # Remove the desk from the set so we don't go back
             del points[desk]
         else:
             points = False
+            routes.append(('Report', start))
+            start = desk
+            route.append(('Rotate', (src_ang-facing)%360, 30))
+            route.append(('Move', dist, 30))
+            route.append(('Rotate', 180))
         # Save the route segment
         routes.append(route)
     # Flatten the list
