@@ -34,7 +34,7 @@ _MAP = {'S' : {'A' : (48, 0, 180)},
         'K' : {'P' : (0, 270, 90),
                'M' : (50, 180, 0)},
         'L' : {'T' : (0, 270, 90),
-               'N' : (51, 180, 0)},       
+               'N' : (51, 180, 0)},
         'M' : {'N' : (80, 90, 270)},
         'N' : {'X' : (194, 90, 0)}}
 
@@ -81,7 +81,7 @@ def build_route(points, start_at='S'):
     to_desks = False
     if isinstance(points, dict):
         to_desks = True
-        points = dict(point)
+        points = dict(points)
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
@@ -147,20 +147,23 @@ def build_route(points, start_at='S'):
     # make the robot leave the desk on the opposite arc to the one it entered
     # on, the rotates can then be dropped
     to_remove = set()
-    for first, _, second in _triwise(full_route):
+    for i, triple in enumerate(_triwise(full_route)):
+        first, _ , second = triple
         # Check we have a FromDesk followed by a Rotate (Ignoring the Report in
         # the middle)
         if first[0] == 'FromDesk' and second[0] == 'Rotate':
             # Log the Rotate for removal
-            to_remove.add(second)
+            to_remove.add(i+2)
             # Fun trick, in python ^ is bitwise xor on ints and logical xor on
             # bools. This flips the boolean iff second.angle == 180 is true
             first[1] ^= second[1] == 180
-        if first[0] == 'Rotate' and first[1] == 0:
-            to_remove.add(first)
+    for i, instruction in enumerate(full_route):
+        if instruction[0] == 'Rotate' and instruction[1] == 0:
+            to_remove.add(i)
+
     # Remove the now useless Rotate instructions
-    for instruction in to_remove:
-        full_route.remove(instruction)
+    for i in sorted(to_remove, reverse=True):
+        full_route.pop(i)
     return list(map(tuple, full_route))
 
 # If FLASK_DEBUG isn't defined in the environment build a graph, if it is make
