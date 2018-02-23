@@ -3,13 +3,19 @@
 from Slave import controller, incoming
 from queue import Empty
 from dispenser import dump
+import catcher
 
+slots = []
 while True:
     try:
-        slot = incoming.get_nowait()
+        slots = incoming.get_nowait()
+        print("slots")
+        print(slots)
     except Empty:
+        print("Empty")
         pass
     else:
+        print(slots)
         for slot in slots:
             dump(slot)
         controller.dumped()

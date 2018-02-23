@@ -21,7 +21,7 @@ import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
 from threading import Lock
-#from Controller import slave, incoming
+from Controller import slave, incoming
 
 CHOSEN_PATH = None
 chosen_path_lock = Lock()
@@ -45,7 +45,7 @@ Move = namedtuple('Move', 'dist tolerance')
 Rotate = namedtuple('Rotate', 'angle tolerance')
 Dump = namedtuple('Dump', 'slots')
 ToDesk = namedtuple('ToDesk', 'is_left angle')
-FromDesk = namedtuple('FromDesk', 'is_left angle')
+FromDesk = namedtuple('FromDesk', 'is_left angle tolerance')
 
 CLIENT = mqtt.Client()
 
@@ -76,6 +76,7 @@ def on_message(client, userdata, msg):
 			STATE_QUEUE.put(T_STOPPING)
 		elif string == "Callback":
 			STATE_QUEUE.put(T_RETURNING)
+	elif msg.topic ==
 
 def generate_named_tuples(list):
 	new_list = []
@@ -91,7 +92,7 @@ def generate_named_tuples(list):
 		elif listee[0] == "ToDesk":
 			new_list.append(ToDesk(listee[1], listee[2]))
 		elif listee[0] == "FromDesk":
-			new_list.append(FromDesk(listee[1], listee[2]))
+			new_list.append(FromDesk(listee[1], listee[2], listee[3]))
 	return new_list
 
 @thread
@@ -214,23 +215,23 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 			if isinstance(instruction, Move):
 				print("moving")
-				success = forward(instruction.dist, instruction.tolerance)
+				success = forward(instruction.dist, tolerance = instruction.tolerance)
 
 			elif isinstance(instruction, Dump):
 				print("dumping")
-				#slave.dump(1)
-				#incoming.get()
-				#dispenser.dump(instruction.slot)
+				slave.dump(instruction.slots)
+				client.publish("dump", json.dumps(instruction.slots))
+				incoming.get()
 
 			elif isinstance(instruction, Rotate):
-				print("reporting")
+				print("rotating")
 				if instruction.angle <= 180:
 					direction = Directions.ROT_RIGHT
 					angle = instruction.angle
 				else:
 					direction = Directions.ROT_LEFT
 					angle = instruction.angle - 180
-				success = rotate(angle, instruction.tolerance, direction=direction)
+				success = rotate(angle, tolerance = instruction.tolerance, direction = direction)
 
 			elif isinstance(instruction, ToDesk):
 				print("approaching desk")
@@ -248,7 +249,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 					direction = Directions.ROT_LEFT
 				else:
 					direction = Directions.ROT_RIGHT
-				approach(angle=angle, direction=direction, reverse=True)
+				success = approach(angle=angle, tolerance=instruction.tolerance, direction=direction, reverse=True)
 
 			elif isinstance(instruction, Report):
 				print("reporting")
@@ -279,8 +280,9 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 			final = [Move(instruction.dist - get_odometry(), 50)]
 
 		elif isinstance(instruction, Dump):
-			pass
-			#incoming.get()
+			#pass
+			incoming.get()
+			// wait for it
 
 		elif isinstance(instruction, Rotate):
 			if instruction.angle <= 180:
@@ -290,7 +292,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 		elif isinstance(instruction, FromDesk):
 			get_odometry(rotating=True)
-			final = [FromDesk(instruction.is_left, instruction.angle - get_odometry(rotating=True))]
+			final = [FromDesk(instruction.is_left, instruction.angle - get_odometry(rotating=True), 50)]
 
 		elif isinstance(instruction, ToDesk):
 			get_odometry(rotating=True)
@@ -310,6 +312,8 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 def panic_loop():
 	CLIENT.publish("problem", "I panicked. In need of assistance. Sorry.")
+	with final_cmd_lock:
+		FINAL_CMD = []
 	# while True:
 	# 	new_state = check_state(STATE)
 	# 	if new_state != None:

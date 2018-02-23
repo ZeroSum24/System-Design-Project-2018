@@ -14,8 +14,10 @@ def run(*cmd):
     return stdout
 
 class _Service(rpyc.Service):
-    def dump(self, slots):
+    def exposed_dump(self, slots):
+        print("Dump")
         incoming.put(slots)
+        print("Here")
 
 
 @thread
@@ -41,7 +43,7 @@ def _get_ips():
     if len(inet) != 1:
         # TODO: Should be an exception so the control loop can catch it, is a
         # print statement so we can see it
-        print('Expected 1 IP, got {} ({})'.format(len(inet), '|'.join(inet)))
+        print('Expected 1 IP, got {} ({})'.format(len(inet), inet))
         # TODO: Blocking for the above print, remove later
         while True:
             pass
@@ -90,6 +92,7 @@ print("Waiting for controller to come alive")
 while True:
     try:
         _conn = rpyc.connect(_controller_ip, 8889)
+        print("Connected")
     except ConnectionRefusedError:
         pass
     else:
@@ -97,3 +100,4 @@ while True:
 controller = _conn.root
 # Send it our ip
 controller.send_ip(_slave_ip)
+print("Sent")

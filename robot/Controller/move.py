@@ -338,7 +338,7 @@ def _move_distance(dist, direction):
 ##### Exports #####
 
 # TODO: Disable junction search when there is no correction
-def forward(dist, tolerance, junction_type=Junctions.NORMAL, correction=True):
+def forward(dist, tolerance=50, junction_type=Junctions.DESK, correction=True):
     if correction:
         upper = int(_straight_line_odometry(dist + (tolerance/100 * dist)))
         lower = int(_straight_line_odometry(dist - (tolerance/100 * dist)))
@@ -377,8 +377,7 @@ def forward(dist, tolerance, junction_type=Junctions.NORMAL, correction=True):
                 raise ColorDisconnectedError('Color sensor disconnected')
             if junction_marker:
                 if traveled <= lower:
-                    stop_motors()
-                    return False
+                    continue
                 else:
                     stop_motors()
                     return True
@@ -398,7 +397,7 @@ def left(dist):
 def right(dist):
     _move_distance(dist, Directions.RIGHT)
 
-def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
+def rotate(angle, tolerance=50, direction=Directions.ROT_RIGHT):
     upper = int(_rotation_odometry(angle + (tolerance/100 * angle)))
     lower = int(_rotation_odometry(angle - (tolerance/100 * angle)))
 
@@ -416,14 +415,15 @@ def rotate(angle, tolerance, direction=Directions.ROT_RIGHT):
         if traveled < lower:
             continue
 
-        if traveled > upper:
-            stop_motors()
-            return False
-
         ref = read_reflect()
         if 100 >= ref >= _TARGET:
             stop_motors()
             return True
+
+        if traveled > upper:
+            stop_motors()
+            return False
+
 
 def test_angle_accuracy():
     primary_speed = -_DEFAULT_RUN_SPEED # overshoots when this value is negative,
@@ -495,17 +495,21 @@ def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back, lefty=
             lefty  : primary_speed,
             righty : primary_speed}
 
-def approach(angle=90, direction=Directions.ROT_LEFT, reverse = False):
+def approach(angle=90, tolerance=50, direction=Directions.ROT_LEFT, reverse = False):
     # rotation odometry is enough here, as the diagonal movement
     # adds speed in the same direction on opposite wheels, making them
     # cancel out in the _parse_by_average calculation
-    ticks = _rotation_odometry(angle)
     traveled = 0
-
+    ticks = _rotation_odometry(angle)
     if reverse: # in case the robot is reversing the angle needs to be phase
                 # shifted for the diagonal_speeds calculation; this will result
                 # in mirroring the movement backwards - simple sign change is not
                 # enough
+
+        # if returning, the robot will search for the white line within these bounds
+        upper = int(_rotation_odometry(angle + (tolerance/100 * angle)))
+        lower = int(_rotation_odometry(angle - (tolerance/100 * angle)))
+
         angle+=90
         if direction == Directions.ROT_LEFT: # this ensures that if you do
                                              # forward-left followed by reverse
@@ -515,16 +519,19 @@ def approach(angle=90, direction=Directions.ROT_LEFT, reverse = False):
         else:
             direction = Directions.ROT_LEFT
 
+
     multiplier = _MOTOR_PARAMS[direction]
-    turning_speed = _DEFAULT_TURN_SPEED//2 # the turning and driver_speeds are
+    turning_speed = _DEFAULT_RUN_SPEED//2 # the turning and driver_speeds are
                                            # halved, so their sum is capped at
-                                           # _DEFAULT_TURN_SPEED
+                                           # _DEFAULT_RUN_SPEED
+
+
     # the angle needs a sign change for diagonal_speeds depending on direction
     if direction == Directions.ROT_LEFT:
         start_angle = -angle
     else:
         start_angle = angle
-    driver_speed = diagonal_speeds(start_angle, _DEFAULT_TURN_SPEED-turning_speed)
+    driver_speed = diagonal_speeds(start_angle, _DEFAULT_RUN_SPEED-turning_speed)
 
     for motor in _MOTORS:
         run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor], reset=True)
@@ -533,17 +540,31 @@ def approach(angle=90, direction=Directions.ROT_LEFT, reverse = False):
         odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
         traveled = _parse_by_average(odometer_readings)
 
-        if traveled > ticks:
-            break
+        if traveled < ticks:
+            angle_so_far = _rev_rotation_odometry(traveled)
+            # the angle needs a sign change for diagonal_speeds depending on direction
+            if direction == Directions.ROT_RIGHT:
+                angle_so_far = -angle_so_far
+            driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_RUN_SPEED-turning_speed)
 
-        angle_so_far = _rev_rotation_odometry(traveled)
-        # the angle needs a sign change for diagonal_speeds depending on direction
-        if direction == Directions.ROT_RIGHT:
-            angle_so_far = -angle_so_far
-        driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_TURN_SPEED-turning_speed)
+            for motor in _MOTORS:
+                run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor])
 
-        for motor in _MOTORS:
-            run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor])
+        if reverse:
+            if traveled < lower:
+                continue
+
+            ref = read_reflect()
+            if 100 >= ref >= _TARGET:
+                stop_motors()
+                return True
+
+            if traveled > upper:
+                stop_motors()
+                return False
+        else:
+            if traveled > ticks:
+                break
 
     stop_motors()
 
