@@ -55,6 +55,7 @@ def add_unseen_notification():
     global unseen_notifications
     unseen_notifications += 1
 def get_unseen_notification():
+    global unseen_notifications
     return unseen_notifications
 def zero_unseen_notification():
     global unseen_notifications
