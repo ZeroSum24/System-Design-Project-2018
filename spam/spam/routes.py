@@ -202,7 +202,7 @@ def status():
     global location_info
     global battery_info_volts
     global delivery_status
-    return render_template('status.html', active="Status", battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status)
+    return render_template('status.html', unseen_notifications=get_unseen_notification(), active="Status", battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status)
 
 @mqtt.on_connect()
 def on_connect(client, userdata, flags, rc):
