@@ -50,6 +50,7 @@ lock = Lock()
 seen = False
 # Definition of environment variable for Notifications
 unseen_notifications=0
+current_orientation = 0
 
 def add_unseen_notification():
     global unseen_notifications
@@ -223,7 +224,7 @@ def on_message(client, userdata, msg):
     print("Msg Recieved Cap")
     global path_planning_result
     if msg.topic == "location_info":
-        global location_info
+        global location_info, current_orientation
         location_info = msg.payload.decode()
         instruction_info = path_planning_result.pop(0)
         while (instruction_info != ("Report", location_info)):
@@ -240,7 +241,7 @@ def on_message(client, userdata, msg):
         global delivery_status
         delivery_status = msg.payload.decode()
         if delivery_status == "State.RETURNING":
-            path_planning_result = router.build_route('S', location_info)
+            path_planning_result = router.return_from(*(location_info.split('-')))
             publish_path_planning(path_planning_result)
         print("delivery_status updated")
     elif msg.topic == "problem":
@@ -276,8 +277,8 @@ def publish_emergency_commands(emergency_command):
         instruction = path_planning_result.pop(0)
         while instruction[0] != 'Report':
             instruction = path_planning_result.pop(0)
-        location = instruction[1]
-        path_planning_result = router.build_route('S', location)
+        location, orientation = instruction[1].split('-')
+        path_planning_result = router.build_route(location, orientation)
         publish_path_planning(path_planning_result)
 
 # Function that produces a list of Desk names by going into the database.

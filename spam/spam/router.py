@@ -76,16 +76,34 @@ def _get_edge_stats(start, end):
         dist, dest_ang, src_ang = _MAP[end][start]
     return dist, src_ang, dest_ang
 
-def build_route(points, start_at='S'):
+def return_from(start, direction):
+    nodes = _GRAPH.route(start, 'S')
+    route = []
+    facing = direction
+    for src, dest in _pairwise(nodes):
+        dist, src_ang, dest_ang = _get_edge_stats(src, dest)
+        route.append(('Report', src))
+        route.append(('Rotate', (src_ang-facing)%360, 30))
+        facing = (dest_ang + 180) % 360
+        route.append(('Move', dist, 30))
+    route.append(('Rotate', 180, 30))
+    route.append(('Report', 'S'))
+    to_remove = set()
+    for i, instruction in enumerate(route):
+        if instruction[0] == 'Rotate' and instruction[1] == 0:
+            to_remove.add(i)
+
+    for i in sorted(to_remove, reverse=True):
+        route.pop(i)
+    return route
+
+def build_route(points):
     # Avoid mutating the argument
-    to_desks = False
-    if isinstance(points, dict):
-        to_desks = True
-        points = dict(points)
+    points = dict(points)
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
-    start = start_at
+    start = 'S'
     # Always start facing 0 degrees
     facing = 0
     while points:
@@ -104,7 +122,7 @@ def build_route(points, start_at='S'):
             # Get the required statistics
             dist, src_ang, dest_ang = _get_edge_stats(src, dest)
             # Report reaching the source node
-            route.append(('Report', src))
+            route.append(('Report', '{}-{}'.format(src, facing)))
             # Rotate to the correct angle to exit relative to where we are
             # currently facing
             route.append(('Rotate', (src_ang-facing)%360, 30))
@@ -114,31 +132,21 @@ def build_route(points, start_at='S'):
             # Move move the required distance down the line
             route.append(('Move', dist, 30))
         dist, src_ang, dest_ang = _get_edge_stats(start, desk)
-        print(route)
-        if to_desks:
-            # Will be 90 for right and 270 for left
-            to_rotate = (src_ang - facing) % 360
-            # Generate the dump commands
-            # True if we are going left. Actually for use in the ToDesk command,
-            # also embedded in the FromDesk command temporarily for use in the
-            # optimisation step
-            is_left = to_rotate == 270
-            route.append(('ToDesk', is_left, 90))
-            route.append(('Dump', points[desk]))
-            route.append(['FromDesk', is_left, 90, 30])
-            # Remove the desk from the set so we don't go back
-            del points[desk]
-        else:
-            points = False
-            routes.append(('Report', start))
-            start = desk
-            route.append(('Rotate', (src_ang-facing)%360, 30))
-            route.append(('Move', dist, 30))
-            route.append(('Rotate', 180))
+        # Will be 90 for right and 270 for left
+        to_rotate = (src_ang - facing) % 360
+        # Generate the dump commands
+        # True if we are going left. Actually for use in the ToDesk command,
+        # also embedded in the FromDesk command temporarily for use in the
+        # optimisation step
+        is_left = to_rotate == 270
+        route.append(('ToDesk', is_left, 90))
+        route.append(('Dump', points[desk]))
+        route.append(['FromDesk', is_left, 90, 30])
+        # Remove the desk from the set so we don't go back
+        del points[desk]
         # Save the route segment
         routes.append(route)
     # Flatten the list
-    print(routes)
     full_route = sum(routes, [])
     # Report the final location
     full_route.append(('Report', start))
