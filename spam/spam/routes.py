@@ -220,9 +220,9 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
+    global path_planning_result
     if msg.topic == "location_info":
         global location_info
-        global path_planning_result
         location_info = msg.payload.decode()
         instruction_info = path_planning_result.pop(0)
         while (instruction_info != ("Report", location_info)):
@@ -239,7 +239,7 @@ def on_message(client, userdata, msg):
         global delivery_status
         delivery_status = msg.payload.decode()
         if delivery_status == "State.RETURNING":
-            path_planning_result = router.build_route({"S" : []}, location_info)
+            path_planning_result = router.build_route('S', location_info)
             publish_path_planning(path_planning_result)
         print("delivery_status updated")
     elif msg.topic == "problem":
@@ -270,8 +270,15 @@ def publish_path_planning(path_direction):
 def publish_emergency_commands(emergency_command):
     mqtt.publish("emergency_command", emergency_command)
     print(emergency_command)
-
-
+    global path_planning_result
+    if emergency_command == 'Callback':
+        instruction = path_planning_result.pop(0)
+        while instruction[0] != 'Report':
+            instruction = path_planning_result.pop(0)
+        location = instruction[1]
+        path_planning_result = router.build_route('S', location)
+        publish_path_planning(path_planning_result)
+        
 # Function that produces a list of Desk names by going into the database.
 def get_desks_list():
     desks=[]

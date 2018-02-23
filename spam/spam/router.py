@@ -10,7 +10,7 @@ except ImportError:
 import itertools
 from os import environ
 
-_MAP = {'S' : {'A' : (36, 0, 180)},
+_MAP = {'S' : {'A' : (48, 0, 180)},
         'A' : {'B' : (84, 0, 180),
                'M' : (71, 90, 270)},
         'B' : {'O' : (0, 270, 90),
@@ -78,7 +78,10 @@ def _get_edge_stats(start, end):
 
 def build_route(points, start_at='S'):
     # Avoid mutating the argument
-    points = dict(points)
+    to_desks = False
+    if isinstance(points, dict):
+        to_desks = True
+        points = dict(point)
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
@@ -110,22 +113,25 @@ def build_route(points, start_at='S'):
             facing = (dest_ang + 180) % 360
             # Move move the required distance down the line
             route.append(('Move', dist, 30))
-        # At the end of the route dump the required slots
-        # Figure out which direction to dump in
-        # Only src_ang is relevant here, the others are just for homogeny
-        dist, src_ang, dest_ang = _get_edge_stats(start, desk)
-        # Will be 90 for right and 270 for left
-        to_rotate = (src_ang - facing) % 360
-        # Generate the dump commands
-        # True if we are going left. Actually for use in the ToDesk command,
-        # also embedded in the FromDesk command temporarily for use in the
-        # optimisation step
-        is_left = to_rotate == 270
-        route.append(('ToDesk', is_left, 90))
-        route.append(('Dump', points[desk]))
-        route.append(['FromDesk', is_left, 90])
-        # Remove the desk from the set so we don't go back
-        del points[desk]
+        if to_desks:
+            # At the end of the route dump the required slots
+            # Figure out which direction to dump in
+            # Only src_ang is relevant here, the others are just for homogeny
+            dist, src_ang, dest_ang = _get_edge_stats(start, desk)
+            # Will be 90 for right and 270 for left
+            to_rotate = (src_ang - facing) % 360
+            # Generate the dump commands
+            # True if we are going left. Actually for use in the ToDesk command,
+            # also embedded in the FromDesk command temporarily for use in the
+            # optimisation step
+            is_left = to_rotate == 270
+            route.append(('ToDesk', is_left, 90))
+            route.append(('Dump', points[desk]))
+            route.append(['FromDesk', is_left, 90])
+            # Remove the desk from the set so we don't go back
+            del points[desk]
+        else:
+            points = False
         # Save the route segment
         routes.append(route)
     # Flatten the list
@@ -150,6 +156,8 @@ def build_route(points, start_at='S'):
             # Fun trick, in python ^ is bitwise xor on ints and logical xor on
             # bools. This flips the boolean iff second.angle == 180 is true
             first[1] ^= second[1] == 180
+        if first[0] == 'Rotate' and first[1] == 0:
+            to_remove.add(first)
     # Remove the now useless Rotate instructions
     for instruction in to_remove:
         full_route.remove(instruction)
