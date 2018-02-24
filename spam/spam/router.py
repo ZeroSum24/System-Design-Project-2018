@@ -76,26 +76,40 @@ def _get_edge_stats(start, end):
         dist, dest_ang, src_ang = _MAP[end][start]
     return dist, src_ang, dest_ang
 
+def _to_tuple(instruction):
+    if isinstance(instruction, Report):
+        return ('Report', instruction.where)
+    elif isinstance(instruction, Move):
+        return ('Move', instruction.dist, instruction.tolerance)
+    elif isinstance(instruction, Rotate):
+        return ('Rotate', instruction.angle, instruction.tolerance)
+    elif isinstance(instruction, ToDesk):
+        return ('ToDesk', instruction.is_left, instruction.angle)
+    elif isinstance(instruction, FromDesk):
+        return ('FromDesk', instruction.is_left, instruction.angle, instruction.tolerance)
+    elif isinstance(instruction, Dump):
+        return ('Dump', slots)
+
 def return_from(start, direction):
     nodes = _GRAPH.route(start, 'S')
     route = []
     facing = int(direction)
     for src, dest in _pairwise(nodes):
         dist, src_ang, dest_ang = _get_edge_stats(src, dest)
-        route.append(('Rotate', (src_ang-facing)%360, 30))
-        route.append(('Report', '{}-{}'.format(src, src_ang)))
+        route.append(Rotate((src_ang-facing)%360, 30))
+        route.append(Report('{}-{}'.format(src, src_ang)))
         facing = (dest_ang + 180) % 360
-        route.append(('Move', dist, 30))
-    route.append(('Rotate', 180, 30))
-    route.append(('Report', 'S-0'))
+        route.append(Move(dist, 30))
+    route.append((Rotate(180, 30)))
+    route.append(Report('S-0'))
     to_remove = set()
-    for i, instruction in enumerate(route):
-        if instruction[0] == 'Rotate' and instruction[1] == 0:
+    for instruction in route:
+        if isinstance(instruction, Rotate) and instruction.angle == 0:
             to_remove.add(i)
 
-    for i in sorted(to_remove, reverse=True):
-        route.pop(i)
-    return route
+    for instruction in to_remove:
+        route.remove(instruction)
+    return list(map(_to_tuple, route))
 
 def build_route(points):
     # Avoid mutating the argument
@@ -123,14 +137,14 @@ def build_route(points):
             dist, src_ang, dest_ang = _get_edge_stats(src, dest)
             # Rotate to the correct angle to exit relative to where we are
             # currently facing
-            route.append(('Rotate', (src_ang-facing)%360, 30))
+            route.append(Rotate((src_ang-facing)%360, 30))
             # Report reaching the source node
-            route.append(('Report', '{}-{}'.format(src, src_ang)))
+            route.append(Report('{}-{}'.format(src, src_ang)))
             # Calculate the direction we will be facing upon reaching the next
             # node
             facing = (dest_ang + 180) % 360
             # Move move the required distance down the line
-            route.append(('Move', dist, 30))
+            route.append(Move(dist, 30))
         dist, src_ang, dest_ang = _get_edge_stats(start, desk)
         # Will be 90 for right and 270 for left
         to_rotate = (src_ang - facing) % 360
@@ -139,9 +153,9 @@ def build_route(points):
         # also embedded in the FromDesk command temporarily for use in the
         # optimisation step
         is_left = to_rotate == 270
-        route.append(('ToDesk', is_left, 90))
-        route.append(('Dump', points[desk]))
-        route.append(['FromDesk', is_left, 90, 30])
+        route.append(ToDesk(is_left, 90))
+        route.append(Dump(points[desk]))
+        route.append(FromDesk(is_left, 90, 30))
         # Remove the desk from the set so we don't go back
         del points[desk]
         # Save the route segment
@@ -149,7 +163,7 @@ def build_route(points):
     # Flatten the list
     full_route = sum(routes, [])
     # Report the final location
-    full_route.append(('Report', '{}-{}'.format(start, facing)))
+    full_route.append(Report('{}-{}'.format(start, facing)))
     # Optimisation step. Currently the booleans in the ToDesk and FromDesk
     # commands are the same, this causes the robot to enter and exit the desk on
     # the same arc. FromDesk is always followed by a Report then a Rotate, the
@@ -159,24 +173,22 @@ def build_route(points):
     # make the robot leave the desk on the opposite arc to the one it entered
     # on, the rotates can then be dropped
     to_remove = set()
-    for i, triple in enumerate(_pairwise(full_route)):
-        first, second = triple
-        # Check we have a FromDesk followed by a Rotate (Ignoring the Report in
-        # the middle)
-        if first[0] == 'FromDesk' and second[0] == 'Rotate':
+    for first, second in enumerate(_pairwise(full_route)):
+        # Check we have a FromDesk followed by a Rotate
+        if isinstance(first, FromDesk) and isinstance(second, ToDesk):
             # Log the Rotate for removal
-            to_remove.add(i+2)
+            to_remove.add(second)
             # Fun trick, in python ^ is bitwise xor on ints and logical xor on
             # bools. This flips the boolean iff second.angle == 180 is true
-            first[1] ^= second[1] == 180
-    for i, instruction in enumerate(full_route):
-        if instruction[0] == 'Rotate' and instruction[1] == 0:
-            to_remove.add(i)
+            first.is_left ^= second.is_left == 180
+    for instruction in full_route:
+        if isinstance(instruction, Rotate) and instruction.angle == 0:
+            to_remove.add(instruction)
 
     # Remove the now useless Rotate instructions
     for i in sorted(to_remove, reverse=True):
         full_route.pop(i)
-    return list(map(tuple, full_route))
+    return list(map(_to_tuple, full_route))
 
 # If FLASK_DEBUG isn't defined in the environment build a graph, if it is make
 # build_route a nop

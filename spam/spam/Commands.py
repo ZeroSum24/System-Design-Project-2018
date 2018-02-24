@@ -35,10 +35,11 @@ class ToDesk(Instruction):
         return 'Go to desk on left' if self.is_left else 'Go to desk on right'
 
 class FromDesk(Instruction):
-    def __init__(self, is_left, angle=90):
+    def __init__(self, is_left):
         Instruction.__init__(self)
         self.is_left = is_left
-        self.angle = angle
+        self.angle = 90
+        self.tolerance = 30
     def __repr__(self):
         return 'Go from desk on left' if self.is_left else 'Go from desk on right'
 
