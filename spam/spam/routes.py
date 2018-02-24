@@ -174,14 +174,16 @@ def mail_delivery():
         print ("This is path planning:")
         print (path_planning)
         path_planning_result = router.build_route(path_planning)
-        publish_path_planning(path_planning_result)
+        if connection_status and delivery_status == "State.LOADING":
+            publish_path_planning(path_planning_result)
 
         return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
     #else
     else:
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
-            mqtt.publish("emergency_command",command)
+            if connection_status:
+                mqtt.publish("emergency_command",command)
         return render_template('recipients.html', active="Mail Delivery", error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
 
 @spam.route('/report', methods=['GET', 'POST'])

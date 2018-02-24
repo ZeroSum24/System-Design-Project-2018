@@ -71,17 +71,17 @@
       {% if not connection_status %}
 
       <div style="padding-right:10px; padding-left: 15px;">
-        <span class="d-inline-block" data-toggle="popover" data-content="Robot not connected.">
+        <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Robot not connected.">
           <button type="submit" class="btn btn-success" disabled style="pointer-events: none;">Resume</button>
         </span>
       </div>
       <div style="padding-right:10px; padding-left: 15px;">
-        <span class="d-inline-block" data-toggle="popover" data-content="Robot not connected.">
+        <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Robot not connected.">
           <button type="submit" class="btn btn-danger" disabled style="pointer-events: none;">Stop</button>
         </span>
       </div>
       <div style="padding-right:10px; padding-left: 15px;">
-        <span class="d-inline-block" data-toggle="popover" data-content="Robot not connected.">
+        <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Robot not connected.">
           <button type="submit" class="btn btn-warning" disabled style="pointer-events: none;">Callback</button>
         </span>
       </div>
@@ -177,11 +177,9 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
       <script type="text/javascript">
-        $(function() {
-          $('.example-popover').popover({
-            container: 'body'
-          })
-        })
+      $(function () {
+        $('[data-toggle="popover"]').popover()
+      })
       </script>
 </body>
 
