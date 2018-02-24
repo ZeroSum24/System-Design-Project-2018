@@ -243,10 +243,9 @@ def on_message(client, userdata, msg):
     elif msg.topic == "delivery_status":
         global delivery_status
         delivery_status = msg.payload.decode()
-        #if delivery_status == "State.RETURNING":
-        #    path_planning_result = router.return_from(*(location_info.split('-')))
-        #    publish_path_planning(path_planning_result)
-        #print("delivery_status updated")
+        if delivery_status == "State.RETURNING":
+            print("Returning")
+        print("delivery_status updated")
     elif msg.topic == "problem":
         add_unseen_notification()
         problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com").one().id, message=msg.payload.decode(), is_urgent=True)
@@ -254,7 +253,9 @@ def on_message(client, userdata, msg):
         db.session.commit()
         print("Problem reported by robot.")
     elif msg.topic == "request_route":
+        print("Requested Route")
         path_planning_result = router.return_from(*(location_info.split('-')))
+        print(path_planning_result)
         publish_path_planning(path_planning_result)
 
 def database_map_nodes_lookup():

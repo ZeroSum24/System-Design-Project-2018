@@ -79,7 +79,7 @@ def _get_edge_stats(start, end):
 def return_from(start, direction):
     nodes = _GRAPH.route(start, 'S')
     route = []
-    facing = direction
+    facing = int(direction)
     for src, dest in _pairwise(nodes):
         dist, src_ang, dest_ang = _get_edge_stats(src, dest)
         route.append(('Rotate', (src_ang-facing)%360, 30))
@@ -125,7 +125,7 @@ def build_route(points):
             # currently facing
             route.append(('Rotate', (src_ang-facing)%360, 30))
             # Report reaching the source node
-            route.append(('Report', '{}-{}'.format(src, src_ang))
+            route.append(('Report', '{}-{}'.format(src, src_ang)))
             # Calculate the direction we will be facing upon reaching the next
             # node
             facing = (dest_ang + 180) % 360
