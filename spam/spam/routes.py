@@ -225,14 +225,16 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    global path_planning_result
+    global path_planning_result, location_info
     if msg.topic == "location_info":
-        global location_info
         with location_info_lock:
             location_info = msg.payload.decode()
             instruction_info = path_planning_result.pop(0)
-            while instruction_info != ("Report", location_info):
+            while instruction_info[0] != "Report":
                 instruction_info = path_planning_result.pop(0)
+            print("HERE")
+            print(location_info)
+            print(instruction_info)
         print("location_info updated")
     elif msg.topic == "battery_info_volts":
         global seen
@@ -255,9 +257,11 @@ def on_message(client, userdata, msg):
         print("Problem reported by robot.")
     elif msg.topic == "request_route":
         print("Requested Route")
-        path_planning_result = router.return_from(*(location_info.split('-')))
-        print(path_planning_result)
-        publish_path_planning(path_planning_result)
+        with location_info_lock:
+            print(location_info)
+            path_planning_result = router.return_from(*(msg.payload.decode().split('-')))
+            print(path_planning_result)
+            publish_path_planning(path_planning_result)
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
@@ -280,6 +284,9 @@ def publish_emergency_commands(emergency_command):
             while instruction[0] != 'Report':
                 instruction = path_planning_result.pop(0)
             location_info = instruction[1]
+            print("HERE")
+            print(location_info)
+            print(instruction)
 
 # Function that produces a list of Desk names by going into the database.
 def get_desks_list():
