@@ -88,7 +88,7 @@ def _to_tuple(instruction):
     elif isinstance(instruction, FromDesk):
         return ('FromDesk', instruction.is_left, instruction.angle, instruction.tolerance)
     elif isinstance(instruction, Dump):
-        return ('Dump', slots)
+        return ('Dump', instruction.slots)
 
 def return_from(start, direction):
     nodes = _GRAPH.route(start, 'S')
