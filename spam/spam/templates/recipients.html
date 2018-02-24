@@ -68,7 +68,13 @@
     <div class="form-group row">
       <div class="col-sm-10">
         <!--TODO: check this works with the action-->
+        {% if delivery_status == "State.LOADING" %}
         <button type="submit" class="btn btn-primary">Deliver Mail</button>
+        {% else %}
+        <span class="d-inline-block" data-toggle="popover" data-content="Spam is not ready to load.">
+          <button type="submit" class="btn btn-primary" disabled>Deliver Mail</button>
+        </span>
+        {% endif%}
       </div>
     </div>
   </form>
