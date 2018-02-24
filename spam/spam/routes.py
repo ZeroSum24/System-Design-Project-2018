@@ -183,7 +183,7 @@ def mail_delivery():
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
             if connection_status:
-            mqtt.publish("emergency_command",command)
+                mqtt.publish("emergency_command",command)
         return render_template('recipients.html', active="Mail Delivery", error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
 
 @spam.route('/report', methods=['GET', 'POST'])
