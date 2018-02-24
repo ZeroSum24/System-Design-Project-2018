@@ -175,7 +175,7 @@ def build_route(points):
     to_remove = set()
     for first, second in _pairwise(full_route):
         # Check we have a FromDesk followed by a Rotate
-        if isinstance(first, FromDesk) and isinstance(second, ToDesk):
+        if isinstance(first, FromDesk) and isinstance(second, Rotate):
             # Log the Rotate for removal
             to_remove.add(second)
             # Fun trick, in python ^ is bitwise xor on ints and logical xor on
