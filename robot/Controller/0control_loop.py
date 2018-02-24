@@ -21,7 +21,7 @@ import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
 from threading import Lock
-from Controller import slave, incoming
+# from Controller import slave, incoming
 
 CHOSEN_PATH = None
 chosen_path_lock = Lock()
@@ -32,6 +32,9 @@ final_cmd_lock = Lock()
 STATE = State.LOADING
 
 STATE_QUEUE = uniq.UniquePriorityQueue()
+
+dumped_lock = Lock()
+dumped = False
 
 # the lower the number, the higher the priority
 T_LOADING = (3, State.LOADING)
@@ -62,6 +65,7 @@ def setup_procedure():
 def on_connect(client, userdata, flags, rc):
 	client.subscribe("path_direction")
 	client.subscribe("emergency_command")
+	client.subscribe("dump_confirmation")
 
 def on_message(client, userdata, msg):
 	if msg.topic == "path_direction":
@@ -76,6 +80,12 @@ def on_message(client, userdata, msg):
 			STATE_QUEUE.put(T_STOPPING)
 		elif string == "Callback":
 			STATE_QUEUE.put(T_RETURNING)
+	elif msg.topic == "dump_confirmation":
+		global dumped
+		print('Got Confirmation')
+		with dumped_lock:
+			print('Set Flag')
+			dumped = True
 
 def generate_named_tuples(list):
 	new_list = []
@@ -128,17 +138,19 @@ def control_loop():
 		elif STATE == State.DELIVERING:
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
-			get_path()
+			get_path(returning=True)
 			STATE = movement_loop() # same function as above
 		elif STATE == State.STOPPING:
 			STATE = stop_loop()
 		elif STATE == State.PANICKING:
 			STATE = panic_loop()
 
-def get_path():
+def get_path(returning=False):
 	global CHOSEN_PATH
 	with chosen_path_lock:
 		CHOSEN_PATH = None
+	if returning:
+		CLIENT.publish("request_route", "X")
 	while True:
 		with chosen_path_lock:
 			if CHOSEN_PATH is not None:
@@ -201,6 +213,7 @@ def movement_loop():
 
 @thread
 def move_asynch(chosen_path, state): #all global returns will have to be passed in queues
+	global dumped
 	instruction = None
 	try:
 		# if state == State.RETURNING:
@@ -217,9 +230,13 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				success = forward(instruction.dist, tolerance = instruction.tolerance)
 
 			elif isinstance(instruction, Dump):
-				print("dumping")
-				slave.dump(instruction.slots)
-				incoming.get()
+				CLIENT.publish("dump", json.dumps(instruction.slots))
+				while True:
+					with dumped_lock:
+						print("Got Lock")
+						if dumped:
+							dumped = False
+							break
 
 			elif isinstance(instruction, Rotate):
 				print("rotating")
@@ -276,10 +293,15 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 		if isinstance(instruction, Move):
 			final = [Move(instruction.dist - get_odometry(), 50)]
+			if chosen_path and isinstance(chosen_path[0], Rotate):
+				final.append(chosen_path.pop(0))
 
 		elif isinstance(instruction, Dump):
-			#pass
-			incoming.get()
+			while True:
+				with dumped_lock:
+					if dumped:
+						dumped = False
+						break
 
 		elif isinstance(instruction, Rotate):
 			if instruction.angle <= 180:
@@ -310,11 +332,13 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 def panic_loop():
 	CLIENT.publish("problem", "I panicked. In need of assistance. Sorry.")
 	with final_cmd_lock:
+		global FINAL_CMD
 		FINAL_CMD = []
 	# while True:
 	# 	new_state = check_state(STATE)
 	# 	if new_state != None:
 	# 		return new_state
+	CLIENT.publish("delivery_status", str(State.LOADING))
 	return State.LOADING
 
 def stop_loop():
