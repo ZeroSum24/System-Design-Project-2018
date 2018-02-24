@@ -82,12 +82,12 @@ def return_from(start, direction):
     facing = direction
     for src, dest in _pairwise(nodes):
         dist, src_ang, dest_ang = _get_edge_stats(src, dest)
-        route.append(('Report', src))
         route.append(('Rotate', (src_ang-facing)%360, 30))
+        route.append(('Report', '{}-{}'.format(src, src_ang)))
         facing = (dest_ang + 180) % 360
         route.append(('Move', dist, 30))
     route.append(('Rotate', 180, 30))
-    route.append(('Report', 'S'))
+    route.append(('Report', 'S-0'))
     to_remove = set()
     for i, instruction in enumerate(route):
         if instruction[0] == 'Rotate' and instruction[1] == 0:
@@ -121,11 +121,11 @@ def build_route(points):
         for src, dest in _pairwise(nodes[:-1]):
             # Get the required statistics
             dist, src_ang, dest_ang = _get_edge_stats(src, dest)
-            # Report reaching the source node
-            route.append(('Report', '{}-{}'.format(src, facing)))
             # Rotate to the correct angle to exit relative to where we are
             # currently facing
             route.append(('Rotate', (src_ang-facing)%360, 30))
+            # Report reaching the source node
+            route.append(('Report', '{}-{}'.format(src, src_ang))
             # Calculate the direction we will be facing upon reaching the next
             # node
             facing = (dest_ang + 180) % 360
@@ -149,7 +149,7 @@ def build_route(points):
     # Flatten the list
     full_route = sum(routes, [])
     # Report the final location
-    full_route.append(('Report', start))
+    full_route.append(('Report', '{}-{}'.format(start, facing)))
     # Optimisation step. Currently the booleans in the ToDesk and FromDesk
     # commands are the same, this causes the robot to enter and exit the desk on
     # the same arc. FromDesk is always followed by a Report then a Rotate, the
@@ -159,8 +159,8 @@ def build_route(points):
     # make the robot leave the desk on the opposite arc to the one it entered
     # on, the rotates can then be dropped
     to_remove = set()
-    for i, triple in enumerate(_triwise(full_route)):
-        first, _ , second = triple
+    for i, triple in enumerate(_pairwise(full_route)):
+        first, second = triple
         # Check we have a FromDesk followed by a Rotate (Ignoring the Report in
         # the middle)
         if first[0] == 'FromDesk' and second[0] == 'Rotate':
