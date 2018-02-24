@@ -227,7 +227,7 @@ def on_message(client, userdata, msg):
         global location_info, current_orientation
         location_info = msg.payload.decode()
         instruction_info = path_planning_result.pop(0)
-        while (instruction_info != ("Report", location_info)):
+        while (path_planning_result && instruction_info != ("Report", location_info)):
             instruction_info = path_planning_result.pop(0)
         print("location_info updated")
     elif msg.topic == "battery_info_volts":
