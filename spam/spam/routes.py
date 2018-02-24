@@ -43,6 +43,7 @@ db = SQLAlchemy(spam)
 battery_info_volts = 40
 # Delivery Status should assume one of these >> "State.DELIVERING", "State.RETURNING", "State.LOADING", "State.STOPPING", "State.PANICKING"
 delivery_status = "State.LOADING"
+location_info_lock = Lock()
 location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
@@ -213,6 +214,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("location_info")
     client.subscribe("delivery_status")
     client.subscribe("problem")
+    client.subscribe("request_route")
 
 
 #Receiving information from the robot.
@@ -224,11 +226,12 @@ def on_message(client, userdata, msg):
     print("Msg Recieved Cap")
     global path_planning_result
     if msg.topic == "location_info":
-        global location_info, current_orientation
-        location_info = msg.payload.decode()
-        instruction_info = path_planning_result.pop(0)
-        while instruction_info != ("Report", location_info):
+        global location_info
+        with location_info_lock:
+            location_info = msg.payload.decode()
             instruction_info = path_planning_result.pop(0)
+            while instruction_info != ("Report", location_info):
+                instruction_info = path_planning_result.pop(0)
         print("location_info updated")
     elif msg.topic == "battery_info_volts":
         global seen
@@ -240,16 +243,19 @@ def on_message(client, userdata, msg):
     elif msg.topic == "delivery_status":
         global delivery_status
         delivery_status = msg.payload.decode()
-        if delivery_status == "State.RETURNING":
-            path_planning_result = router.return_from(*(location_info.split('-')))
-            publish_path_planning(path_planning_result)
-        print("delivery_status updated")
+        #if delivery_status == "State.RETURNING":
+        #    path_planning_result = router.return_from(*(location_info.split('-')))
+        #    publish_path_planning(path_planning_result)
+        #print("delivery_status updated")
     elif msg.topic == "problem":
         add_unseen_notification()
         problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com").one().id, message=msg.payload.decode(), is_urgent=True)
         db.session.add(problem)
         db.session.commit()
         print("Problem reported by robot.")
+    elif msg.topic == "request_route":
+        path_planning_result = router.return_from(*(location_info.split('-')))
+        publish_path_planning(path_planning_result)
 
 def database_map_nodes_lookup():
     # looks up the map nodes from the databse and adds in the map nodes from
@@ -274,12 +280,12 @@ def publish_emergency_commands(emergency_command):
     print(emergency_command)
     global path_planning_result
     if emergency_command == 'Callback':
-        instruction = path_planning_result.pop(0)
-        while instruction[0] != 'Report':
+        with location_info_lock:
+            global location_info
             instruction = path_planning_result.pop(0)
-        location, orientation = instruction[1].split('-')
-        path_planning_result = router.build_route(location, orientation)
-        publish_path_planning(path_planning_result)
+            while instruction[0] != 'Report':
+                instruction = path_planning_result.pop(0)
+            location_info = instruction[1]
 
 # Function that produces a list of Desk names by going into the database.
 def get_desks_list():
