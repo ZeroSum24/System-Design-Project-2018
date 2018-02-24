@@ -29,6 +29,9 @@ chosen_path_lock = Lock()
 FINAL_CMD = []
 final_cmd_lock = Lock()
 
+NEXT_NODE = None
+next_node_lock = Lock()
+
 STATE = State.LOADING
 
 STATE_QUEUE = uniq.UniquePriorityQueue()
@@ -150,7 +153,7 @@ def get_path(returning=False):
 	with chosen_path_lock:
 		CHOSEN_PATH = None
 	if returning:
-		CLIENT.publish("request_route", "X")
+		CLIENT.publish("request_route", NEXT_NODE)
 	while True:
 		with chosen_path_lock:
 			if CHOSEN_PATH is not None:
@@ -158,6 +161,8 @@ def get_path(returning=False):
 
 def loading_loop():
 	# pool for "go-ahead" button
+	global NEXT_NODE
+	NEXT_NODE = None
 	get_path()
 	CLIENT.publish("delivery_status", str(State.DELIVERING))
 	return State.DELIVERING
@@ -214,6 +219,7 @@ def movement_loop():
 @thread
 def move_asynch(chosen_path, state): #all global returns will have to be passed in queues
 	global dumped
+	global NEXT_NODE
 	instruction = None
 	try:
 		# if state == State.RETURNING:
@@ -282,6 +288,14 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				elif state == State.RETURNING:
 					STATE_QUEUE.put(T_LOADING)
 					break
+
+		# last reported location for return
+		with next_node_lock:
+			if isinstance(instruction, Report):
+				NEXT_NODE = instruction.where
+
+		# TODO right now the code spins here forever after executing the movement
+		# commands - does not need to
 		while True:
 			pass
 
@@ -326,6 +340,12 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 			global CHOSEN_PATH
 			CHOSEN_PATH = chosen_path
 
+		with next_node_lock:
+			for instructione in chosen_path:
+				if isinstance(instructione, Report):
+					NEXT_NODE = instructione.where
+					break
+
 		sys.exit()
 
 
@@ -334,6 +354,10 @@ def panic_loop():
 	with final_cmd_lock:
 		global FINAL_CMD
 		FINAL_CMD = []
+
+	with next_node_lock:
+		global NEXT_NODE
+		NEXT_NODE = None
 	# while True:
 	# 	new_state = check_state(STATE)
 	# 	if new_state != None:
