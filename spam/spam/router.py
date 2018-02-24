@@ -186,7 +186,7 @@ def build_route(points):
             to_remove.add(instruction)
 
     # Remove the now useless Rotate instructions
-    for instruction in to_reverse:
+    for instruction in to_remove:
         full_route.remove(instruction)
     return list(map(_to_tuple, full_route))
 
