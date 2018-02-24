@@ -173,7 +173,7 @@ def build_route(points):
     # make the robot leave the desk on the opposite arc to the one it entered
     # on, the rotates can then be dropped
     to_remove = set()
-    for first, second in enumerate(_pairwise(full_route)):
+    for first, second in _pairwise(full_route):
         # Check we have a FromDesk followed by a Rotate
         if isinstance(first, FromDesk) and isinstance(second, ToDesk):
             # Log the Rotate for removal
