@@ -258,7 +258,8 @@ def on_message(client, userdata, msg):
     elif msg.topic == "request_route":
         print("Requested Route")
         with location_info_lock:
-            print(location_info)
+            print("Received Location:")
+            print(msg.payload.decode())
             path_planning_result = router.return_from(*(msg.payload.decode().split('-')))
             print(path_planning_result)
             publish_path_planning(path_planning_result)
