@@ -155,7 +155,7 @@ def build_route(points):
         is_left = to_rotate == 270
         route.append(ToDesk(is_left, 90))
         route.append(Dump(points[desk]))
-        route.append(FromDesk(is_left, 90, 30))
+        route.append(FromDesk(is_left))
         # Remove the desk from the set so we don't go back
         del points[desk]
         # Save the route segment
