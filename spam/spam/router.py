@@ -180,7 +180,7 @@ def build_route(points):
             to_remove.add(second)
             # Fun trick, in python ^ is bitwise xor on ints and logical xor on
             # bools. This flips the boolean iff second.angle == 180 is true
-            first.is_left ^= second.is_left == 180
+            first.is_left ^= second.angle == 180
     for instruction in full_route:
         if isinstance(instruction, Rotate) and instruction.angle == 0:
             to_remove.add(instruction)
