@@ -216,7 +216,6 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("problem")
     client.subscribe("request_route")
 
-
 #Receiving information from the robot.
 @mqtt.on_message()
 def on_message(client, userdata, msg):
@@ -257,14 +256,6 @@ def on_message(client, userdata, msg):
         path_planning_result = router.return_from(*(location_info.split('-')))
         print(path_planning_result)
         publish_path_planning(path_planning_result)
-
-def database_map_nodes_lookup():
-    # looks up the map nodes from the databse and adds in the map nodes from
-    # the database. Poll the database for these map nodes
-
-    #add look-up part
-    map_nodes = []
-    return build_route(map_nodes)
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
