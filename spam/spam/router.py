@@ -10,7 +10,7 @@ except ImportError:
 import itertools
 from os import environ
 
-_MAP = {'S' : {'A' : (48, 0, 180)},
+_MAP = {'S' : {'A' : (36, 0, 180)},
         'A' : {'B' : (84, 0, 180),
                'M' : (71, 90, 270)},
         'B' : {'O' : (0, 270, 90),
