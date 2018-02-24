@@ -105,7 +105,7 @@ def return_from(start, direction):
     to_remove = set()
     for instruction in route:
         if isinstance(instruction, Rotate) and instruction.angle == 0:
-            to_remove.add(i)
+            to_remove.add(instruction)
 
     for instruction in to_remove:
         route.remove(instruction)
