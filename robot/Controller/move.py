@@ -521,7 +521,7 @@ def approach(angle=90, tolerance=50, direction=Directions.ROT_LEFT, reverse = Fa
 
 
     multiplier = _MOTOR_PARAMS[direction]
-    turning_speed = _DEFAULT_RUN_SPEED//2 # the turning and driver_speeds are
+    turning_speed = _DEFAULT_TURN_SPEED//2 # the turning and driver_speeds are
                                            # halved, so their sum is capped at
                                            # _DEFAULT_RUN_SPEED
 
@@ -531,7 +531,7 @@ def approach(angle=90, tolerance=50, direction=Directions.ROT_LEFT, reverse = Fa
         start_angle = -angle
     else:
         start_angle = angle
-    driver_speed = diagonal_speeds(start_angle, _DEFAULT_RUN_SPEED-turning_speed)
+    driver_speed = diagonal_speeds(start_angle, _DEFAULT_TURN_SPEED-turning_speed)
 
     for motor in _MOTORS:
         run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor], reset=True)
@@ -545,7 +545,7 @@ def approach(angle=90, tolerance=50, direction=Directions.ROT_LEFT, reverse = Fa
             # the angle needs a sign change for diagonal_speeds depending on direction
             if direction == Directions.ROT_RIGHT:
                 angle_so_far = -angle_so_far
-            driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_RUN_SPEED-turning_speed)
+            driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_TURN_SPEED-turning_speed)
 
             for motor in _MOTORS:
                 run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor])

@@ -14,3 +14,6 @@ class UniquePriorityQueue(PriorityQueue):
         item = PriorityQueue._get(self)
         self.values.remove(item[1])
         return item
+
+    def __repr__(self):
+        return repr(self.values)

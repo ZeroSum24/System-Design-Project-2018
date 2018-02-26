@@ -23,6 +23,8 @@ from collections import namedtuple
 from threading import Lock
 # from Controller import slave, incoming
 
+log = open('log.txt', 'w')
+
 CHOSEN_PATH = None
 chosen_path_lock = Lock()
 
@@ -33,6 +35,9 @@ NEXT_NODE = None
 next_node_lock = Lock()
 
 STATE = State.LOADING
+
+state_resumed_lock = Lock()
+STATE_RESUMED = None
 
 STATE_QUEUE = uniq.UniquePriorityQueue()
 
@@ -78,7 +83,8 @@ def on_message(client, userdata, msg):
 	elif msg.topic == "emergency_command":
 		string = msg.payload.decode()
 		if string == "Resume":
-			STATE_QUEUE.put(T_DELIVERING)
+			with state_resumed_lock:
+				STATE_QUEUE.put((2, STATE_RESUMED))
 		elif string == "Stop":
 			STATE_QUEUE.put(T_STOPPING)
 		elif string == "Callback":
@@ -136,6 +142,7 @@ def get_voltage():
 def control_loop():
 	global STATE
 	while True:
+		print(STATE)
 		if STATE == State.LOADING:
 			STATE = loading_loop() # these are going to be blocking
 		elif STATE == State.DELIVERING:
@@ -149,11 +156,13 @@ def control_loop():
 			STATE = panic_loop()
 
 def get_path(returning=False):
+	print(returning)
 	global CHOSEN_PATH
 	with chosen_path_lock:
 		CHOSEN_PATH = None
 	if returning:
-		CLIENT.publish("request_route", NEXT_NODE)
+		with next_node_lock:
+			CLIENT.publish("request_route", NEXT_NODE)
 	while True:
 		with chosen_path_lock:
 			if CHOSEN_PATH is not None:
@@ -161,18 +170,23 @@ def get_path(returning=False):
 
 def loading_loop():
 	# pool for "go-ahead" button
-	global NEXT_NODE
-	NEXT_NODE = None
+	with next_node_lock:
+		global NEXT_NODE
+		NEXT_NODE = None
+	with STATE_QUEUE.mutex:
+		STATE_QUEUE.queue.clear()
 	get_path()
 	CLIENT.publish("delivery_status", str(State.DELIVERING))
 	return State.DELIVERING
 
 def check_state(current_state):
+	print(STATE_QUEUE)
 	try:
 		state = STATE_QUEUE.get_nowait()
 	except Empty:
 		return None
 	else:
+		print("got {}".format(state))
 		if state[1] != current_state:
 			with STATE_QUEUE.mutex:
 				STATE_QUEUE.queue.clear()
@@ -184,6 +198,8 @@ def check_state(current_state):
 def movement_loop():
 	moving_flag = False
 	move_thread = None
+	with STATE_QUEUE.mutex:
+		STATE_QUEUE.queue.clear()
 	while True:
 		new_state = check_state(STATE)
 		if new_state != None:
@@ -194,9 +210,12 @@ def movement_loop():
 		if not moving_flag:
 			moving_flag = True
 			global FINAL_CMD
-			with final_cmd_lock:
+			with final_cmd_lock, chosen_path_lock:
 				chosen_path = FINAL_CMD + CHOSEN_PATH
 				FINAL_CMD = []
+			with state_resumed_lock:
+				global STATE_RESUMED
+				STATE_RESUMED = STATE
 			move_thread = move_asynch(chosen_path, STATE)
 
 
@@ -239,7 +258,6 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				CLIENT.publish("dump", json.dumps(instruction.slots))
 				while True:
 					with dumped_lock:
-						print("Got Lock")
 						if dumped:
 							dumped = False
 							break
@@ -283,9 +301,12 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 			if len(chosen_path) == 0:
 				if state == State.DELIVERING:
+					print("Returning")
 					STATE_QUEUE.put(T_RETURNING)
+					print(STATE_QUEUE)
 					break
 				elif state == State.RETURNING:
+					print("Loading")
 					STATE_QUEUE.put(T_LOADING)
 					break
 
@@ -293,7 +314,8 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 		with next_node_lock:
 			if isinstance(instruction, Report):
 				NEXT_NODE = instruction.where
-
+		print(NEXT_NODE)
+		print(STATE_QUEUE)
 		# TODO right now the code spins here forever after executing the movement
 		# commands - does not need to
 		while True:
@@ -345,19 +367,17 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				if isinstance(instructione, Report):
 					NEXT_NODE = instructione.where
 					break
+		print(STATE_QUEUE)
 
 		sys.exit()
 
 
 def panic_loop():
-	CLIENT.publish("problem", "I panicked. In need of assistance. Sorry.")
+	with next_node_lock:
+		CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
 	with final_cmd_lock:
 		global FINAL_CMD
 		FINAL_CMD = []
-
-	with next_node_lock:
-		global NEXT_NODE
-		NEXT_NODE = None
 	# while True:
 	# 	new_state = check_state(STATE)
 	# 	if new_state != None:
