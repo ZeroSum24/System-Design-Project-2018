@@ -328,7 +328,11 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 		final = []
 
 		if isinstance(instruction, Move):
-			final = [Move(instruction.dist - get_odometry(), 50)]
+			dist = instruction.dist - get_odometry()
+			if dist <= 10:
+				final = [Move(10, 100)]
+			else:
+				final = [Move(dist, 50)]
 			if chosen_path and isinstance(chosen_path[0], Rotate):
 				final.append(chosen_path.pop(0))
 
@@ -341,9 +345,17 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 		elif isinstance(instruction, Rotate):
 			if instruction.angle <= 180:
-				final = [Rotate(instruction.angle - get_odometry(rotating=True), 50)]
+				angle = instruction.angle - get_odometry(rotating=True)
+				if angle <= 10:
+					final = [Rotate(10, 100)]
+				else:
+					final = [Rotate(angle, 50)]
 			else:
-				final = [Rotate(instruction.angle + get_odometry(rotating=True), 50)]
+				angle = instruction.angle + get_odometry(rotating=True)
+				if angle >= 350:
+					final = [Rotate(350, 100)]
+				else:
+					final = [Rotate(angle, 50)]
 
 		elif isinstance(instruction, FromDesk):
 			get_odometry(rotating=True)
