@@ -16,12 +16,12 @@ _MAP = {'S' : {'A' : (36, 0, 180)},
         'B' : {'O' : (0, 270, 90),
                'C' : (74, 0, 180)},
         'C' : {'G' : (71, 90, 270,),
-               'D' : (81, 0, 270)},
+               'D' : (118, 0, 270)},
         'D' : {'E' : (69, 90, 270),
                'U' : (0, 0, 180)},
         'E' : {'F' : (72, 90, 270),
                'V' : (0, 0, 180)},
-        'F' : {'X' : (88, 90, 180),
+        'F' : {'X' : (120, 90, 180),
                'W' : (0, 0, 180)},
         'G' : {'I' : (52, 180, 0),
                'H' : (80, 90, 270)},
@@ -96,11 +96,13 @@ def return_from(start, direction):
     facing = int(direction)
     for src, dest in _pairwise(nodes):
         dist, src_ang, dest_ang = _get_edge_stats(src, dest)
+        route.append(Report('{}-{}'.format(src, facing)))
         route.append(Rotate((src_ang-facing)%360, 30))
         route.append(Report('{}-{}'.format(src, src_ang)))
         facing = (dest_ang + 180) % 360
         route.append(Move(dist, 30))
-    route.append((Rotate(180, 30)))
+        route.append(Report('{}-{}'.format(dest, facing)))
+    route.append((Rotate(facing, 30)))
     route.append(Report('S-0'))
     to_remove = set()
     for instruction in route:
@@ -109,6 +111,15 @@ def return_from(start, direction):
 
     for instruction in to_remove:
         route.remove(instruction)
+
+    to_remove = set()
+    for first, second in _pairwise(route):
+        if isinstance(first, Report) and isinstance(second, Report):
+            to_remove.add(second)
+
+    for instruction in to_remove:
+        route.remove(instruction)
+
     return list(map(_to_tuple, route))
 
 def build_route(points):
@@ -137,6 +148,7 @@ def build_route(points):
             dist, src_ang, dest_ang = _get_edge_stats(src, dest)
             # Rotate to the correct angle to exit relative to where we are
             # currently facing
+            route.append(Report('{}-{}'.format(src, facing)))
             route.append(Rotate((src_ang-facing)%360, 30))
             # Report reaching the source node
             route.append(Report('{}-{}'.format(src, src_ang)))
@@ -145,6 +157,7 @@ def build_route(points):
             facing = (dest_ang + 180) % 360
             # Move move the required distance down the line
             route.append(Move(dist, 30))
+            route.append(Report('{}-{}'.format(dest, facing)))
         dist, src_ang, dest_ang = _get_edge_stats(start, desk)
         # Will be 90 for right and 270 for left
         to_rotate = (src_ang - facing) % 360
@@ -173,14 +186,15 @@ def build_route(points):
     # make the robot leave the desk on the opposite arc to the one it entered
     # on, the rotates can then be dropped
     to_remove = set()
-    for first, second in _pairwise(full_route):
+    for first, second, third in _triwise(full_route):
         # Check we have a FromDesk followed by a Rotate
-        if isinstance(first, FromDesk) and isinstance(second, Rotate):
+        if isinstance(first, FromDesk) and isinstance(second, Report) and isinstance(third, Rotate):
             # Log the Rotate for removal
             to_remove.add(second)
+            to_remove.add(third)
             # Fun trick, in python ^ is bitwise xor on ints and logical xor on
             # bools. This flips the boolean iff second.angle == 180 is true
-            first.is_left ^= second.angle == 180
+            first.is_left ^= third.angle == 180
     for instruction in full_route:
         if isinstance(instruction, Rotate) and instruction.angle == 0:
             to_remove.add(instruction)
@@ -188,6 +202,15 @@ def build_route(points):
     # Remove the now useless Rotate instructions
     for instruction in to_remove:
         full_route.remove(instruction)
+
+    to_remove = set()
+    for first, second in _pairwise(full_route):
+        if isinstance(first, Report) and isinstance(second, Report):
+            to_remove.add(second)
+
+    for instruction in to_remove:
+        full_route.remove(instruction)
+
     return list(map(_to_tuple, full_route))
 
 # If FLASK_DEBUG isn't defined in the environment build a graph, if it is make

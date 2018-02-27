@@ -48,4 +48,4 @@ class Dump(Instruction):
         Instruction.__init__(self)
         self.slots = slots
     def __repr__(self):
-        return 'Dump Slot(s) {} '.format(self.slots)
+        return 'Dump Slot(s) {}'.format(self.slots)
