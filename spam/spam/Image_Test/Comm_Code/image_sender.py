@@ -2,6 +2,7 @@
 
 #This sends an image to the server to be processed by the Flask app
 import paho.mqtt.client as mqtt
+import sys
 
 broker_aws_host = "18.219.97.244"
 def main(argv):

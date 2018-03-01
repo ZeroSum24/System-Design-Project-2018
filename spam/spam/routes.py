@@ -18,6 +18,8 @@ from threading import Lock
 from time import sleep
 from spam.thread_decorator import thread
 
+import image_processing
+
 
 
 #spam = Flask(__name__) # create the spamlication instance :)
@@ -48,6 +50,7 @@ location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
 lock = Lock()
+desk_from_image = "" #TODO later update to int
 seen = False
 # Definition of environment variable for Notifications
 unseen_notifications=0
@@ -266,6 +269,19 @@ def on_message(client, userdata, msg):
             publish_path_planning(path_planning_result)
     elif msg.topic == "image_processing":
         print("Image Recieved")
+
+        #TODO add a check to ensure a number corresponding to a desk is returned
+        image = msg.payload.decode()
+        desk_from_image = image_processing.scanImage(image)
+
+        if (isinstance(desk_from_image, int)):
+            amount_of_desks = len(get_desks_list())
+            if (desk_from_image < 0 or desk_from_image > amount_of_desks):
+                print("Error incorrect desk allocation")
+            else:
+                #   pass_the desk info to the path_planning
+        elif:
+            print(desk_from_image)
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
