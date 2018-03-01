@@ -21,7 +21,7 @@ def main(argv):
 
    client = mqtt.Client()
    client.connect(broker_aws_host,1883,60)
-   client.publish("image_processing", pickle.Pickler(byteArr));
+   client.publish("image_processing", payload=pickle.dumps(byteArr))
 
    client.loop_forever()
 

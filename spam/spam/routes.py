@@ -19,6 +19,7 @@ from time import sleep
 from spam.thread_decorator import thread
 
 import image_processing
+import pickle
 
 
 
@@ -271,8 +272,7 @@ def on_message(client, userdata, msg):
         print("Image Recieved")
 
         #TODO add a check to ensure a number corresponding to a desk is returned
-        imageByteArray = bytearray()
-        imageByteArray.extend(map(ord,msg.payload.decode()))
+        imageByteArray = pickle.loads(msg.payload)
 
         desk_from_image = image_processing.scanImage(imageByteArray)
 
