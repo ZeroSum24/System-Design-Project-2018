@@ -1,10 +1,11 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 #This sends an image to the server to be processed by the Flask app
 import paho.mqtt.client as mqtt
 import sys
 
 broker_aws_host = "18.219.97.244"
+
 def main(argv):
 
    # accepting the image argument
@@ -13,14 +14,13 @@ def main(argv):
        sys.exit(2)
    imgfile = argv[0]
 
+   byteArr = bytearray(imgfile, 'utf8')
+
    client = mqtt.Client()
    client.connect(broker_aws_host,1883,60)
-   client.on_connect = on_connect
+   client.publish("topic/image_processing", byteArr);
 
-def on_connect(client, userdata, flags, rc):
-  print("Connected with result code "+str(rc))
-  client.publish("topic/image_processing", imgfile);
-  client.disconnect(); 
+   client.loop_forever()
 
 if __name__ == "__main__":
    main(sys.argv[1:])
