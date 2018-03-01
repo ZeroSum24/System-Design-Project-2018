@@ -3,6 +3,7 @@
 #This sends an image to the server to be processed by the Flask app
 import paho.mqtt.client as mqtt
 import sys
+import pickle
 
 broker_aws_host = "18.219.97.244"
 
@@ -12,13 +13,15 @@ def main(argv):
    if (len(argv) != 1):
        print("Please add one image argument")
        sys.exit(2)
-   imgfile = argv[0]
+   imgpath = argv[0]
 
-   byteArr = bytearray(imgfile, 'utf8')
+   with open(imgpath, "rb") as imageFile:
+       f = imageFile.read()
+       byteArr = bytearray(f)
 
    client = mqtt.Client()
    client.connect(broker_aws_host,1883,60)
-   client.publish("image_processing", byteArr);
+   client.publish("image_processing", pickle.Pickler(byteArr));
 
    client.loop_forever()
 
