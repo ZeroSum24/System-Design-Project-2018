@@ -280,7 +280,8 @@ def on_message(client, userdata, msg):
                 print("Error incorrect desk allocation")
             else:
                 #   pass_the desk info to the path_planning
-        elif:
+                pass
+        else:
             print(desk_from_image)
 
 @mqtt.on_log()
