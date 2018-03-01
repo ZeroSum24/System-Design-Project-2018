@@ -13,7 +13,7 @@ def scanImage(image):
    # Zbarlight checks it's an image file, throwing an exception which we catch
    # and feed back to Flask
 
-   file_path = imgfile
+   file_path = image
    with open(file_path, 'rb') as image_file:
         image = Image.open(image_file)
         image.load()
@@ -22,7 +22,7 @@ def scanImage(image):
    try:
        codes = zbarlight.scan_codes('qrcode',image)
        print(codes)
-   except Assertion Error:
+   except AssertionError:
        return "The File is not an image"
 
    # display_image(img)
