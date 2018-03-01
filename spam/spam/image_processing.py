@@ -13,7 +13,8 @@ import zbarlight
 
 def scanImage(imageByteArray):
 
-   print(%s + " this is a bytearray", % (isinstance(imageByteArray, bytearray)))
+   isByteArray = isinstance(imageByteArray, bytearray)
+   print("%s this is a bytearray", % (isByteArray))
    # converts the Byte Array to an image
    image = Image.open(io.BytesIO(imageByteArray))
 
