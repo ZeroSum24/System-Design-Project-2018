@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # the main function would be replaced but broadly this is
 # how the server module should look
@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import sys, getopt
 
-import Image
+from PIL import Image
 import zbarlight
 
 def main(argv):
