@@ -18,7 +18,7 @@ def main(argv):
 
    client = mqtt.Client()
    client.connect(broker_aws_host,1883,60)
-   client.publish("topic/image_processing", byteArr);
+   client.publish("image_processing", byteArr);
 
    client.loop_forever()
 

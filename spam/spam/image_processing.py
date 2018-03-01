@@ -10,18 +10,20 @@ import zbarlight
 
 def scanImage(image):
 
-   # TODO should add a check here to make sure it is an image file
+   # Zbarlight checks it's an image file, throwing an exception which we catch
+   # and feed back to Flask
 
-   # OpenCV: converting the image to grey_scale and appling THRESH_TOZERO
-   img = cv2.imread(image,cv2.IMREAD_GRAYSCALE)
-   ret,img = cv2.threshold(img,127,255,cv2.THRESH_TOZERO)
+   file_path = imgfile
+   with open(file_path, 'rb') as image_file:
+        image = Image.open(image_file)
+        image.load()
 
    # scan the image for barcodes
-
-   # TODO <--- this bit here needs work as it is not
-   # outputting anything useful for the scanned images part
-   codes = zbarlight.scan_codes('qrcode',image)
-   print(codes)
+   try:
+       codes = zbarlight.scan_codes('qrcode',image)
+       print(codes)
+   except Assertion Error:
+       return "The File is not an image"
 
    # display_image(img)
 

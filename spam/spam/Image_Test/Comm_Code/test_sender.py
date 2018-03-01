@@ -7,5 +7,5 @@ broker_aws_host = "18.219.97.244"
 
 client = mqtt.Client()
 client.connect(broker_aws_host,1883,60)
-client.publish("topic/image_processing", "Hello world!");
+client.publish("image_processing", "Hello world!");
 client.disconnect()

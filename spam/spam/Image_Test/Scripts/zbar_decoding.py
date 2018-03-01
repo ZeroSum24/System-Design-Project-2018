@@ -18,15 +18,20 @@ def main(argv):
        sys.exit(2)
    imgfile = argv[0]
 
-   # OpenCV: converting the image to grey_scale and appling THRESH_TOZERO
-   img = cv2.imread(imgfile,cv2.IMREAD_GRAYSCALE)
-   ret,img = cv2.threshold(img,127,255,cv2.THRESH_TOZERO)
+   # # OpenCV: converting the image to grey_scale and appling THRESH_TOZERO
+   # img = cv2.imread(imgfile,cv2.IMREAD_GRAYSCALE)
+   # ret,img = cv2.threshold(img,127,255,cv2.THRESH_TOZERO)
+
+   file_path = imgfile
+   with open(file_path, 'rb') as image_file:
+       image = Image.open(image_file)
+       image.load()
 
    # scan the image for barcodes
    codes = zbarlight.scan_codes('qrcode',image)
    print(codes)
 
-   display_image(img)
+   # display_image(img)
 
    return "Image scan success"
 
