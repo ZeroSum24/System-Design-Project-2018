@@ -4,6 +4,7 @@
 import paho.mqtt.client as mqtt
 import sys
 import pickle
+from PIL import Image
 
 broker_aws_host = "18.219.97.244"
 
@@ -15,13 +16,11 @@ def main(argv):
        sys.exit(2)
    imgpath = argv[0]
 
-   with open(imgpath, "rb") as imageFile:
-       f = imageFile.read()
-       byteArr = bytearray(f)
+   img = Image.open(imgpath)
 
    client = mqtt.Client()
    client.connect(broker_aws_host,1883,60)
-   client.publish("image_processing", payload=pickle.dumps(byteArr))
+   client.publish("image_processing", payload=pickle.dumps(img))
 
    client.loop_forever()
 

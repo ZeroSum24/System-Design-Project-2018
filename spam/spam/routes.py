@@ -272,9 +272,9 @@ def on_message(client, userdata, msg):
         print("Image Recieved")
 
         #TODO add a check to ensure a number corresponding to a desk is returned
-        imageByteArray = pickle.loads(msg.payload)
+        image = pickle.loads(msg.payload)
 
-        desk_from_image = image_processing.scanImage(imageByteArray)
+        desk_from_image = image_processing.scanImage(image)
 
         if (isinstance(desk_from_image, int)):
             amount_of_desks = len(get_desks_list())

@@ -11,12 +11,7 @@ from array import array
 from PIL import Image
 import zbarlight
 
-def scanImage(imageByteArray):
-
-   isByteArray = isinstance(imageByteArray, bytearray)
-   print(str(isByteArray) + " this is a bytearray")
-   # converts the Byte Array to an image
-   image = Image.open(io.BytesIO(imageByteArray))
+def scanImage(image):
 
    # scan the image for barcodes
    try:
