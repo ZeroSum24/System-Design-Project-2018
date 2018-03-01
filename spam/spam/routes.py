@@ -52,6 +52,7 @@ connection_status = False
 path_planning_result = []
 lock = Lock()
 desk_from_image = "" #TODO later update to int
+slots_filled = 0
 seen = False
 # Definition of environment variable for Notifications
 unseen_notifications=0
@@ -281,14 +282,26 @@ def on_message(client, userdata, msg):
             if (desk_from_image < 0 or desk_from_image > amount_of_desks):
                 print("Error incorrect desk allocation")
             else:
-                #   pass_the desk info to the path_planning
-                pass
+                # pass_the desk info to the path_planning
+                # like desk num + slot num
+                if (slots_filled == 5): #or go button is pressed
+                    finish_loading()
+                else:
+                    shift_slot()
         else:
             print(desk_from_image)
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
     print(level, buf)
+
+#Functions that send image_processing commands to the robot
+def finish_loading():
+    client.publish("finish_loading", "True")
+
+def shift_slot():
+    slots_filled += 1
+    client.publish("shift_slot", "True")
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
