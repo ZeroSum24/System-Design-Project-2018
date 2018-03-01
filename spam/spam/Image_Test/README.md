@@ -3,7 +3,7 @@ Working with the Camera: Tips&Tricks
 
 Install Zbar
 ------------------
-apt-get install libzbar-dev
+sudo apt-get install libzbar-dev
 pip install zbar
 
 

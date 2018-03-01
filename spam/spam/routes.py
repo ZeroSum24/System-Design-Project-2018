@@ -217,6 +217,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("delivery_status")
     client.subscribe("problem")
     client.subscribe("request_route")
+    client.subscribe("image_processing")
 
 #Receiving information from the robot.
 @mqtt.on_message()
@@ -263,6 +264,8 @@ def on_message(client, userdata, msg):
             path_planning_result = router.return_from(*(msg.payload.decode().split('-')))
             print(path_planning_result)
             publish_path_planning(path_planning_result)
+    elif msg.topic == "image_processing":
+        print("Image Recieved")
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):

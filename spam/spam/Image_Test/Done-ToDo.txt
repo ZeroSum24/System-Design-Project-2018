@@ -5,6 +5,7 @@ Jobs Done
 --Got Flask running on the secondary experimental server
 --Wrote a python script incorporating zbar and openCV
 --Wrote out instructions in README.md
+--Added a shell script to ssh into the server (convenience only)
 
 Jobs To-DO
 
