@@ -23,14 +23,17 @@ def scanImage(image):
    codes = zbarlight.scan_codes('qrcode',image)
    print(codes)
 
-   # displaying the altered image
-   cv2.namedWindow("opencv_image", cv2.WINDOW_NORMAL)
-   cv2.imshow("opencv_image", img)
-   k = cv2.waitKey(0) & 0xFF
-   if k == 27:         # wait for ESC key to exit
-        cv2.destroyAllWindows()
-   elif k == ord('s'): # wait for 's' key to save and exit
-        cv2.imwrite('messigray.png',img)
-        cv2.destroyAllWindows()
+   # display_image(img)
 
    return "Image scan success"
+
+def display_image(img):
+       # displaying the altered image
+       cv2.namedWindow("opencv_image", cv2.WINDOW_NORMAL)
+       cv2.imshow("opencv_image", img)
+       k = cv2.waitKey(0) & 0xFF
+       if k == 27:         # wait for ESC key to exit
+            cv2.destroyAllWindows()
+       elif k == ord('s'): # wait for 's' key to save and exit
+            cv2.imwrite( "../opencv_image.jpg", img)
+            cv2.destroyAllWindows()

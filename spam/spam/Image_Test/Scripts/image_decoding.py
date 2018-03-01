@@ -15,7 +15,7 @@ def main(argv):
    img = cv2.imread(imgfile,cv2.IMREAD_GRAYSCALE)
 
    ret,img = cv2.threshold(img,127,255,cv2.THRESH_TOZERO)
-   cv2.imwrite( "../opencv_image.jpg", img);
+   cv2.imwrite( "../opencv_image.jpg", img)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

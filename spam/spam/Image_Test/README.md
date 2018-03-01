@@ -4,7 +4,7 @@ Working with the Camera: Tips&Tricks
 Install Zbar
 ------------------
 sudo apt-get install libzbar-dev
-pip install zbar
+sudo pip3 install zbarlight
 
 
 Install OpenCV

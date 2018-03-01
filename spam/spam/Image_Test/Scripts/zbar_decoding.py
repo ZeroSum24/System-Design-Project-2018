@@ -8,7 +8,7 @@ import numpy as np
 import sys, getopt
 
 import Image
-import zbar
+import zbarlight
 
 def main(argv):
 
@@ -19,41 +19,28 @@ def main(argv):
    imgfile = argv[0]
 
    # OpenCV: converting the image to grey_scale and appling THRESH_TOZERO
-   img = cv2.imread(imgfile,cv2.IMREAD_UNCHANGED)
-   # ret,img = cv2.threshold(img,127,255,cv2.THRESH_TOZERO)
-
-   # obtain image data
-   pil = Image.fromarray(img)
-   width, height = pil.size
-   raw = pil.tobytes()
-
-   # wrap image data
-   image = zbar.Image(width, height, 'Y800', raw)
+   img = cv2.imread(imgfile,cv2.IMREAD_GRAYSCALE)
+   ret,img = cv2.threshold(img,127,255,cv2.THRESH_TOZERO)
 
    # scan the image for barcodes
+   codes = zbarlight.scan_codes('qrcode',image)
+   print(codes)
 
-   # TODO <--- this bit here needs work as it is not
-   # outputting anything useful for the scanned images part
-   scanner = zbar.ImageScanner()
-   output = scanner.scan(image)
-   print output
+   display_image(img)
 
-   # extract results
-   #TODO -- this bit may be useless (see above)
-   for symbol in image:
-    # do something useful with results
-        print 'decoded', symbol.type, 'symbol', '"%s"' % symbol.data
+   return "Image scan success"
 
 
-   # displaying the altered image
-   cv2.namedWindow("opencv_image", cv2.WINDOW_NORMAL)
-   cv2.imshow("opencv_image", img)
-   k = cv2.waitKey(0) & 0xFF
-   if k == 27:         # wait for ESC key to exit
-        cv2.destroyAllWindows()
-   elif k == ord('s'): # wait for 's' key to save and exit
-        cv2.imwrite('messigray.png',img)
-        cv2.destroyAllWindows()
+def display_image(img):
+       # displaying the altered image
+       cv2.namedWindow("opencv_image", cv2.WINDOW_NORMAL)
+       cv2.imshow("opencv_image", img)
+       k = cv2.waitKey(0) & 0xFF
+       if k == 27:         # wait for ESC key to exit
+            cv2.destroyAllWindows()
+       elif k == ord('s'): # wait for 's' key to save and exit
+            cv2.imwrite( "../opencv_image.jpg", img)
+            cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
