@@ -271,8 +271,8 @@ def on_message(client, userdata, msg):
         print("Image Recieved")
 
         #TODO add a check to ensure a number corresponding to a desk is returned
-        image = msg.payload.decode()
-        desk_from_image = image_processing.scanImage(image)
+        imageByteArray = msg.payload.decode()
+        desk_from_image = image_processing.scanImage(imageByteArray)
 
         if (isinstance(desk_from_image, int)):
             amount_of_desks = len(get_desks_list())

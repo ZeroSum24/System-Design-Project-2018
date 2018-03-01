@@ -1,22 +1,20 @@
 # The main function would be replaced but broadly this is
 # how the server module should look
 
+import os
+import io
 import cv2
 import numpy as np
 import sys, getopt
+from array import array
 
 from PIL import Image
 import zbarlight
 
-def scanImage(image):
+def scanImage(imageByteArray):
 
-   # Zbarlight checks it's an image file, throwing an exception which we catch
-   # and feed back to Flask
-
-   file_path = image
-   with open(file_path, 'rb') as image_file:
-        image = Image.open(image_file)
-        image.load()
+   # converts the Byte Array to an image
+   image = Image.open(io.BytesIO(imageByteArray))
 
    # scan the image for barcodes
    try:
@@ -24,6 +22,8 @@ def scanImage(image):
        print(codes)
    except AssertionError:
        return "The File is not an image"
+        # Zbarlight checks it's an image file, throwing an exception which we catch
+        # and feed back to Flask
 
    # display_image(img)
 
