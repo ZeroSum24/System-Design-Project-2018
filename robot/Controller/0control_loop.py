@@ -174,7 +174,7 @@ def loading_loop():
 		global NEXT_NODE
 		NEXT_NODE = None
 	with STATE_QUEUE.mutex:
-		STATE_QUEUE.queue.clear()
+		STATE_QUEUE.clear()
 	get_path()
 	CLIENT.publish("delivery_status", str(State.DELIVERING))
 	return State.DELIVERING
@@ -188,7 +188,7 @@ def check_state(current_state):
 		print("got {}".format(state))
 		if state[1] != current_state:
 			with STATE_QUEUE.mutex:
-				STATE_QUEUE.queue.clear()
+				STATE_QUEUE.clear()
 			CLIENT.publish("delivery_status", str(state[1]))
 			return state[1]
 		else:
@@ -198,7 +198,7 @@ def movement_loop():
 	moving_flag = False
 	move_thread = None
 	with STATE_QUEUE.mutex:
-		STATE_QUEUE.queue.clear()
+		STATE_QUEUE.clear()
 	while True:
 		new_state = check_state(STATE)
 		if new_state != None:
