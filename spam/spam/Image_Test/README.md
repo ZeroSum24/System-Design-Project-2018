@@ -5,7 +5,7 @@ Install Zbar
 ------------------
 sudo apt-get install libzbar-dev
 sudo -H pip3 install setuptools --upgrade
-sudo -H pipe install zbarlight
+sudo -H pip3 install zbarlight
 
 
 Install OpenCV
