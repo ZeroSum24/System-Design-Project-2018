@@ -18,6 +18,9 @@ from threading import Lock
 from time import sleep
 from spam.thread_decorator import thread
 
+import image_processing
+import pickle
+
 
 
 #spam = Flask(__name__) # create the spamlication instance :)
@@ -48,6 +51,8 @@ location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
 lock = Lock()
+desk_from_image = "" #TODO later update to int
+slots_filled = 0
 seen = False
 # Definition of environment variable for Notifications
 unseen_notifications=0
@@ -217,6 +222,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("delivery_status")
     client.subscribe("problem")
     client.subscribe("request_route")
+    client.subscribe("image_processing")
 
 #Receiving information from the robot.
 @mqtt.on_message()
@@ -263,10 +269,39 @@ def on_message(client, userdata, msg):
             path_planning_result = router.return_from(*(msg.payload.decode().split('-')))
             print(path_planning_result)
             publish_path_planning(path_planning_result)
+    elif msg.topic == "image_processing":
+        print("Image Recieved")
+
+        #TODO add a check to ensure a number corresponding to a desk is returned
+        image = pickle.loads(msg.payload)
+
+        desk_from_image = image_processing.scanImage(image)
+
+        if (isinstance(desk_from_image, int)):
+            amount_of_desks = len(get_desks_list())
+            if (desk_from_image < 0 or desk_from_image > amount_of_desks):
+                print("Error incorrect desk allocation")
+            else:
+                # pass_the desk info to the path_planning
+                # like desk num + slot num
+                if (slots_filled == 5): #or go button is pressed
+                    finish_loading()
+                else:
+                    shift_slot()
+        else:
+            print(desk_from_image)
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
     print(level, buf)
+
+#Functions that send image_processing commands to the robot
+def finish_loading():
+    client.publish("finish_loading", "True")
+
+def shift_slot():
+    slots_filled += 1
+    client.publish("shift_slot", "True")
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
