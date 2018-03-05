@@ -12,6 +12,11 @@ Install OpenCV
 -----------------------
 sudo pip3 install opencv-python
 
+Install PIL
+-----------
+
+sudo pip3 install Pillow
+
 Useful Links:
 ZbarLight: https://pypi.python.org/pypi/zbarlight
 ZbarLight Repo: https://github.com/Polyconseil/zbarlight 
