@@ -40,7 +40,7 @@ def on_message(client, userdata, msg):
             dump(slot)
         print('Dumped')
         client.publish("dump_confirmation", "dumped")
-    elif msg.topic == "delivery_status" and msg.payload == "Status.LOADING":
+    elif msg.topic == "delivery_status" and str(msg.payload.decode()) == "Status.LOADING":
         camera_picture()
         print("first letter")
         #dispenser.stop(1)
