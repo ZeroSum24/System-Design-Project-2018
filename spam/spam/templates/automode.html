@@ -1,0 +1,41 @@
+{% extends "index.html" %} {% block body %}
+
+
+<div class="jumbotron">
+
+
+  <h1>Mail Delivery</h1>
+  <h3>You are in Automatic Mode.</h3>
+  <h5> Please insert first letter.
+  <h5> Letter to XXX loaded. Insert next letter. </h5>
+  <h5> Letter to XXX loaded. Spam is full. Press Deliver Mail when ready. </h5>
+  <h5> The robot is not ready to load. Wait or click callback. </h5>
+
+
+  <div class="form-group row">
+    <div class="col-sm-10">
+      <!--TODO: check this works with the action-->
+      {% if delivery_status == "State.LOADING" and connection_status %}
+      <button type="submit" class="btn btn-primary">Deliver Mail</button>
+      {% else %}
+      <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
+          <button type="submit" class="btn btn-primary" disabled style="pointer-events: none;">Deliver Mail</button>
+        </span>
+      {% endif%}
+    </div>
+
+    <div class="col-sm-10">
+      <!--TODO: check this works with the action-->
+      {% if delivery_status == "State.LOADING" and connection_status %}
+      <button type="submit" class="btn btn-primary">Manual Mode</button>
+      {% else %}
+      <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
+          <button type="submit" class="btn btn-primary" disabled style="pointer-events: none;">Manual Mode</button>
+        </span>
+      {% endif%}
+    </div>
+
+  </div>
+</div>
+<!---->
+{% endblock %}
