@@ -180,7 +180,6 @@ def loading_loop():
 	return State.DELIVERING
 
 def check_state(current_state):
-	print(STATE_QUEUE)
 	try:
 		state = STATE_QUEUE.get_nowait()
 	except Empty:
@@ -315,7 +314,6 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 			if isinstance(instruction, Report):
 				NEXT_NODE = instruction.where
 		print(NEXT_NODE)
-		print(STATE_QUEUE)
 		# TODO right now the code spins here forever after executing the movement
 		# commands - does not need to
 		while True:
@@ -379,7 +377,6 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				if isinstance(instructione, Report):
 					NEXT_NODE = instructione.where
 					break
-		print(STATE_QUEUE)
 
 		sys.exit()
 
