@@ -51,9 +51,11 @@ location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
 lock = Lock()
-desk_from_image = ""
+desk_from_image = 0
 current_slot = 1
 seen = False
+path_planning={}
+go_button_pressed = False
 # Definition of environment variable for Notifications
 unseen_notifications=0
 current_orientation = 0
@@ -272,27 +274,49 @@ def on_message(client, userdata, msg):
     elif msg.topic == "image_processing":
         print("Image Recieved")
 
-        #TODO add a check to ensure a number corresponding to a desk is returned
         image = pickle.loads(msg.payload)
+        qr_code = image_processing.scanImage(image)
 
-        desk_from_image = image_processing.scanImage(image)
+        desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
 
-        if (isinstance(desk_from_image, int)):
+        if (isinstance(desk_from_image, int)):    # yes -- the qr_code is right
+
+            print('QR codes: %s' % qr_code)
             amount_of_desks = len(get_desks_list())
-            if (desk_from_image < 0 or desk_from_image > amount_of_desks):
-                # update above for desk_ids
+
+            if (desk_from_image < 1 or desk_from_image > amount_of_desks):
+                # Input checking that the QR is not a desk we can't handle
                 print("Error incorrect desk allocation")
                 new_photo_needed(client, userdata)
+
             else:
-                # TODO call the server and pass_the desk info to the path_planning
-                # like desk num + slot num
-                if (current_slot == 4): #or go button is pressed
-                    finish_loading(client, userdata)
+                # Adds the location to path planning, looks up the unique id of person in the database
+
+                location_read = Staff.query.filter(Staff.id == desk_from_image).one().location_id
+                map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
+                if (map_node_of_location not in path_planning.keys()):
+                    path_planning[Location.query.filter(Location.id == location_read).one().map_node]=[current_slot]
                 else:
-                    shift_slot(client, userdata)
-        else:
-            print(desk_from_image)
-            new_photo_needed(client, userdata)
+                    path_planning[Location.query.filter(Location.id == location_read).one().map_node].append(current_slot)
+
+                print ("This is path planning:")
+                print (path_planning)
+
+                if (current_slot == 4):
+                    print("Slots have all been filled")
+                else: # Breaks the communication between robot and server
+                    if (go_button_pressed == False):
+                        shift_slot(client, userdata)
+                    else:
+                        path_planning_go_button
+        else:                                    # no -- no qr_code so get new photo
+            print('QR codes: %s' % qr_code)
+
+            if (go_button_pressed == False):
+                new_photo_needed(client, userdata)
+            else:
+                path_planning_go_button
+        # TODO need to include UI feedback for the path_planning being empty and the Go_button being pressed
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
@@ -303,11 +327,25 @@ def finish_loading(client, userdata):
     client.publish("finish_loading", "True")
 
 def shift_slot(client, userdata):
-    slots_filled += 1
+    current_slot += 1
     client.publish("shift_slot", str(current_slot))
 
 def new_photo_needed(client, userdata):
     client.publish("new_photo", "True")
+
+def path_planning_go_button:
+    #Once Go Button is pressed sends path planning off
+
+    go_button_pressed = False
+    path_planning_result = router.build_route(path_planning)
+    if connection_status and delivery_status == "State.LOADING":
+        publish_path_planning(path_planning_result)
+    return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
+
+@spam.route('/reset_button')
+def reset_button:
+    #Once button is pressed sends a command moving the slot over one place and to dump each slot already loaded
+    client.publish("shift_slot", str(current_slot))
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
