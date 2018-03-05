@@ -51,7 +51,7 @@ location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
 lock = Lock()
-desk_from_image = 0
+desk_from_image = ""
 slots_filled = 0
 seen = False
 # Definition of environment variable for Notifications
@@ -281,6 +281,7 @@ def on_message(client, userdata, msg):
             amount_of_desks = len(get_desks_list())
             if (desk_from_image < 0 or desk_from_image > amount_of_desks):
                 print("Error incorrect desk allocation")
+                new_photo_needed()
             else:
                 # pass_the desk info to the path_planning
                 # like desk num + slot num
@@ -289,7 +290,7 @@ def on_message(client, userdata, msg):
                 else:
                     shift_slot()
         else:
-            print(str(desk_from_image))
+            print(desk_from_image)
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
