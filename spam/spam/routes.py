@@ -52,7 +52,7 @@ connection_status = False
 path_planning_result = []
 lock = Lock()
 desk_from_image = ""
-slots_filled = 0
+current_slot = 1
 seen = False
 # Definition of environment variable for Notifications
 unseen_notifications=0
@@ -285,7 +285,7 @@ def on_message(client, userdata, msg):
             else:
                 # pass_the desk info to the path_planning
                 # like desk num + slot num
-                if (slots_filled == 5): #or go button is pressed
+                if (current_slot == 4): #or go button is pressed
                     finish_loading()
                 else:
                     shift_slot()
@@ -302,7 +302,7 @@ def finish_loading():
 
 def shift_slot():
     slots_filled += 1
-    client.publish("shift_slot", "True")
+    client.publish("shift_slot", str(current_slot))
 
 def new_photo_needed():
     client.publish("new_photo", "True")

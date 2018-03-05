@@ -3,12 +3,13 @@
 #Threading will be required to handle the camera_picture -loading variable jazz
 
 import paho.mqtt.client as mqtt
-# from dispenser import dump
+from dispenser import dump, stop
 import json
 import pickle
 from subprocess import Popen
 
 # loading = False
+current_slot = 0;
 
 def run(*cmd):
 	proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
@@ -28,6 +29,7 @@ def on_connect(client, userdata,flags, rc):
     client.subscribe("shift_slot")
     client.subscribe("finish_loading")
     client.subscribe("new_photo")
+	client.subscribe("delivery_status")
 
 def on_message(client, userdata, msg):
     print("Received on topic " + msg.topic +": "+str(msg.payload.decode()))
@@ -38,14 +40,17 @@ def on_message(client, userdata, msg):
             dump(slot)
         print('Dumped')
         client.publish("dump_confirmation", "dumped")
-    elif msg.topic == "new_photo":
+	elif msg.topic == "delivery_status" and msg.payload = "Status.LOADING":
+		print("first letter")
+		#dispenser.stop(1)
+	elif msg.topic == "new_photo":
         camera_picture()
     elif msg.topic == "shift_slot":
+		global current_slot
+		current_slot = int(msg.payload.decode())
         print("pass")
-        # slots = json.loads(msg.payload.decode())
-        # for slot in slots:
-        #     dump(slot)
         #incorporate the dispensing code
+		#dispenser.stop(current_slot)
 	 	#has to to shift the dispensing slot after the bar code has been
         camera_picture()
     elif msg.topic == "finish_loading":
