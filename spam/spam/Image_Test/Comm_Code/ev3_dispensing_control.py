@@ -3,12 +3,12 @@
 #Threading will be required to handle the camera_picture -loading variable jazz
 
 import paho.mqtt.client as mqtt
-from dispenser import dump
+# from dispenser import dump
 import json
 import pickle
 from subprocess import Popen
 
-loading = False
+# loading = False
 
 def run(*cmd):
 	proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
@@ -16,17 +16,18 @@ def run(*cmd):
 	return stdout
 
 def camera_picture():
-	while (loading == True):
-		seconds = 4
-		run("fswebcam -r 1280x720 image_sent.jpg")
-		img = Image.open("./image_sent.jpg")
-		client.publish("image_processing", payload=pickle.dumps(img))
+	# while (loading == True):
+		# seconds = 4
+    run("fswebcam -r 1280x720 image_sent.jpg")
+    img = Image.open("./image_sent.jpg")
+    client.publish("image_processing", payload=pickle.dumps(img))
 
 def on_connect(client, userdata,flags, rc):
     print("Connected with result code "+str(rc))
     client.subscribe("dump")
     client.subscribe("shift_slot")
     client.subscribe("finish_loading")
+    client.subscribe("new_photo")
 
 def on_message(client, userdata, msg):
     print("Received on topic " + msg.topic +": "+str(msg.payload.decode()))
@@ -37,6 +38,8 @@ def on_message(client, userdata, msg):
             dump(slot)
         print('Dumped')
         client.publish("dump_confirmation", "dumped")
+    elif msg.topic == "new_photo":
+        camera_picture()
     elif msg.topic == "shift_slot":
         print("pass")
         # slots = json.loads(msg.payload.decode())
@@ -44,8 +47,10 @@ def on_message(client, userdata, msg):
         #     dump(slot)
         #incorporate the dispensing code
 	 	#has to to shift the dispensing slot after the bar code has been
+        camera_picture()
     elif msg.topic == "finish_loading":
-        loading = False
+        # loading = False
+        pass
         #should stop the camera doing the pictures and be called when the go
 		#button is pressed or all the slots have been filled
 
@@ -59,5 +64,5 @@ client.connect("34.242.137.167", 1883, 60)
 client.loop_forever()
 
 if __name__ == "__main__":
-     loading = True
+     # loading = True
      camera_picture()

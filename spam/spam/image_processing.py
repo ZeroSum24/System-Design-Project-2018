@@ -16,7 +16,7 @@ def scanImage(image):
    # scan the image for barcodes
    try:
        codes = zbarlight.scan_codes('qrcode',image)
-       print(codes)
+       print("Image scan success")
    except AssertionError:
        return "The File is not an image"
         # Zbarlight checks it's an image file, throwing an exception which we catch
@@ -24,7 +24,7 @@ def scanImage(image):
 
    # display_image(img)
 
-   return "Image scan success"
+   return codes
 
 def display_image(img):
        # displaying the altered image

@@ -51,7 +51,7 @@ location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
 lock = Lock()
-desk_from_image = "" #TODO later update to int
+desk_from_image = 0
 slots_filled = 0
 seen = False
 # Definition of environment variable for Notifications
@@ -289,7 +289,7 @@ def on_message(client, userdata, msg):
                 else:
                     shift_slot()
         else:
-            print(desk_from_image)
+            print(str(desk_from_image))
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
@@ -302,6 +302,9 @@ def finish_loading():
 def shift_slot():
     slots_filled += 1
     client.publish("shift_slot", "True")
+
+def new_photo_needed():
+    client.publish("new_photo", "True")
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
