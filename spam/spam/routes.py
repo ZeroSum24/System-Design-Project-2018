@@ -12,7 +12,7 @@ from spam.database import init_db
 from spam import db
 from spam.models import Staff, Location, Problem
 from spam import router
-from flask_mqtt import Mqtt
+from flask_xmqtt import Mqtt
 import json
 from threading import Lock
 from time import sleep

@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 
 #Threading will be required to handle the camera_picture -loading variable jazz
@@ -7,15 +6,21 @@ import paho.mqtt.client as mqtt
 from dispenser import dump
 import json
 import pickle
+from subprocess import Popen
 
 loading = False
+
+def run(*cmd):
+	proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+	stdout, stderr = proc.communicate()
+	return stdout
 
 def camera_picture():
 	while (loading == True):
 		seconds = 4
-		#camera takes a picture every amount of seconds and publis
-		#img = Image.open(imgpath)
-		#client.publish("image_processing", payload=pickle.dumps(img))
+		run("fswebcam -r 1280x720 image_sent.jpg")
+		img = Image.open("./image_sent.jpg")
+		client.publish("image_processing", payload=pickle.dumps(img))
 
 def on_connect(client, userdata,flags, rc):
     print("Connected with result code "+str(rc))
