@@ -3,7 +3,7 @@
 #Threading will be required to handle the camera_picture -loading variable jazz
 
 import paho.mqtt.client as mqtt
-from dispenser import dump, stop
+# from dispenser import dump, stop
 import json
 import pickle
 from subprocess import Popen, PIPE
