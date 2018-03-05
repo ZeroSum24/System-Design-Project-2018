@@ -153,9 +153,9 @@ def notifications():
 def settings():
     return redirect('/admin')
 
-@spam.route('/view', methods=['GET', 'POST'])
+@spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
-    return render_template('automode.html', active="Mail Delivery", error=error, unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
+    return render_template('automode.html', active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
 
 
 @spam.route('/view', methods=['GET', 'POST'])
