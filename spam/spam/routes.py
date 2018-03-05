@@ -120,7 +120,7 @@ def login():
         else:
             session['logged_in'] = True
             flash('You were logged in')
-            return redirect(url_for('mail_delivery'))
+            return redirect(url_for('automatic_mode'))
 
     #else
     return render_template('login.html', error=error)
@@ -153,7 +153,11 @@ def notifications():
 def settings():
     return redirect('/admin')
 
-#TODO: match these up with index.html
+@spam.route('/view', methods=['GET', 'POST'])
+def automatic_mode():
+    return render_template('automode.html', unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
+
+
 @spam.route('/view', methods=['GET', 'POST'])
 def mail_delivery():
     error = None
