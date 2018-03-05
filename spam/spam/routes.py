@@ -281,31 +281,31 @@ def on_message(client, userdata, msg):
             amount_of_desks = len(get_desks_list())
             if (desk_from_image < 0 or desk_from_image > amount_of_desks):
                 print("Error incorrect desk allocation")
-                new_photo_needed()
+                new_photo_needed(client, userdata)
             else:
                 # pass_the desk info to the path_planning
                 # like desk num + slot num
                 if (current_slot == 4): #or go button is pressed
-                    finish_loading()
+                    finish_loading(client, userdata)
                 else:
-                    shift_slot()
+                    shift_slot(client, userdata)
         else:
             print(desk_from_image)
-            new_photo_needed()
+            new_photo_needed(client, userdata)
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
     print(level, buf)
 
 #Functions that send image_processing commands to the robot
-def finish_loading():
+def finish_loading(client, userdata):
     client.publish("finish_loading", "True")
 
-def shift_slot():
+def shift_slot(client, userdata):
     slots_filled += 1
     client.publish("shift_slot", str(current_slot))
 
-def new_photo_needed():
+def new_photo_needed(client, userdata):
     client.publish("new_photo", "True")
 
 #Functions that send information to the robot
