@@ -41,6 +41,7 @@ def on_message(client, userdata, msg):
         print('Dumped')
         client.publish("dump_confirmation", "dumped")
 	elif msg.topic == "delivery_status" and msg.payload = "Status.LOADING":
+		camera_picture()
 		print("first letter")
 		#dispenser.stop(1)
 	elif msg.topic == "new_photo":
