@@ -6,7 +6,8 @@ import paho.mqtt.client as mqtt
 from dispenser import dump, stop
 import json
 import pickle
-from subprocess import Popen
+from subprocess import Popen, PIPE
+from PIL import Image
 
 # loading = False
 current_slot = 0;
@@ -40,9 +41,9 @@ def on_message(client, userdata, msg):
             dump(slot)
         print('Dumped')
         client.publish("dump_confirmation", "dumped")
-    elif msg.topic == "delivery_status" and str(msg.payload.decode()) == "Status.LOADING":
-        camera_picture()
+    elif msg.topic == "delivery_status" and str(msg.payload.decode()) == "State.LOADING":
         print("first letter")
+        camera_picture()
         #dispenser.stop(1)
     elif msg.topic == "new_photo":
         camera_picture()
