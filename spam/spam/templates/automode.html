@@ -16,25 +16,18 @@
     <div class="col-sm-10">
       <!--TODO: check this works with the action-->
       {% if delivery_status == "State.LOADING" and connection_status %}
-      <button type="submit" class="btn btn-primary">Deliver Mail</button>
-      {% else %}
+      <button type="submit" class="btn btn-primary">Deliver Mail</button> {% else %}
       <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
           <button type="submit" class="btn btn-primary" disabled style="pointer-events: none;">Deliver Mail</button>
-        </span>
-      {% endif%}
-    </div>
+        </span> {% endif%}
 
-    <div class="col-sm-10">
       <!--TODO: check this works with the action-->
       {% if delivery_status == "State.LOADING" and connection_status %}
-      <a role="button" href="{{ url_for('mail_delivery') }}" class="btn btn-primary">Manual Mode</a>
-      {% else %}
+      <a role="button" href="{{ url_for('mail_delivery') }}" class="btn btn-primary">Manual Mode</a> {% else %}
       <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
           <button class="btn btn-primary" disabled style="pointer-events: none;">Manual Mode</button>
-        </span>
-      {% endif%}
+        </span> {% endif%}
     </div>
-
   </div>
 </div>
 <!---->
