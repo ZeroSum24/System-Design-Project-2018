@@ -291,6 +291,7 @@ def on_message(client, userdata, msg):
                     shift_slot()
         else:
             print(desk_from_image)
+            new_photo_needed()
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
