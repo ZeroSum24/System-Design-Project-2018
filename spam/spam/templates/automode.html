@@ -25,7 +25,28 @@
 
       <!--TODO: check this works with the action-->
       {% if delivery_status == "State.LOADING" and connection_status %}
-      <a role="button" href="{{ url_for('mail_delivery') }}" class="btn btn-primary">Manual Mode</a>
+      <button type="submit" class="btn btn-primary" data-toggle="modal" data-target="#ResetModalConfirmation">Manual Mode</a>
+
+      <div class="modal fade" id="ResetModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="startButtonTitle">Manual Mode</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              Are you sure if you wish to swap to manual mode? <b>Any current classifications will be lost.</b>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+              <a role="button" class="btn btn-primary" href="{{ url_for('mail_delivery') }}" method=get>Start Manual</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {% else %}
         <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
           <button class="btn btn-primary" disabled style="pointer-events: none;">Manual Mode</button>
