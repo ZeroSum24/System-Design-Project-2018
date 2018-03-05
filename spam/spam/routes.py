@@ -280,10 +280,11 @@ def on_message(client, userdata, msg):
         if (isinstance(desk_from_image, int)):
             amount_of_desks = len(get_desks_list())
             if (desk_from_image < 0 or desk_from_image > amount_of_desks):
+                # update above for desk_ids
                 print("Error incorrect desk allocation")
                 new_photo_needed(client, userdata)
             else:
-                # pass_the desk info to the path_planning
+                # TODO call the server and pass_the desk info to the path_planning
                 # like desk num + slot num
                 if (current_slot == 4): #or go button is pressed
                     finish_loading(client, userdata)
