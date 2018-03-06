@@ -283,10 +283,10 @@ def on_message(client, userdata, msg):
         add_unseen_notification()
         problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com").one().id, message=msg.payload.decode(), is_urgent=True)
         db.session.add(problem)
+        db.session.commit()
         print("Problem reported by robot.")
     elif msg.topic == "request_route":
         print("Requested Route")
-        db.session.commit()
         with location_info_lock:
             print("Received Location:")
             print(msg.payload.decode())
