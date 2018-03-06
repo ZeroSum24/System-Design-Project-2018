@@ -273,15 +273,18 @@ def on_message(client, userdata, msg):
         delivery_status = msg.payload.decode()
         if delivery_status == "State.RETURNING":
             print("Returning")
+        elif delivery_status == "State.LOADING":
+            current_slot = 1
+            print("Loading")
         print("delivery_status updated")
     elif msg.topic == "problem":
         add_unseen_notification()
         problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com").one().id, message=msg.payload.decode(), is_urgent=True)
         db.session.add(problem)
-        db.session.commit()
         print("Problem reported by robot.")
     elif msg.topic == "request_route":
         print("Requested Route")
+        db.session.commit()
         with location_info_lock:
             print("Received Location:")
             print(msg.payload.decode())
@@ -293,6 +296,8 @@ def on_message(client, userdata, msg):
 
         #put recieved bytearray back onto disk and read as image
         #TODO look into whether image on ev3 can be saved as a png
+        if (delivery_status != "State.LOADING"):
+            return
 
         image_location = 'image_recieved.jpg'
         msg_handle = open(image_location, 'wb')
