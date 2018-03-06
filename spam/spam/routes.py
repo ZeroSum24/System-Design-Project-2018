@@ -157,7 +157,20 @@ def settings():
 
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
-    return render_template('automode.html', active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
+    if request.method = 'GET':
+        return render_template('automode.html', active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
+    else:
+        global path_planning_result, path_planning
+        submit=[]
+
+        #Use path planner
+        print ("This is path planning:")
+        print (path_planning)
+        path_planning_result = router.build_route(path_planning)
+        if connection_status and delivery_status == "State.LOADING":
+            publish_path_planning(path_planning_result)
+
+        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
 
 
 @spam.route('/view', methods=['GET', 'POST'])
