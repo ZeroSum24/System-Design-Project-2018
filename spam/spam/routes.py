@@ -337,7 +337,7 @@ def shift_slot(client, userdata):
 def new_photo_needed(client, userdata):
     client.publish("new_photo", "True")
 
-def path_planning_go_button:
+def path_planning_go_button():
     #Once Go Button is pressed sends path planning off
 
     go_button_pressed = False
@@ -347,7 +347,7 @@ def path_planning_go_button:
     return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status)
 
 @spam.route('/reset_button')
-def reset_button:
+def reset_button():
     #Once button is pressed sends a command moving the slot over one place and to dump each slot already loaded
     client.publish("shift_slot", str(current_slot))
 
