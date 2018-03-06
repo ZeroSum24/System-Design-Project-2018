@@ -19,7 +19,7 @@ def run(*cmd):
 
 def camera_picture():
     #Camera takes a picture using a command_line subprocess
-    run("fswebcam -r 800x600 image_sent.jpg")
+    run("fswebcam -r 200x150 --no-banner image_sent.jpg")
 
     imgpath = "./image_sent.jpg"
     with open(imgpath,'rb') as img:
@@ -56,8 +56,10 @@ def on_message(client, userdata, msg):
         elif msg.payload.decode() == "State.DELIVERING":
             loading = False
             try:
-                slot_movement.go_further()
-                slot_movement.go_further()
+                if slot_movement != None:
+                    slot_movement.go_further()
+                    slot_movement.go_further()
+                    time.sleep(2)
             except StopIteration:
                 pass
 
@@ -73,14 +75,19 @@ def on_message(client, userdata, msg):
             slot_movement.go_further()
             time.sleep(2)
             slot_movement.go_further()
-            slot_movement = stop(current_slot)
-            camera_picture()
+            time.sleep(2)
+            print("got slot " + str(current_slot))
+            if 1 <= current_slot <= 4:
+                print("check passed")
+                slot_movement = stop(current_slot)
+                camera_picture()
 
     elif msg.topic == "go_manual":
         if msg.payload.decode() == "True":
             slot_movement.go_further()
             time.sleep(2)
             slot_movement.go_further()
+            time.sleep(2)
 
         if msg.payload.decode() == "False":
             current_slot = 1
