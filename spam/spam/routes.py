@@ -51,7 +51,6 @@ location_info = "Nothing reported yet."
 connection_status = False
 path_planning_result = []
 lock = Lock()
-desk_from_image = 0
 current_slot = 1
 seen = False
 path_planning={}
@@ -250,7 +249,7 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    global path_planning_result, location_info, path_planning, desk_from_image, current_slot
+    global path_planning_result, location_info, path_planning, current_slot
     if msg.topic == "location_info":
         with location_info_lock:
             location_info = msg.payload.decode()
@@ -306,21 +305,20 @@ def on_message(client, userdata, msg):
 
         # image = pickle.loads(msg.payload)
         # qr_code = image_processing.scanImage(image)
+        desk_from_image = 0
         qr_code = image_processing.scanImage(image_location)
 
         if qr_code != "None":                 #Checks qr_code has been registered
+            # yes -- the qr_code is right
             desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
-
-        if (desk_from_image != 0):    # yes -- the qr_code is right
-
             print('QR codes: %s' % qr_code)
-            amount_of_desks = len(get_desks_list())
 
+            # Input checking that the QR is not a desk we can't handle
+            amount_of_desks = len(get_desks_list())
             if (desk_from_image < 1 or desk_from_image > amount_of_desks):
-                # Input checking that the QR is not a desk we can't handle
+
                 print("Error incorrect desk allocation")
                 client.publish("image_result", "False")
-                desk_from_image = 0     #reset_value for loop
             else:
                 # Adds the location to path planning, looks up the unique id of person in the database
 
@@ -334,9 +332,7 @@ def on_message(client, userdata, msg):
                 print ("This is path planning:")
                 print (path_planning)
 
-                desk_from_image = 0     #reset_value for loop
-
-                if (current_slot == 4):
+                if (current_slot > 4):
                     print("Slots have all been filled")
                 else: # Breaks the communication between robot and server
                     if (go_button_pressed == False):
