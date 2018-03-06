@@ -294,9 +294,10 @@ def on_message(client, userdata, msg):
         image = pickle.loads(msg.payload)
         qr_code = image_processing.scanImage(image)
 
-        desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
+        if qr_code != None:                 #Checks qr_code has been registered
+            desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
 
-        if (isinstance(desk_from_image, int)):    # yes -- the qr_code is right
+        if (desk_from_image != 0):    # yes -- the qr_code is right
 
             print('QR codes: %s' % qr_code)
             amount_of_desks = len(get_desks_list())
@@ -305,6 +306,7 @@ def on_message(client, userdata, msg):
                 # Input checking that the QR is not a desk we can't handle
                 print("Error incorrect desk allocation")
                 client.publish("image_result", "False")
+                desk_from_image = 0     #reset_value for loop
             else:
                 # Adds the location to path planning, looks up the unique id of person in the database
 
@@ -317,6 +319,8 @@ def on_message(client, userdata, msg):
 
                 print ("This is path planning:")
                 print (path_planning)
+
+                desk_from_image = 0     #reset_value for loop
 
                 if (current_slot == 4):
                     print("Slots have all been filled")
