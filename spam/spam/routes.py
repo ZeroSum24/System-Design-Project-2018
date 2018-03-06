@@ -157,7 +157,7 @@ def settings():
 
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
-    if request.method = 'GET':
+    if request.method == 'GET':
         return render_template('automode.html', active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
     else:
         global path_planning_result, path_planning
