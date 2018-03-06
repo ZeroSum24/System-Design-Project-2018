@@ -24,7 +24,8 @@ def camera_picture():
     imgpath = "./image_sent.jpg"
     with open(imgpath,'rb') as img:
         data = img.read();
-    client.publish("image_processing", payload=pickle.dumps(img))
+    client.publish("image_processing", payload=data)
+    # client.publish("image_processing", payload=pickle.dumps(img))
 
 def on_connect(client, userdata,flags, rc):
     print("Connected with result code "+str(rc))
