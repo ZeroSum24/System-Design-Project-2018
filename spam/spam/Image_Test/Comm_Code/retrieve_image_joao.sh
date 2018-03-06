@@ -1,5 +1,5 @@
 #!/bin/sh
-# This is a script to automate access to the experimental server
+# This is a script to automate getting the sent image from the main server
 
 chmod 400 "SDP_GROUP_KEY.pem.txt"
-scp -i "SDP_GROUP_KEY.pem.txt" ubuntu@34.242.137.167:/home/ubuntu/sdp2018/spam/spam/image_recieved.jpg /afs/inf.ed.ac.uk/user/s13/s1346249/Desktop/sdp2018/spam/spam/Image_Test/imgs/server_images
+scp -i "SDP_GROUP_KEY.pem.txt" ubuntu@34.242.137.167:/home/ubuntu/sdp2018/spam/spam/image_recieved.jpg ../imgs/server_images
