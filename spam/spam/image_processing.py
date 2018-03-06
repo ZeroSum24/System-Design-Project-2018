@@ -13,6 +13,8 @@ import zbarlight
 
 def scanImage(image):
 
+    #TODO Include Image open on the byte array to work with byte sort
+
    # scan the image for barcodes
    try:
        codes = zbarlight.scan_codes('qrcode',image)

@@ -291,6 +291,13 @@ def on_message(client, userdata, msg):
     elif msg.topic == "image_processing":
         print("Image Recieved")
 
+        #put recieved bytearray back onto disk and read as image
+        #TODO look into whether image on ev3 can be saved as a png
+
+        # msg_handle = open('image.jpg', 'wb')
+        # msg_handle.write(msg.payload)
+        # msg_handle.close()
+
         image = pickle.loads(msg.payload)
         qr_code = image_processing.scanImage(image)
 
