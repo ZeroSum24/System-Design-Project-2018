@@ -23,7 +23,7 @@ from collections import namedtuple
 from threading import Lock
 # from Controller import slave, incoming
 
-DO_DUMP = True
+PROFILING = False
 
 CHOSEN_PATH = None
 chosen_path_lock = Lock()
@@ -150,6 +150,8 @@ def control_loop():
 		elif STATE == State.RETURNING:
 			get_path(returning=True)
 			STATE = movement_loop() # same function as above
+			if PROFILING:
+				sys.exit()
 		elif STATE == State.STOPPING:
 			STATE = stop_loop()
 		elif STATE == State.PANICKING:
@@ -254,7 +256,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				success = forward(instruction.dist, tolerance = instruction.tolerance)
 
 			elif isinstance(instruction, Dump):
-				if DO_DUMP:
+				if PROFILING:
 					CLIENT.publish("dump", json.dumps(instruction.slots))
 					while True:
 						with dumped_lock:

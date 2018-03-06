@@ -7,6 +7,7 @@ import ctypes
 from time import sleep
 
 PROFILING = False
+threads = 0
 
 class ThreadKiller(Exception):
     def __init__(self):
@@ -109,11 +110,13 @@ class GenericThread(threading.Thread):
 
 class ProfiledThread(GenericThread):
     def run(self):
+        global threads
         profiler = cProfile.Profile()
         try:
             return profiler.runcall(GenericThread.run, self)
         finally:
-            profiler.dump_stats('thread-profile-{}.prof'.format(self.ident))
+            profiler.dump_stats('thread-profile-{}.prof'.format(threads))
+            threads += 1
 
 # Decorators in python nearly implement the decorator pattern (See
 # Wikipedia). A python decorator is a function that accepts a function as a
