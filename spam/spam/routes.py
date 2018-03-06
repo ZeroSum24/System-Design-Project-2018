@@ -294,7 +294,7 @@ def on_message(client, userdata, msg):
         #put recieved bytearray back onto disk and read as image
         #TODO look into whether image on ev3 can be saved as a png
 
-        msg_handle = open('image.jpg', 'wb')
+        msg_handle = open('image_recieved.jpg', 'wb')
         msg_handle.write(msg.payload)
         msg_handle.close()
 
