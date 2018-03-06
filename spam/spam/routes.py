@@ -291,8 +291,7 @@ def on_message(client, userdata, msg):
             if (desk_from_image < 1 or desk_from_image > amount_of_desks):
                 # Input checking that the QR is not a desk we can't handle
                 print("Error incorrect desk allocation")
-                new_photo_needed(client, userdata)
-
+                client.publish("image_result", "False")
             else:
                 # Adds the location to path planning, looks up the unique id of person in the database
 
@@ -310,16 +309,17 @@ def on_message(client, userdata, msg):
                     print("Slots have all been filled")
                 else: # Breaks the communication between robot and server
                     if (go_button_pressed == False):
-                        shift_slot(client, userdata)
+                        current_slot += 1
+                        client.publish("image_result", str(current_slot))
                     else:
-                        path_planning_go_button
+                        path_planning_go_button()
         else:                                    # no -- no qr_code so get new photo
             print('QR codes: %s' % qr_code)
 
             if (go_button_pressed == False):
-                new_photo_needed(client, userdata)
+                client.publish("image_result", "False")
             else:
-                path_planning_go_button
+                path_planning_go_button()
         # TODO need to include UI feedback for the path_planning being empty and the Go_button being pressed
 
 @mqtt.on_log()
@@ -327,16 +327,6 @@ def handle_logging(client, userdata, level, buf):
     print(level, buf)
 
 #Functions that send image_processing commands to the robot
-def finish_loading(client, userdata):
-    client.publish("finish_loading", "True")
-
-def shift_slot(client, userdata):
-    current_slot += 1
-    client.publish("shift_slot", str(current_slot))
-
-def new_photo_needed(client, userdata):
-    client.publish("new_photo", "True")
-
 def path_planning_go_button():
     #Once Go Button is pressed sends path planning off
 

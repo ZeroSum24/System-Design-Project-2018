@@ -7,7 +7,7 @@ import pickle
 from subprocess import Popen, PIPE
 from PIL import Image
 
-current_slot = 0;
+current_slot = 0
 
 def run(*cmd):
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
@@ -38,6 +38,7 @@ def on_message(client, userdata, msg):
         client.publish("dump_confirmation", "dumped")
     elif msg.topic == "delivery_status" and str(msg.payload.decode()) == "State.LOADING":
         print("first letter")
+        global
         camera_picture()
         #dispenser.stop(1)
     elif msg.topic == "new_photo":
