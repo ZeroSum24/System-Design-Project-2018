@@ -61,6 +61,7 @@ def _base_run_to(pos, in_between_action = None, shifted_return = False):
         in_between_action = lambda: None
 
     _motor_setup(MOTORS.slider, pos, speed = 100)
+    _coast()
     yield
     if shifted_return:
         pos -= 70
@@ -72,6 +73,10 @@ def _base_run_to(pos, in_between_action = None, shifted_return = False):
     MOTORS.slider.run_timed(speed_sp=-100, time_sp=500)
     _wait_for_motor(MOTORS.slider)
     yield
+
+def _coast():
+    MOTORS.slider.stop_action=Motor.STOP_ACTION_COAST
+    MOTORS.slider.run_timed(speed_sp=0, time_sp=0)
 
 def _run_to_dump(pos):
     func = partial(_base_run_to, pos, in_between_action = _raise_dumper)
