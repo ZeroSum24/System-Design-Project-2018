@@ -335,6 +335,7 @@ def on_message(client, userdata, msg):
                 if (current_slot > 4):
                     print("Slots have all been filled")
                 else: # Breaks the communication between robot and server
+                    print("Entered the shift_slot loop")
                     if (go_button_pressed == False):
                         current_slot += 1
                         client.publish("image_result", str(current_slot))
