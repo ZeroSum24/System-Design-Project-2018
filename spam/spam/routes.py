@@ -275,6 +275,9 @@ def on_message(client, userdata, msg):
         elif delivery_status == "State.LOADING":
             current_slot = 1
             print("Loading")
+        elif delivery_status != "State.LOADING":
+            path_planning = {}
+            print("Path Planning reset")
         print("delivery_status updated")
     elif msg.topic == "problem":
         add_unseen_notification()
@@ -296,7 +299,6 @@ def on_message(client, userdata, msg):
         #put recieved bytearray back onto disk and read as image
         #TODO look into whether image on ev3 can be saved as a png
         if (delivery_status != "State.LOADING"):
-            path_planning = {}
             return
 
         image_location = 'image_recieved.jpg'
