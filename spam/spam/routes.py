@@ -249,7 +249,7 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    global path_planning_result, location_info, path_planning, current_slot
+    global path_planning_result, location_info, path_planning, current_slot, go_button_pressed
     if msg.topic == "location_info":
         with location_info_lock:
             location_info = msg.payload.decode()
@@ -317,7 +317,7 @@ def on_message(client, userdata, msg):
             amount_of_desks = len(get_desks_list())
             if (desk_from_image < 1 or desk_from_image > amount_of_desks):
 
-                print("Error incorrect desk allocation")
+                print("Error incorrect desk allocation - wrong number from QR Code")
                 client.publish("image_result", "False")
             else:
                 # Adds the location to path planning, looks up the unique id of person in the database
@@ -332,23 +332,24 @@ def on_message(client, userdata, msg):
                 print ("This is path planning:")
                 print (path_planning)
 
-                if (current_slot > 4):
-                    print("Slots have all been filled")
-                else: # Breaks the communication between robot and server
-                    print("Entered the shift_slot loop " + str(current_slot))
-                    if (go_button_pressed == False):
-                        current_slot += 1
-                        client.publish("image_result", str(current_slot))
-                    else:
-                        path_planning_go_button()
+
+                if (go_button_pressed == False):
+                    current_slot += 1
+                    client.publish("image_result", str(current_slot))
+
+                    if (current_slot > 4):
+                        print("Slots have all been filled")
+                else:
+                    return
         else:                                    # no -- no qr_code so get new photo
             print('QR codes: %s' % qr_code)
 
-            if (go_button_pressed == False):
+            if (go_button_pressed == False): # Breaks the communication between robot and server
                 client.publish("image_result", "False")
             else:
-                path_planning_go_button()
+                return
         # TODO need to include UI feedback for the path_planning being empty and the Go_button being pressed
+
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
