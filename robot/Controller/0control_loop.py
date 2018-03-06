@@ -23,7 +23,7 @@ from collections import namedtuple
 from threading import Lock
 # from Controller import slave, incoming
 
-log = open('log.txt', 'w')
+DO_DUMP = True
 
 CHOSEN_PATH = None
 chosen_path_lock = Lock()
@@ -254,12 +254,13 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				success = forward(instruction.dist, tolerance = instruction.tolerance)
 
 			elif isinstance(instruction, Dump):
-				CLIENT.publish("dump", json.dumps(instruction.slots))
-				while True:
-					with dumped_lock:
-						if dumped:
-							dumped = False
-							break
+				if DO_DUMP:
+					CLIENT.publish("dump", json.dumps(instruction.slots))
+					while True:
+						with dumped_lock:
+							if dumped:
+								dumped = False
+								break
 
 			elif isinstance(instruction, Rotate):
 				print("rotating")
@@ -402,6 +403,9 @@ def stop_loop():
 			return new_state
 
 
-if __name__ == "__main__":
+def main():
 	setup_procedure()
 	control_loop()
+
+if __name__ == "__main__":
+	main()

@@ -1,9 +1,12 @@
 """Decorator to push an arbitary callable onto a background thread"""
 
+import cProfile
 import threading
 from functools import wraps
 import ctypes
 from time import sleep
+
+PROFILING = False
 
 class ThreadKiller(Exception):
     def __init__(self):
@@ -104,6 +107,14 @@ class GenericThread(threading.Thread):
             while self.isAlive():
                 pass
 
+class ProfiledThread(GenericThread):
+    def run(self):
+        profiler = cProfile.Profile()
+        try:
+            return profiler.runcall(GenericThread.run, self)
+        finally:
+            profiler.dump_stats('thread-profile-{}.prof'.format(self.ident))
+
 # Decorators in python nearly implement the decorator pattern (See
 # Wikipedia). A python decorator is a function that accepts a function as a
 # parameter and returns a function, generally the returned function calls the
@@ -114,11 +125,15 @@ class GenericThread(threading.Thread):
 # .join() on it to make the function call blocking if desired
 def thread(func):
     """Pushes the decorated callable onto a background thread"""
+    if PROFILING:
+        Thread = ProfiledThread
+    else:
+        Thread = GenericThread
     # Prevents the decorator from corrupting the wrapped function's metadata
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Create a new thread to run the function
-        thread = GenericThread(func, args, kwargs)
+        thread = Thread(func, args, kwargs)
         # Run it
         thread.start()
         # Return it
