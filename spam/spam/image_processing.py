@@ -11,10 +11,14 @@ from array import array
 from PIL import Image
 import zbarlight
 
-def scanImage(image):
+# def scanImage(image):
+def scanImage():
 
     #TODO Include Image open on the byte array to work with byte sort
-
+    file_path = 'image.jpg'
+    with open(file_path, 'rb') as image_file:
+        image = Image.open(image_file)
+        image.load()
    # scan the image for barcodes
    try:
        codes = zbarlight.scan_codes('qrcode',image)
