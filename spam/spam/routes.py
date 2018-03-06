@@ -250,7 +250,7 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    global path_planning_result, location_info, path_planning, desk_from_image
+    global path_planning_result, location_info, path_planning, desk_from_image, current_slot
     if msg.topic == "location_info":
         with location_info_lock:
             location_info = msg.payload.decode()
