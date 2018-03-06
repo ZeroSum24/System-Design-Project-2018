@@ -294,13 +294,14 @@ def on_message(client, userdata, msg):
         #put recieved bytearray back onto disk and read as image
         #TODO look into whether image on ev3 can be saved as a png
 
-        msg_handle = open('image_recieved.jpg', 'wb')
+        image_location = 'image_recieved.jpg'
+        msg_handle = open(image_location, 'wb')
         msg_handle.write(msg.payload)
         msg_handle.close()
 
         # image = pickle.loads(msg.payload)
         # qr_code = image_processing.scanImage(image)
-        qr_code = image_processing.scanImage()
+        qr_code = image_processing.scanImage(image_location)
 
         if qr_code != "None":                 #Checks qr_code has been registered
             desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
