@@ -19,26 +19,25 @@ def scanImage():
     with open(file_path, 'rb') as image_file:
         image = Image.open(image_file)
         image.load()
-   # scan the image for barcodes
-   try:
-       codes = zbarlight.scan_codes('qrcode',image)
-       return str(codes)
-       print("Image scan success")
-   except AssertionError:
-       return "The File is not an image"
+    # scan the image for barcodes
+    try:
+        codes = zbarlight.scan_codes('qrcode',image)
+        return str(codes)
+        print("Image scan success")
+    except AssertionError:
+        return "The File is not an image"
         # Zbarlight checks it's an image file, throwing an exception which we catch
         # and feed back to Flask
 
-   # display_image(img)
-
+     # display_image(img)
 
 def display_image(img):
-       # displaying the altered image
-       cv2.namedWindow("opencv_image", cv2.WINDOW_NORMAL)
-       cv2.imshow("opencv_image", img)
-       k = cv2.waitKey(0) & 0xFF
-       if k == 27:         # wait for ESC key to exit
-            cv2.destroyAllWindows()
-       elif k == ord('s'): # wait for 's' key to save and exit
-            cv2.imwrite( "../opencv_image.jpg", img)
-            cv2.destroyAllWindows()
+    # displaying the altered image
+    cv2.namedWindow("opencv_image", cv2.WINDOW_NORMAL)
+    cv2.imshow("opencv_image", img)
+    k = cv2.waitKey(0) & 0xFF
+    if k == 27:         # wait for ESC key to exit
+        cv2.destroyAllWindows()
+    elif k == ord('s'): # wait for 's' key to save and exit
+        cv2.imwrite( "../opencv_image.jpg", img)
+        cv2.destroyAllWindows()
