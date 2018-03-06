@@ -300,7 +300,7 @@ def on_message(client, userdata, msg):
 
         # image = pickle.loads(msg.payload)
         # qr_code = image_processing.scanImage(image)
-         qr_code = image_processing.scanImage()
+        qr_code = image_processing.scanImage()
 
         if qr_code != "None":                 #Checks qr_code has been registered
             desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
