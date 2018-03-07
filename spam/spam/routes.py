@@ -163,13 +163,18 @@ def automatic_mode():
         submit=[]
 
         try:
+            print ("166")
             where_to = request.form.get('inputSlot5')
+            print ("167")
             if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
+                print ("168")
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[i]
             else:
+                print ("169")
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(i)
         except:
             # When nothing is selected
+            print ("170")
             pass
 
         for node in path_planning.keys():
