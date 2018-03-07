@@ -90,16 +90,16 @@ def polling_loop():
             seen = False
 polling_loop()
 
- @thread
- def polling_loop_2():
-     while True:
-         sleep(7)
-         with lock:
-             global connection_status_2
-             global seen_2
-             connection_status_2 = seen_2
-             seen_2 = False
- polling_loop_2()
+@thread
+def polling_loop_2():
+    while True:
+        sleep(7)
+        with lock:
+            global connection_status_2
+            global seen_2
+            connection_status_2 = seen_2
+            seen_2 = False
+polling_loop_2()
 
 
 
