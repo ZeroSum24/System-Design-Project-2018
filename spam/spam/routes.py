@@ -26,6 +26,10 @@ import pickle
 mqtt = Mqtt(spam)
 db = SQLAlchemy(spam)
 
+# First brick is BRICK 30
+# Second brick (extension _2) is BRICK 10
+
+
 # GLOBAL VARIABLES
 battery_info_volts = 0
 battery_info_volts_2= 0
@@ -57,12 +61,6 @@ def zero_unseen_notification():
     global unseen_notifications
     unseen_notifications = 0
 
-#database functions
-# def connect_db():
-#     """Connects to the specific database."""
-#     rv = sqlite3.connect(spam.config['DATABASE'])
-#     rv.row_factory = sqlite3.Row
-#     return rv
 
 @thread
 def polling_loop():
@@ -94,14 +92,6 @@ def initdb_command():
     """Initializes the database."""
     init_db()
     print('Initialized the database.')
-#g is a is a general purpose variable associated with the current spamlication context.
-# def get_db():
-#     """Opens a new database connection if there is none yet for the
-#     current spamlication context.
-#     """
-#     if not hasattr(g, 'sqlite_db'):
-#         g.sqlite_db = connect_db()
-#     return g.sqlite_db
 
 
 @spam.teardown_appcontext
@@ -123,7 +113,6 @@ def login():
             flash('You were logged in')
             return redirect(url_for('automatic_mode'))
 
-    #else
     return render_template('login.html', error=error)
 
 @spam.route('/logout')
@@ -161,13 +150,14 @@ def settings():
 def automatic_mode():
     if request.method == 'GET':
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
-        return render_template('automode.html', min_battery_level=min_battery_level, desks=get_desks_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status)
+        return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status)
     else:
         global path_planning_result, path_planning
         submit=[]
 
         try:
-            where_to = request.form.get('inputSlot5')
+            who_to = request.form.get('inputSlot5')
+            where_to = transform_into_desk(who_to)
             if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
             else:
@@ -187,7 +177,7 @@ def automatic_mode():
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","False")
-        return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
+        return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
 
 @spam.route('/view', methods=['GET', 'POST'])
@@ -203,7 +193,8 @@ def mail_delivery():
         path_planning={}
         for i in range(1,6):
             try:
-                where_to = request.form.get('inputSlot'+str(i))
+                who_to = request.form.get('inputSlot'+str(i))
+                where_to = transform_into_desk(who_to)
                 if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
                     path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[i]
                 else:
@@ -221,7 +212,7 @@ def mail_delivery():
             publish_path_planning(path_planning_result)
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
-        return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
+        return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
     #else
     else:
         command = request.args.get('emergency_command', default = "", type = str)
@@ -230,7 +221,7 @@ def mail_delivery():
                 mqtt.publish("emergency_command",command)
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","True")
-        return render_template('recipients.html', min_battery_level=min_battery_level, active="Mail Delivery", error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, delivery_status=delivery_status, connection_status_2=connection_status_2)
+        return render_template('recipients.html', min_battery_level=min_battery_level, active="Mail Delivery", error=error, people=get_people_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, delivery_status=delivery_status, connection_status_2=connection_status_2)
 
 @spam.route('/report', methods=['GET', 'POST'])
 def report():
@@ -440,6 +431,16 @@ def get_desks_list():
         if location.is_desk:
             desks.append(location)
     return desks
+
+def get_people_list():
+    people=[]
+    for person in Staff.query.all():
+        if person.name != "ROBOT SPAM":
+            people.append(person)
+    return people
+
+def transform_into_desk(who_to):
+    return who_to.staff.map_node
 
 def battery_calculate(voltage_reading):
     max_volt = 9000000
