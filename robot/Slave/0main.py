@@ -56,16 +56,13 @@ def on_message(client, userdata, msg):
             camera_picture()
         elif msg.payload.decode() == "State.DELIVERING":
             loading = False
-            try:
-                if slot_movement != None:
-                    slot_go_back()
-            except StopIteration:
-                pass
+            slot_go_back()
+            slot_movement = None
 
     elif msg.topic == "image_result":
         if msg.payload.decode() == "False": #test to check if its an int
             #"new_photo"
-            print("qr not found - taking picutre")
+            print("qr not found - taking picture")
             camera_picture()
         else: # the qr code was identified, and the slot goes to the right place
             #"shift_slot"
@@ -89,15 +86,19 @@ def on_message(client, userdata, msg):
 
 def slot_go_back():
     global slot_movement
-    slot_movement.go_further()
-    time.sleep(2)
-    slot_movement.go_further()
-    time.sleep(1)
+    try:
+        if slot_movement != None:
+            slot_movement.go_further()
+            time.sleep(2)
+            slot_movement.go_further()
+            time.sleep(2)
+    except StopIteration:
+        print("StopIteration")
 
 @thread
 def battery_alive_thread():
 	while True:
-		CLIENT.publish("battery_info_volts_2", payload=get_voltage())
+		client.publish("battery_info_volts_2", payload=get_voltage())
 		time.sleep(5)
 
 def get_voltage():
