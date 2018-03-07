@@ -322,11 +322,10 @@ def on_message(client, userdata, msg):
     elif msg.topic == "image_processing":
         print("Image Recieved")
 
-        #put recieved bytearray back onto disk and read as image
-        #TODO look into whether image on ev3 can be saved as a png
         if (delivery_status != "State.LOADING"):
             return
 
+        # Save recieved bytearray back onto disk and read as image
         image_location = 'image_recieved.jpg'
         msg_handle = open(image_location, 'wb')
         msg_handle.write(msg.payload)
