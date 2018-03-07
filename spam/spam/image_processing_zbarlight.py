@@ -54,7 +54,7 @@ def scanImage(file_path):
         else:
             #Success State is [b'2']
             print("Type: " + "QR_Code")
-            return str(codes[3])
+            return str(codes)[3]
 
         print("Image scan success")
     except AssertionError:

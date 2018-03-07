@@ -18,7 +18,7 @@ from threading import Lock
 from time import sleep
 from spam.thread_decorator import thread
 
-import image_processing_pyzbar as image_processing
+import image_processing_zbarlight as image_processing
 import pickle
 
 
