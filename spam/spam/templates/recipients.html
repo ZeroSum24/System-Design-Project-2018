@@ -91,6 +91,8 @@
       </div>
     </div>
   </form>
+  {% if delivery_status != "State.LOADING" or not connection_status %}
+  <script> $('select').attr('disabled', true); </script>
 </div>
 <!---->
 {% endblock %}
