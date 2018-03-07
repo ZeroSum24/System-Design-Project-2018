@@ -68,8 +68,8 @@
       </a> {% else %}
       <a role="button" href="{{ url_for('notifications') }}" class="btn btn-dark" style="background-color: #647687; border-color:#647687;">
         Notifications <span class="badge badge-warning">{{ unseen_notifications }}</span>
-      </a> {% endif %} {% if connection_status %}
-      <a href="{{ url_for('status') }}" class="badge badge-pill badge-success">Robot Connected ({{ battery_level }}%)</a> {% else %}
+      </a> {% endif %} {% if connection_status and connection_status_2 %}
+      <a href="{{ url_for('status') }}" class="badge badge-pill badge-success">Robot Connected ({{ min(battery_level,battery_level_2) }}%)</a> {% else %}
       <a href="{{ url_for('status') }}" class="badge badge-pill badge-danger">Robot Disconnected</a> {% endif %}
     </div>
   </nav>
