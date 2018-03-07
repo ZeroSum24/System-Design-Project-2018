@@ -168,10 +168,10 @@ def automatic_mode():
             print ("167")
             if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
                 print ("168")
-                path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[i]
+                path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
             else:
                 print ("169")
-                path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(i)
+                path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
         except:
             # When nothing is selected
             print ("170")
