@@ -34,10 +34,9 @@ def scanImage(file_path):
     if len(approx) == 4:
         rect_count = approx
 
+    im1 = cv2.drawContours(img, [rect_count], -1, (0,255,0), 3)
 
-im1 = cv2.drawContours(img, [rect_count], -1, (0,255,0), 3)
-
-cv2.imwrite('/Image_Test/imgs/server_images/contours.jpg', contours)
+    cv2.imwrite('/Image_Test/imgs/server_images/contours.jpg', contours)
 
     #TODO Include Image open on the byte array to work with byte sort
     with open(file_path, 'rb') as image_file:
