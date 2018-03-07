@@ -329,9 +329,13 @@ def on_message(client, userdata, msg):
         desk_from_image = 0
         qr_code = image_processing.scanImage(image_location)
 
-        if qr_code != "None":                 #Checks qr_code has been registered
+        # if qr_code != "None":                 #Checks qr_code has been registered
+        if qr_code != "[]":
+            #pyzbar - for output: no (zbarlight ) None == [] ; yes (zbarlight [b'2'] == [Decoded(data=b'2', type='QRCODE')])
             # yes -- the qr_code is right
-            desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
+            # desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
+            desk_from_image = int(qr_code[16])
+            print("Type: " + qr_code[24:])
             print('QR codes: %s' % qr_code)
 
             # Input checking that the QR is not a desk we can't handle

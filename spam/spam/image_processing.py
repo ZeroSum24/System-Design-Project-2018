@@ -9,7 +9,8 @@ import sys, getopt
 from array import array
 
 from PIL import Image
-import zbarlight
+from pyzbar.pyzbar import decode
+# import zbarlight
 
 # def scanImage(image):
 def scanImage(file_path):
@@ -45,7 +46,8 @@ def scanImage(file_path):
 
     # scan the image for barcodes
     try:
-        codes = zbarlight.scan_codes('qrcode',image)
+        # codes = zbarlight.scan_codes('qrcode',image)
+        codes = decode(image)
         return str(codes)
         print("Image scan success")
     except AssertionError:

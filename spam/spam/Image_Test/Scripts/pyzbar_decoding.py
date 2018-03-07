@@ -8,7 +8,7 @@ import numpy as np
 import sys, getopt
 
 from PIL import Image
-import zbarlight
+from pyzbar.pyzbar import decode
 
 def main(argv):
 
@@ -28,7 +28,7 @@ def main(argv):
        image.load()
 
    # scan the image for barcodes
-   codes = zbarlight.scan_codes('qrcode',image)
+   codes = decode(image)
    print(codes)
 
    # display_image(img)
