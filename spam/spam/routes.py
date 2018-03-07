@@ -53,6 +53,7 @@ connection_status = False
 connection_status_2 = False
 path_planning_result = []
 lock = Lock()
+lock_2 = Lock()
 current_slot = 1
 seen = False
 seen_2 = False
@@ -94,7 +95,7 @@ polling_loop()
 def polling_loop_2():
     while True:
         sleep(7)
-        with lock:
+        with lock_2:
             global connection_status_2
             global seen_2
             connection_status_2 = seen_2
@@ -151,6 +152,7 @@ def logout():
 @spam.route('/notifications')
 def notifications():
     global connection_status
+    global connection_status_2
     global battery_info_volts
     global battery_info_volts_2
     zero_unseen_notification()
@@ -164,7 +166,7 @@ def notifications():
     notifications= Problem.query.filter(Problem.solved == False).all()
     for notification in notifications:
         notification.origin = Staff.query.filter(Staff.id == notification.origin).one().name
-    return render_template('notifications.html', notifications=notifications,battery_level_2=battery_calculate(battery_info_volts_2) , battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, unseen_notifications=get_unseen_notification())
+    return render_template('notifications.html', notifications=notifications,battery_level_2=battery_calculate(battery_info_volts_2) , battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, unseen_notifications=get_unseen_notification())
 
 @spam.route('/settings')
 def settings():
@@ -173,7 +175,7 @@ def settings():
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
     if request.method == 'GET':
-        return render_template('automode.html', desks=get_desks_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
+        return render_template('automode.html', desks=get_desks_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status)
     else:
         global path_planning_result, path_planning
         submit=[]
@@ -203,13 +205,14 @@ def automatic_mode():
         if connection_status and delivery_status == "State.LOADING":
             publish_path_planning(path_planning_result)
 
-        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status)
+        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
 
 @spam.route('/view', methods=['GET', 'POST'])
 def mail_delivery():
     error = None
     global connection_status
+    global connection_status_2
     global battery_info_volts
     global battery_info_volts_2
     global path_planning_result
@@ -235,14 +238,14 @@ def mail_delivery():
         if connection_status and delivery_status == "State.LOADING":
             publish_path_planning(path_planning_result)
 
-        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status)
+        return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
     #else
     else:
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
             if connection_status:
                 mqtt.publish("emergency_command",command)
-        return render_template('recipients.html', active="Mail Delivery", error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, delivery_status=delivery_status)
+        return render_template('recipients.html', active="Mail Delivery", error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, delivery_status=delivery_status, connection_status_2=connection_status_2)
 
 @spam.route('/report', methods=['GET', 'POST'])
 def report():
@@ -262,11 +265,12 @@ def report():
 @spam.route('/status')
 def status():
     global connection_status
+    global connection_status_2
     global location_info
     global battery_info_volts
     global battery_info_volts_2
     global delivery_status
-    return render_template('status.html', unseen_notifications=get_unseen_notification(), active="Status", battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status)
+    return render_template('status.html', unseen_notifications=get_unseen_notification(), active="Status", battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status, connection_status_2=connection_status_2)
 
 @mqtt.on_connect()
 def on_connect(client, userdata, flags, rc):
@@ -410,7 +414,7 @@ def path_planning_go_button():
     path_planning_result = router.build_route(path_planning)
     if connection_status and delivery_status == "State.LOADING":
         publish_path_planning(path_planning_result)
-    return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status)
+    return render_template('echo_submit.html', submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
 @spam.route('/reset_button')
 def reset_button():
