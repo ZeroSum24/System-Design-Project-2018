@@ -17,8 +17,8 @@
       <div class="col-sm-10">
         <select name='inputSlot5' class="form-control">
             <option>Select a desk</option>
-            {% for desk in desks %}
-            <option value={{ desk.id }}>{{ desk.location_name }}</option>
+            {% for person in people %}
+            <option value={{ person.id }}>{{ person.name }}</option>
             {% endfor %}
 
         </select> </div>
