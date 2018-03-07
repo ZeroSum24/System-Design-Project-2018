@@ -58,9 +58,9 @@ def scanImage(file_path):
             #Success State is [Decoded(data=b'2', type='QRCODE')])
             print("Type: " + str(codes[24:]))
             print(str(codes))
-            print(str(codes[16]))
-            return str(codes[16])
-            #pyzbar - for output: no (zbarlight ) None == [] ; yes (zbarlight [b'2'] == [Decoded(data=b'2', type='QRCODE')])
+            print(str(codes)[16])
+            return str(codes)[16]
+            #pyzbar - for output: no (zbarlight ) None == [] ; yes (zbarlight) [b'2'] == [Decoded(data=b'1', type='QRCODE')]
 
         print("Image scan success")
     except AssertionError:
