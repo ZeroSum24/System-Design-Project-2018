@@ -1,16 +1,8 @@
 #!/usr/bin/env python3
 
-# import socket
-# import requests
-# from sys import argv
 import sys
 import time
-
-# import ev3dev.ev3 as ev3
-# import urllib.request as request
-
 from move import forward, rotate, left, right, approach, stop_motors, get_odometry
-# import dispenser
 import State
 import UniquePriorityQueue as uniq
 from queue import Empty
@@ -21,7 +13,6 @@ import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
 from threading import Lock
-# from Controller import slave, incoming
 
 PROFILING = False
 
@@ -36,13 +27,16 @@ next_node_lock = Lock()
 
 STATE = State.LOADING
 
-state_resumed_lock = Lock()
 STATE_RESUMED = None
+state_resumed_lock = Lock()
 
 STATE_QUEUE = uniq.UniquePriorityQueue()
 
+DUMPED = False
 dumped_lock = Lock()
-dumped = False
+
+SECOND_BRICK_ALIVE = False
+second_brick_alive_lock =  Lock()
 
 # the lower the number, the higher the priority
 T_LOADING = (3, State.LOADING)
@@ -65,20 +59,24 @@ def setup_procedure():
 	CLIENT.on_message = on_message
 	# TODO do IO exceptions
 	CLIENT.connect("34.242.137.167", 1883, 60)
-	CLIENT.publish("delivery_status", str(State.LOADING))
-	battery_alive_thread()
 	instruction_thread()
-	# initialize_2nd_brick()
+	while True:
+		with second_brick_alive_lock:
+			if SECOND_BRICK_ALIVE == True:
+				break
+	battery_alive_thread()
+	CLIENT.publish("delivery_status", str(State.LOADING))
 
 def on_connect(client, userdata, flags, rc):
 	client.subscribe("path_direction")
 	client.subscribe("emergency_command")
 	client.subscribe("dump_confirmation")
+	client.subscribe("battery_info_volts_2")
 
 def on_message(client, userdata, msg):
+	global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
 	if msg.topic == "path_direction":
 		with chosen_path_lock:
-			global CHOSEN_PATH
 			CHOSEN_PATH = generate_named_tuples(json.loads(msg.payload.decode()))
 	elif msg.topic == "emergency_command":
 		string = msg.payload.decode()
@@ -90,11 +88,12 @@ def on_message(client, userdata, msg):
 		elif string == "Callback":
 			STATE_QUEUE.put(T_RETURNING)
 	elif msg.topic == "dump_confirmation":
-		global dumped
 		print('Got Confirmation')
 		with dumped_lock:
 			print('Set Flag')
-			dumped = True
+			DUMPED = True
+	elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
+		SECOND_BRICK_ALIVE = True
 
 def generate_named_tuples(list):
 	new_list = []
@@ -127,17 +126,6 @@ def get_voltage():
     with open('/sys/class/power_supply/legoev3-battery/voltage_now') as fin:
         voltage = fin.readline()
     return voltage
-
-# def initialize_2nd_brick():
-# 	pass # RPyC setup here
-#
-# def initialize_connection():
-# 	try:
-# 		pass # do all the required connection setup here
-# 		get_current_instruction()
-# 	except IOError:
-# 		pass # display a "cannot connect" message to the user
-# 	poll_for_instructions()
 
 def control_loop():
 	global STATE
@@ -219,33 +207,11 @@ def movement_loop():
 				STATE_RESUMED = STATE
 			move_thread = move_asynch(chosen_path, STATE)
 
-
-# def choose_path(reception = False):
-# 	if reception:
-# 		CHOSEN_PATH = plan_path(CURRENT_POSITION, 0)
-# 	else:
-# 		list_of_paths = []
-# 		for bracket, table_no in BRACKETS:
-# 			list_of_paths.append(plan_path(CURRENT_POSITION, table_no))
-# 		global CHOSEN_PATH
-# 		CHOSEN_PATH = shotest_path(list_of_paths) # need to return the bracket number, so that we know what is left to deliver
-#
-# def plan_path(current, destination):
-# 	pass # djikstra: this can be either implemented on the brick, or fed from the server
-#
-# def shortest_path(paths):
-# 	pass # returns the shortest path from the path list
-
 @thread
 def move_asynch(chosen_path, state): #all global returns will have to be passed in queues
-	global dumped
-	global NEXT_NODE
+	global DUMPED, NEXT_NODE
 	instruction = None
 	try:
-		# if state == State.RETURNING:
-		# 	chosen_path = choose_path(reception = True)
-		# else:
-		# 	chosen_path = choose_path()
 		while True:
 
 			instruction = chosen_path.pop(0)
@@ -260,8 +226,8 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 					CLIENT.publish("dump", json.dumps(instruction.slots))
 					while True:
 						with dumped_lock:
-							if dumped:
-								dumped = False
+							if DUMPED:
+								DUMPED = False
 								break
 
 			elif isinstance(instruction, Rotate):
@@ -340,8 +306,8 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 		elif isinstance(instruction, Dump):
 			while True:
 				with dumped_lock:
-					if dumped:
-						dumped = False
+					if DUMPED:
+						DUMPED = False
 						break
 
 		elif isinstance(instruction, Rotate):
@@ -383,7 +349,6 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 		sys.exit()
 
-
 def panic_loop():
 	with next_node_lock:
 		CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
@@ -403,7 +368,6 @@ def stop_loop():
 		new_state = check_state(STATE)
 		if new_state != None:
 			return new_state
-
 
 def main():
 	setup_procedure()

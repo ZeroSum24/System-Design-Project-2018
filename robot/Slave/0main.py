@@ -7,6 +7,7 @@ import pickle
 from subprocess import Popen, PIPE
 from PIL import Image
 import time
+from thread_decorator import thread
 
 current_slot = 1
 slot_movement = None
@@ -57,9 +58,7 @@ def on_message(client, userdata, msg):
             loading = False
             try:
                 if slot_movement != None:
-                    slot_movement.go_further()
-                    slot_movement.go_further()
-                    time.sleep(2)
+                    slot_go_back()
             except StopIteration:
                 pass
 
@@ -72,10 +71,7 @@ def on_message(client, userdata, msg):
             #"shift_slot"
             print("qr found")
             current_slot = int(msg.payload.decode())
-            slot_movement.go_further()
-            time.sleep(2)
-            slot_movement.go_further()
-            time.sleep(2)
+            slot_go_back()
             print("got slot " + str(current_slot))
             if 1 <= current_slot <= 4:
                 print("check passed")
@@ -84,21 +80,38 @@ def on_message(client, userdata, msg):
 
     elif msg.topic == "go_manual":
         if msg.payload.decode() == "True":
-            slot_movement.go_further()
-            time.sleep(2)
-            slot_movement.go_further()
-            time.sleep(2)
+            slot_go_back()
 
         if msg.payload.decode() == "False":
             current_slot = 1
             slot_movement = stop(current_slot)
             camera_picture()
 
+def slot_go_back():
+    global slot_movement
+    slot_movement.go_further()
+    time.sleep(2)
+    slot_movement.go_further()
+    time.sleep(1)
+
+@thread
+def battery_alive_thread():
+	while True:
+		CLIENT.publish("battery_info_volts_2", payload=get_voltage())
+		time.sleep(5)
+
+def get_voltage():
+    with open('/sys/class/power_supply/legoev3-battery/voltage_now') as fin:
+        voltage = fin.readline()
+    return voltage
+
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
 client.connect("34.242.137.167", 1883, 60)
+
+battery_alive_thread()
 
 # Loop forever.
 client.loop_forever()
