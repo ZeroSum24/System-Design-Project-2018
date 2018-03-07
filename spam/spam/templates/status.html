@@ -49,6 +49,8 @@
           <td>Robot Location</td>
           <td>{{ location_info }}</td>
         </tr>
+        {% endif %}
+        {% if connection_status_2 %}
         <tr>
           <td>Robot 10 Battery</td>
           <td>
@@ -58,9 +60,9 @@
             {{ battery_level_2 }}%
           </td>
         </tr>
-
         {% endif %}
-        {% if connection_status_2 %}
+
+        {% if connection_status %}
         <tr>
           <td>Brick 30 Battery</td>
           <td>
