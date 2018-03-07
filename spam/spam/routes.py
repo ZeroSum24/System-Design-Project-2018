@@ -399,6 +399,7 @@ def on_message(client, userdata, msg):
                     if (current_slot > 4):
                         print("Slots have all been filled")
                 else:
+                    go_button_pressed = False
                     return
         else:                                    # no -- no qr_code so get new photo
             print('QR codes: %s' % qr_code)
@@ -406,6 +407,7 @@ def on_message(client, userdata, msg):
             if (go_button_pressed == False): # Breaks the communication between robot and server
                 client.publish("image_result", "False")
             else:
+                go_button_pressed = False
                 return
         # TODO need to include UI feedback for the path_planning being empty and the Go_button being pressed
 
@@ -415,10 +417,11 @@ def handle_logging(client, userdata, level, buf):
     print(level, buf)
 
 #Functions that send image_processing commands to the robot
+
 def path_planning_go_button():
     #Once Go Button is pressed sends path planning off
 
-    go_button_pressed = False
+    go_button_pressed = True
     path_planning_result = router.build_route(path_planning)
     if connection_status and delivery_status == "State.LOADING":
         publish_path_planning(path_planning_result)
