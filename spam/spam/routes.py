@@ -167,14 +167,10 @@ def automatic_mode():
         submit=[]
 
         try:
-            print ("166")
             where_to = request.form.get('inputSlot5')
-            print ("167")
             if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
-                print ("168")
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
             else:
-                print ("169")
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
         except:
             # When nothing is selected
@@ -187,11 +183,10 @@ def automatic_mode():
         #Use path planner
         print ("This is path planning:")
         print (path_planning)
-        path_planning_result = router.build_route(path_planning)
-        if connection_status and delivery_status == "State.LOADING":
-            publish_path_planning(path_planning_result)
+        path_planning_go_button()
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
+        mqtt.publish("go_manual","False")
         return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
 
@@ -234,6 +229,7 @@ def mail_delivery():
             if connection_status:
                 mqtt.publish("emergency_command",command)
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
+        mqtt.publish("go_manual","True")
         return render_template('recipients.html', min_battery_level=min_battery_level, active="Mail Delivery", error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, delivery_status=delivery_status, connection_status_2=connection_status_2)
 
 @spam.route('/report', methods=['GET', 'POST'])
@@ -409,8 +405,6 @@ def path_planning_go_button():
     path_planning_result = router.build_route(path_planning)
     if connection_status and delivery_status == "State.LOADING":
         publish_path_planning(path_planning_result)
-    min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
-    return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
 @spam.route('/reset_button')
 def reset_button():
