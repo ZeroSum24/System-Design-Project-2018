@@ -157,10 +157,23 @@ def settings():
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
     if request.method == 'GET':
-        return render_template('automode.html', active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
+        return render_template('automode.html', desks=get_desks_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, delivery_status=delivery_status)
     else:
         global path_planning_result, path_planning
         submit=[]
+
+        try:
+            where_to = request.form.get('inputSlot5')
+            if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
+                path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[i]
+            else:
+                path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(i)
+        except:
+            # When nothing is selected
+            pass
+
+        for node in path_planning.keys():
+            submit.append(Location.query.filter(Location.map_node == node).one())
 
         #Use path planner
         print ("This is path planning:")
