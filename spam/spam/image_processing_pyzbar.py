@@ -56,7 +56,7 @@ def scanImage(file_path):
             return "Fail"
         else:
             #Success State is [Decoded(data=b'2', type='QRCODE')])
-            print("Type: " + codes[24:])
+            print("Type: " + str(codes[24:]))
             return str(codes[16])
             #pyzbar - for output: no (zbarlight ) None == [] ; yes (zbarlight [b'2'] == [Decoded(data=b'2', type='QRCODE')])
 
