@@ -420,7 +420,7 @@ def handle_logging(client, userdata, level, buf):
 
 def path_planning_go_button():
     #Once Go Button is pressed sends path planning off
-
+    global go_button_pressed
     go_button_pressed = True
     path_planning_result = router.build_route(path_planning)
     if connection_status and delivery_status == "State.LOADING":
