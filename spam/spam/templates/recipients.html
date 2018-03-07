@@ -94,7 +94,11 @@
     </div>
   </form>
   {% if delivery_status != "State.LOADING" or not connection_status %}
-  <script type="text/javascript"> $('select').attr('disabled', true); </script>
+  <script type="text/javascript">
+    $(document).ready(function () {
+      $('select').attr('disabled', true);
+    });
+  </script>
   {% endif %}
 </div>
 <!---->
