@@ -5,20 +5,12 @@
 
 
   <h1>Mail Delivery</h1>
-  <h3>You are in Automatic Mode.</h3>
-
-  {% if not connection_status %}
-  <h5> The robot is not connected. Turn it on and wait. </h5>
-  {% else %}
+  <h3>You are in Automatic Mode.</h3> {% if not connection_status %}
+  <h5> The robot is not connected. Turn it on and wait. </h5> {% else %}
   <h5> Please insert first letter.
   <h5> Letter to XXX loaded. Insert next letter. </h5>
   <h5> Letter to XXX loaded. Spam is full. Press Deliver Mail when ready. </h5>
-  <h5> The robot is not ready to load. Wait or click callback. </h5>
-  {% endif %}
-
-
-
-  {% if delivery_status == "State.LOADING" and connection_status %}
+  <h5> The robot is not ready to load. Wait or click callback. </h5> {% endif %} {% if delivery_status == "State.LOADING" and connection_status %}
   <form action="{{ url_for('automatic_mode') }}" method=post role="form">
     <div class="form-group row">
       <label for="inputSlot5" class="col-sm-2 col-form-label">Parcel</label>
@@ -30,47 +22,42 @@
             {% endfor %}
 
         </select> </div>
-      </div>
-        <button type="submit" class="btn btn-primary">Deliver Mail</button>
-      </form>
-      {% else %}
-        <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
+    </div>
+    <button type="submit" class="btn btn-primary">Deliver Mail</button> {% else %}
+    <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
           <button type="submit" class="btn btn-primary" disabled style="pointer-events: none;">Deliver Mail</button>
-        </span>
-      {% endif%}
+        </span> {% endif%}
 
-      <!--TODO: check this works with the action-->
-      {% if delivery_status == "State.LOADING" and connection_status %}
-      <button type="submit" class="btn btn-primary" data-toggle="modal" data-target="#ResetModalConfirmation">Manual Mode</button>
+    <!--TODO: check this works with the action-->
+    {% if delivery_status == "State.LOADING" and connection_status %}
+    <button type="submit" class="btn btn-primary" data-toggle="modal" data-target="#ResetModalConfirmation">Manual Mode</button>
 
-      <div class="modal fade" id="ResetModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="startButtonTitle">Manual Mode</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <div class="modal fade" id="ResetModalConfirmation" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="startButtonTitle">Manual Mode</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
-            </div>
-            <div class="modal-body">
-              <p>Are you sure if you wish to swap to manual mode?</p>
-              <p><b>Any current classifications will be lost.</b></p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-              <a role="button" class="btn btn-primary" href="{{ url_for('mail_delivery') }}" method=get>Manual Mode</a>
-            </div>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure if you wish to swap to manual mode?</p>
+            <p><b>Any current classifications will be lost.</b></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            <a role="button" class="btn btn-primary" href="{{ url_for('mail_delivery') }}" method=get>Manual Mode</a>
           </div>
         </div>
       </div>
-
-      {% else %}
-        <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
-          <button class="btn btn-primary" disabled style="pointer-events: none;">Manual Mode</button>
-        </span>
-      {% endif%}
     </div>
-  </div>
+
+    {% else %}
+    <span class="d-inline-block" data-toggle="popover" data-placement="bottom" data-content="Spam disconnected or not ready to load.">
+          <button class="btn btn-primary" disabled style="pointer-events: none;">Manual Mode</button>
+        </span> {% endif%}
+  </form>
 </div>
 <!---->
 {% endblock %}
