@@ -351,20 +351,20 @@ def on_message(client, userdata, msg):
                 print("Error incorrect desk allocation - wrong number from QR Code")
                 client.publish("image_result", "False")
             else:
-                # Adds the location to path planning, looks up the unique id of person in the database
-
-                location_read = Staff.query.filter(Staff.id == desk_from_image).one().location_id
-                map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
-                if (map_node_of_location not in path_planning.keys()):
-                    path_planning[Location.query.filter(Location.id == location_read).one().map_node]=[current_slot]
-                else:
-                    path_planning[Location.query.filter(Location.id == location_read).one().map_node].append(current_slot)
-
-                print ("This is path planning:")
-                print (path_planning)
-
+                # Adds the location to path planning if the go button has not been pressed, looks up the unique id of person in the database
 
                 if (go_button_pressed == False):
+
+                    location_read = Staff.query.filter(Staff.id == desk_from_image).one().location_id
+                    map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
+                    if (map_node_of_location not in path_planning.keys()):
+                        path_planning[Location.query.filter(Location.id == location_read).one().map_node]=[current_slot]
+                    else:
+                        path_planning[Location.query.filter(Location.id == location_read).one().map_node].append(current_slot)
+
+                    print ("This is path planning:")
+                    print ("Slots: " + str(path_planning))
+
                     current_slot += 1
                     client.publish("image_result", str(current_slot))
 
@@ -381,8 +381,6 @@ def on_message(client, userdata, msg):
             else:
                 go_button_pressed = False
                 return
-        # TODO need to include UI feedback for the path_planning being empty and the Go_button being pressed
-
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):
@@ -392,8 +390,12 @@ def handle_logging(client, userdata, level, buf):
 
 def path_planning_go_button():
     #Once Go Button is pressed sends path planning off
-    global go_button_pressed
+    global go_button_pressed, path_planning
     go_button_pressed = True
+
+    print ("This is path planning:")
+    print ("Slots: " + str(path_planning))
+
     path_planning_result = router.build_route(path_planning)
     if connection_status and delivery_status == "State.LOADING":
         publish_path_planning(path_planning_result)
