@@ -38,7 +38,7 @@ def scanImage(file_path):
     # im1 = cv2.drawContours(img, [rect_count], -1, (0,255,0), 3)
     #
     # cv2.imwrite('/Image_Test/imgs/server_images/contours.jpg', contours)
-
+    print("Entered image testing")
     #TODO Include Image open on the byte array to work with byte sort
     with open(file_path, 'rb') as image_file:
         image = Image.open(image_file)
