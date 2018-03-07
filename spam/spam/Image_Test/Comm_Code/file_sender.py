@@ -5,7 +5,7 @@ import paho.mqtt.client as mqtt
 import sys
 import pickle
 
-broker_aws_host = "18.219.97.244"
+broker_aws_host = "34.242.137.167"
 
 def main(argv):
 

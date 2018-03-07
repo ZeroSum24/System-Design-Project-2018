@@ -1,6 +1,8 @@
 # The main function would be replaced but broadly this is
 # how the server module should look
 
+#This is the pyzbar module
+
 import os
 import io
 import cv2
@@ -9,10 +11,8 @@ import sys, getopt
 from array import array
 
 from PIL import Image
-from pyzbar.pyzbar import decode
-# import zbarlight
+import zbarlight
 
-# def scanImage(image):
 def scanImage(file_path):
 
     # img = cv2.imread(file_path)                                                           # your image to be read ,IMREAD_COLOR =  or 1,0..
@@ -45,10 +45,17 @@ def scanImage(file_path):
         image.load()
 
     # scan the image for barcodes
+    # returns just the data
     try:
-        # codes = zbarlight.scan_codes('qrcode',image)
-        codes = decode(image)
-        return str(codes)
+        codes = zbarlight.scan_codes('qrcode',image)
+        if str(codes) == "None":
+            #Fail State is None
+            return "Fail"
+        else:
+            #Success State is [b'2']
+            print("Type: " + "QR_Code")
+            return str(codes[3])
+
         print("Image scan success")
     except AssertionError:
         return "The File is not an image"
