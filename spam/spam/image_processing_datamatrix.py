@@ -38,8 +38,7 @@ def scanImage(file_path):
         print("Image scan success")
     except AssertionError:
         return "The File is not an image"
-        # Zbarlight checks it's an image file, throwing an exception which we catch
-        # and feed back to Flask
+        # Throws an exception if its is not an image which we catch and feed back to Flask
 
      # display_image(img)
 
