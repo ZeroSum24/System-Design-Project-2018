@@ -6,10 +6,16 @@
 
   <h1>Mail Delivery</h1>
   <h3>You are in Automatic Mode.</h3>
+
+  {% if connection_status %}
+  <h5> The robot is not connected. Turn it on and wait. </h5>
+  {% else %}
   <h5> Please insert first letter.
   <h5> Letter to XXX loaded. Insert next letter. </h5>
   <h5> Letter to XXX loaded. Spam is full. Press Deliver Mail when ready. </h5>
   <h5> The robot is not ready to load. Wait or click callback. </h5>
+  {% endif %}
+
 
 
   <div class="form-group row">
