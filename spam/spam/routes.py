@@ -157,17 +157,30 @@ def automatic_mode():
 
         try:
             who_to = request.form.get('inputSlot5')
+            print ("160")
+            print (who_to)
+
             where_to = transform_into_desk(who_to)
+            print ("164")
+            print (where_to)
+
+
             if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
+                print ("169")
+
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
             else:
+                print ("173")
+
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
         except:
             # When nothing is selected
-            print ("170")
+            print ("178")
             pass
 
         for node in path_planning.keys():
+            print ("182")
+
             submit.append(Location.query.filter(Location.map_node == node).one())
 
         #Use path planner
@@ -177,6 +190,8 @@ def automatic_mode():
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","False")
+        print ("submit=")
+        print (submit)
         return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
 
