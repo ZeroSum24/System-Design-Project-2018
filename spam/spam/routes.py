@@ -55,6 +55,7 @@ path_planning_result = []
 lock = Lock()
 current_slot = 1
 seen = False
+seen_2 = False
 path_planning={}
 go_button_pressed = False
 # Definition of environment variable for Notifications
@@ -88,6 +89,18 @@ def polling_loop():
             connection_status = seen
             seen = False
 polling_loop()
+
+ @thread
+ def polling_loop_2():
+     while True:
+         sleep(7)
+         with lock:
+             global connection_status_2
+             global seen_2
+             connection_status_2 = seen_2
+             seen_2 = False
+ polling_loop_2()
+
 
 
 #this cli contexct is for the flask shell
@@ -292,9 +305,9 @@ def on_message(client, userdata, msg):
         battery_info_volts = float(msg.payload.decode())
         print("battery_info_volts updated")
     elif msg.topic == "battery_info_volts_2":
-        global seen
+        global seen_2
         with lock:
-            seen = True
+            seen_2 = True
         global battery_info_volts_2
         battery_info_volts_2 = float(msg.payload.decode())
         print("battery_info_volts_2 updated")
