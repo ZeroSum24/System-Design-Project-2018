@@ -182,6 +182,13 @@
         <div class=flash>{{ message }}</div>
         {% endfor %}-->
 
+      {% if not connection_status %}
+      <script type="text/javascript">
+        setTimeout(function () {
+          location.reload(true);
+        }, 10000);
+      </script>
+      {% endif %}
 
       <!-- Optional JavaScript -->
       <!-- jQuery first, then Popper.js, then Bootstrap JS -->
