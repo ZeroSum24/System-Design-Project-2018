@@ -208,6 +208,7 @@ def automatic_mode():
             publish_path_planning(path_planning_result)
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
+        mqtt.publish("go_manual","False")
         return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
 
@@ -250,6 +251,7 @@ def mail_delivery():
             if connection_status:
                 mqtt.publish("emergency_command",command)
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
+        mqtt.publish("go_manual","True")
         return render_template('recipients.html', min_battery_level=min_battery_level, active="Mail Delivery", error=error, desks=get_desks_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, delivery_status=delivery_status, connection_status_2=connection_status_2)
 
 @spam.route('/report', methods=['GET', 'POST'])
