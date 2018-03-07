@@ -14,11 +14,11 @@ import zbarlight
 # def scanImage(image):
 def scanImage(file_path):
 
-    img = cv2.imread(file_path)                                                           # your image to be read ,IMREAD_COLOR =  or 1,0..
-
-    grayscaled = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    ret,thresh = cv2.threshold(img,127,255,cv2.THRESH_BINARY)                                 # convert to grayscale(binary image)
-    cv2.imwrite(file_path, thresh)
+    # img = cv2.imread(file_path)                                                           # your image to be read ,IMREAD_COLOR =  or 1,0..
+    #
+    # grayscaled = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    # ret,thresh = cv2.threshold(img,127,255,cv2.THRESH_BINARY)                                 # convert to grayscale(binary image)
+    # cv2.imwrite(file_path, thresh)
 
     # edged = cv2.Canny(thresh, 50, 50)                                                        # edge detection
     # cv2.imwrite('/Image_Test/imgs/server_images/edged.jpg', edged)
