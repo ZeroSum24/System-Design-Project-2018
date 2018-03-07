@@ -6,9 +6,20 @@
   <h1>Mail Delivery</h1>
   <h3>You are in Manual Mode.</h3>
 
-  <div class="alert alert-warning" role="alert">
+  <div class="alert alert-warning" id="alertremove" role="alert">
     Please remove any the letters in the robot now.
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+      <span aria-hidden="true">&times;</span>
+    </button>
   </div>
+
+  <script type="text/javascript">
+  $(document).ready(function () {
+    setTimeout(function () {
+      $('#alertremove').hide('fade');
+    }, 4000);
+  });
+  </script>
 
 
   <form action="{{ url_for('mail_delivery') }}" method=post role="form">
