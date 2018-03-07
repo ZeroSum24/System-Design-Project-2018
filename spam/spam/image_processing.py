@@ -18,25 +18,25 @@ def scanImage(file_path):
 
     grayscaled = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     ret,thresh = cv2.threshold(img,127,255,cv2.THRESH_BINARY)                                 # convert to grayscale(binary image)
-    cv2.imwrite('/Image_Test/imgs/server_images/grayscaled.jpg', thresh)
+    cv2.imwrite(file_path, thresh)
 
-    edged = cv2.Canny(thresh, 50, 50)                                                        # edge detection
-    cv2.imwrite('/Image_Test/imgs/server_images/edged.jpg', edged)
-
-    edged, contours, hierarchy = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)      # contour detection
-
-    contours = sorted(contours, key=cv2.contourArea, reverse = True)[:3]                             # ! since there are three big rectangles with contours quite
-    rect_count = 0                                                                                   #   big and hence differentiable than the others.
-    for c in contours:                                                                               # we will detect abd draw the contour around that big finder pixel
-        peri = cv2.arcLength(c, True)
-        approx = cv2.approxPolyDP(c, 0.02*peri, True)
-
-    if len(approx) == 4:
-        rect_count = approx
-
-    im1 = cv2.drawContours(img, [rect_count], -1, (0,255,0), 3)
-
-    cv2.imwrite('/Image_Test/imgs/server_images/contours.jpg', contours)
+    # edged = cv2.Canny(thresh, 50, 50)                                                        # edge detection
+    # cv2.imwrite('/Image_Test/imgs/server_images/edged.jpg', edged)
+    #
+    # edged, contours, hierarchy = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)      # contour detection
+    #
+    # contours = sorted(contours, key=cv2.contourArea, reverse = True)[:3]                             # ! since there are three big rectangles with contours quite
+    # rect_count = 0                                                                                   #   big and hence differentiable than the others.
+    # for c in contours:                                                                               # we will detect abd draw the contour around that big finder pixel
+    #     peri = cv2.arcLength(c, True)
+    #     approx = cv2.approxPolyDP(c, 0.02*peri, True)
+    #
+    # if len(approx) == 4:
+    #     rect_count = approx
+    #
+    # im1 = cv2.drawContours(img, [rect_count], -1, (0,255,0), 3)
+    #
+    # cv2.imwrite('/Image_Test/imgs/server_images/contours.jpg', contours)
 
     #TODO Include Image open on the byte array to work with byte sort
     with open(file_path, 'rb') as image_file:
