@@ -310,6 +310,7 @@ def on_message(client, userdata, msg):
             current_slot = 1
             print("Loading")
         elif delivery_status != "State.LOADING":
+
             path_planning = {}
             print("Path Planning reset")
         print("delivery_status updated")
@@ -350,7 +351,7 @@ def on_message(client, userdata, msg):
             # yes -- the qr_code is right
             # desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
             desk_from_image = int(qr_code)
-            print('QR codes: %s' % qr_code)
+            print('QR codes: %s' % str(desk_from_image))
 
             # Input checking that the QR is not a desk we can't handle
             amount_of_desks = len(get_desks_list())
