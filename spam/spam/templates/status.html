@@ -15,7 +15,15 @@
       </thead>
       <tbody>
         <tr>
-          <td>Connection Status</td>
+          <td>Brick 10 Status</td>
+          <td>
+            {% if connection_status_2 %}
+            <span class="badge badge-pill badge-success">Robot Connected</span> {% else %}
+            <span class="badge badge-pill badge-danger">Robot Disconnected</span> {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>Brick 30 Status</td>
           <td>
             {% if connection_status %}
             <span class="badge badge-pill badge-success">Robot Connected</span> {% else %}
@@ -42,7 +50,19 @@
           <td>{{ location_info }}</td>
         </tr>
         <tr>
-          <td>Robot Battery</td>
+          <td>Robot 10 Battery</td>
+          <td>
+            <div class="progress">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ battery_level_2 }}%" aria-valuenow="{{ battery_level }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            {{ battery_level_2 }}%
+          </td>
+        </tr>
+
+        {% endif %}
+        {% if connection_status_2 %}
+        <tr>
+          <td>Brick 30 Battery</td>
           <td>
             <div class="progress">
               <div class="progress-bar bg-success" role="progressbar" style="width: {{ battery_level }}%" aria-valuenow="{{ battery_level }}" aria-valuemin="0" aria-valuemax="100"></div>
@@ -50,9 +70,7 @@
             {{ battery_level }}%
           </td>
         </tr>
-
         {% endif %}
-
       </tbody>
     </table>
 
