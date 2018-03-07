@@ -390,7 +390,7 @@ def handle_logging(client, userdata, level, buf):
 
 def path_planning_go_button():
     #Once Go Button is pressed sends path planning off
-    global go_button_pressed, path_planning
+    global go_button_pressed, path_planning, path_planning_result
     go_button_pressed = True
 
     print ("This is path planning:")
