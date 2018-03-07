@@ -158,16 +158,17 @@ def automatic_mode():
         try:
             who_to = request.form.get('inputSlot5')
             where_to = transform_into_desk(who_to)
+
             if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
             else:
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
         except:
             # When nothing is selected
-            print ("170")
             pass
 
         for node in path_planning.keys():
+
             submit.append(Location.query.filter(Location.map_node == node).one())
 
         #Use path planner
@@ -441,7 +442,7 @@ def get_people_list():
     return people
 
 def transform_into_desk(who_to):
-    return who_to.staff.map_node
+    return Staff.query.filter(Staff.id == who_to).one().staff.id
 
 def battery_calculate(voltage_reading):
     max_volt = 9000000
