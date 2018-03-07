@@ -18,26 +18,10 @@ from threading import Lock
 from time import sleep
 from spam.thread_decorator import thread
 
-import image_processing_zbarlight as image_processing
+import image_processing_datamatrix as image_processing
 import pickle
 
-
-
-#spam = Flask(__name__) # create the spamlication instance :)
-#spam.config.from_pyfile('spam.cfg') # load config from this file , spam.py
-# # got rid of envar override because yolo
-# spam.config.from_object(__name__) # load config from this file , spam.py
-#
-# # Load default config and override config from an environment variable
-# spam.config.update(dict(
-#     EMAIL='admin@admin.com',
-#     PASSWORD='default',
-#     SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/test.db',
-#     SQLALCHEMY_ECHO = False,
-#     SECRET_KEY = '\xfb\x12\xdf\xa1@i\xd6>V\xc0\xbb\x8fp\x16#Z\x0b\x81\xeb\x16',
-#     DEBUG = True
-# ))
-# spam.config.from_envvar('SPAM_SETTINGS', silent=True)
+# Ending imports; Beginning Variable assertion
 
 mqtt = Mqtt(spam)
 db = SQLAlchemy(spam)

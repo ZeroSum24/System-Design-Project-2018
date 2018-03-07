@@ -1,7 +1,7 @@
 # The main function would be replaced but broadly this is
 # how the server module should look
 
-#This is the pyzbar module
+#This is the Data Matrix module
 
 import os
 import io
@@ -11,7 +11,7 @@ import sys, getopt
 from array import array
 
 from PIL import Image
-from pyzbar.pyzbar import decode
+from pylibdmtx.pylibdmtx import decode
 
 def scanImage(file_path):
 
@@ -48,6 +48,7 @@ def scanImage(file_path):
     # returns just the data
     try:
         codes = decode(image)
+        print ("Testing output " + str(codes))
         if str(codes) == "[]":
             #Fail State is []
             return "Fail"

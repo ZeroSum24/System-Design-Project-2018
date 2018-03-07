@@ -11,8 +11,9 @@ import sys, getopt
 from array import array
 
 from PIL import Image
-from pyzbar.pyzbar import decode
+import segno
 
+# def scanImage(image):
 def scanImage(file_path):
 
     # img = cv2.imread(file_path)                                                           # your image to be read ,IMREAD_COLOR =  or 1,0..
@@ -47,6 +48,7 @@ def scanImage(file_path):
     # scan the image for barcodes
     # returns just the data
     try:
+        # codes = zbarlight.scan_codes('qrcode',image)
         codes = decode(image)
         if str(codes) == "[]":
             #Fail State is []
@@ -57,6 +59,7 @@ def scanImage(file_path):
             print(str(codes))
             print(str(codes)[16])
             return str(codes)[16]
+            #pyzbar - for output: no (zbarlight ) None == [] ; yes (zbarlight) [b'2'] == [Decoded(data=b'1', type='QRCODE')]
 
         print("Image scan success")
     except AssertionError:
