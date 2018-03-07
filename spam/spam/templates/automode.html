@@ -7,7 +7,7 @@
   <h1>Mail Delivery</h1>
   <h3>You are in Automatic Mode.</h3>
 
-  {% if connection_status %}
+  {% if not connection_status %}
   <h5> The robot is not connected. Turn it on and wait. </h5>
   {% else %}
   <h5> Please insert first letter.
