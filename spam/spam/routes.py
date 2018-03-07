@@ -455,7 +455,7 @@ def get_people_list():
     return people
 
 def transform_into_desk(who_to):
-    return Staff.query.filter(Staff.id == who_to).one().staff.map_node
+    return Staff.query.filter(Staff.id == who_to).one().staff.id
 
 def battery_calculate(voltage_reading):
     max_volt = 9000000
