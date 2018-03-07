@@ -20,6 +20,7 @@ def main(argv):
 
    client = mqtt.Client()
    client.connect(broker_aws_host,1883,60)
+   client.publish("delivery_status", "State.LOADING")
    client.publish("image_processing", payload=data) #unlikely need to pickle
 
    client.loop_forever()
