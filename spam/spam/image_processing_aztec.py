@@ -48,6 +48,7 @@ def scanImage(file_path):
     # returns just the data
     try:
         codes = decode(image)
+        print ("Testing output " + str(codes))
         if str(codes) == "[]":
             #Fail State is []
             return "Fail"
