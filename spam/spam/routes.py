@@ -490,5 +490,5 @@ def battery_calculate(voltage_reading):
 def emit_to_auto_status(msg):
     global last_auto_state
     print ("Sending by socketIO:" + msg)
-    socketio.emit("auto_status", msg)
+    socketio.emit("auto_status", msg, broadcast=True)
     last_auto_state = msg
