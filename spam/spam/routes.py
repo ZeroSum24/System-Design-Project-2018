@@ -149,8 +149,10 @@ def settings():
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
     if request.method == 'GET':
+        global correct_slots
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","False")
+        correct_slots = 0
 
         return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status)
     else:
@@ -331,21 +333,20 @@ def on_message(client, userdata, msg):
         msg_handle.write(msg.payload)
         msg_handle.close()
 
-        # image = pickle.loads(msg.payload)
-        # qr_code = image_processing.scanImage(image)
+        # Calling the image processing module
         desk_from_image = 0
         qr_code = image_processing.scanImage(image_location)
 
-        # if qr_code != "None":                 #Checks qr_code has been registered
-        if qr_code != "Fail":
+        if qr_code != "Fail":          #Checks qr_code has been registered
             # yes -- the qr_code is right
-            # desk_from_image = int(qr_code[3]) # [b'2']  -- expected output example
+
             desk_from_image = int(qr_code)
             print('QR codes: %s' % str(desk_from_image))
 
             # Input checking that the QR is not a desk we can't handle
             amount_of_desks = len(get_desks_list())
             if (desk_from_image < 1 or desk_from_image > amount_of_desks):
+                #TODO make this front facing and dependent on the amount of active users
 
                 print("Error incorrect desk allocation - wrong number from QR Code")
                 client.publish("image_result", "False")
@@ -390,7 +391,6 @@ def handle_logging(client, userdata, level, buf):
 def path_planning_go_button():
     #Once Go Button is pressed sends path planning off
     global go_button_pressed, path_planning, path_planning_result
-    go_button_pressed = True
 
     print ("This is path planning:")
     print ("Slots: " + str(path_planning))
@@ -402,6 +402,7 @@ def path_planning_go_button():
 @spam.route('/reset_button')
 def reset_button():
     #Once button is pressed sends a command moving the slot over one place and to dump each slot already loaded
+    go_button_pressed = True
     client.publish("shift_slot", str(current_slot))
 
 #Functions that send information to the robot
