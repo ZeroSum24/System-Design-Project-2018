@@ -370,9 +370,9 @@ def on_message(client, userdata, msg):
             # Adds the location to path planning if the go button has not been pressed, looks up the unique id of person in the database
 
             if (go_button_pressed == False):
-
-                location_read = Staff.query.filter(Staff.id == desk_from_image).one().location_id
-                if location_read is None:
+                try:
+                    location_read = Staff.query.filter(Staff.id == desk_from_image).one().location_id
+                except:
                     socketio.emit("auto_status","Couldn't find the recipient of this letter in the office. Please use manual mode.")
                     print("Error incorrect desk allocation - wrong number from QR Code")
                     client.publish("image_result", "False")
