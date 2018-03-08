@@ -288,14 +288,15 @@ def on_message(client, userdata, msg):
             print(location_info)
             print(instruction_info)
         print("location_info updated")
+
     elif msg.topic == "battery_info_volts":
         global seen
         with lock:
             seen = True
-        socketio.emit("auto_status","IT WORKS.")
         global battery_info_volts
         battery_info_volts = float(msg.payload.decode())
         print("battery_info_volts updated")
+
     elif msg.topic == "battery_info_volts_2":
         global seen_2
         with lock:
@@ -303,6 +304,7 @@ def on_message(client, userdata, msg):
         global battery_info_volts_2
         battery_info_volts_2 = float(msg.payload.decode())
         print("battery_info_volts_2 updated")
+
     elif msg.topic == "delivery_status":
         global delivery_status
         delivery_status = msg.payload.decode()
@@ -315,12 +317,14 @@ def on_message(client, userdata, msg):
             path_planning = {}
             print("Path Planning reset")
         print("delivery_status updated")
+
     elif msg.topic == "problem":
         add_unseen_notification()
         problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com").one().id, message=msg.payload.decode(), is_urgent=True)
         db.session.add(problem)
         db.session.commit()
         print("Problem reported by robot.")
+
     elif msg.topic == "request_route":
         print("Requested Route")
         with location_info_lock:
@@ -329,10 +333,16 @@ def on_message(client, userdata, msg):
             path_planning_result = router.return_from(*(msg.payload.decode().split('-')))
             print(path_planning_result)
             publish_path_planning(path_planning_result)
+
+    elif msg.topic == "go_manual":
+        if msg.payload.decode() == False:
+            socketio.emit("auto_status","Please insert first letter.")
+
     elif msg.topic == "image_processing":
         print("Image Recieved")
 
         if (delivery_status != "State.LOADING"):
+            socketio.emit("auto_status","The robot is not ready to load. Wait or click callback.")
             return
 
         # Save recieved bytearray back onto disk and read as image
@@ -351,39 +361,36 @@ def on_message(client, userdata, msg):
             desk_from_image = int(qr_code)
             print('QR codes: %s' % str(desk_from_image))
 
-            # Input checking that the QR is not a desk we can't handle
-            amount_of_desks = len(get_desks_list())
-            if (desk_from_image < 1 or desk_from_image > amount_of_desks):
-                #TODO make this front facing and dependent on the amount of active users
+            # Adds the location to path planning if the go button has not been pressed, looks up the unique id of person in the database
 
-                print("Error incorrect desk allocation - wrong number from QR Code")
-                client.publish("image_result", "False")
-            else:
-                # Adds the location to path planning if the go button has not been pressed, looks up the unique id of person in the database
+            if (go_button_pressed == False):
 
-                if (go_button_pressed == False):
+                location_read = Staff.query.filter(Staff.id == desk_from_image).one().location_id
+                if location_read is None:
+                    socketio.emit("auto_status","Couldn't find the recipient of this letter in the office. Please use manual mode.")
+                    print("Error incorrect desk allocation - wrong number from QR Code")
+                    client.publish("image_result", "False")
 
-                    location_read = Staff.query.filter(Staff.id == desk_from_image).one().location_id
-                    map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
-                    if (map_node_of_location not in path_planning.keys()):
-                        path_planning[Location.query.filter(Location.id == location_read).one().map_node]=[current_slot]
-                    else:
-                        path_planning[Location.query.filter(Location.id == location_read).one().map_node].append(current_slot)
-
-                    print ("This is path planning:")
-                    print ("Slots: " + str(path_planning))
-
-                    current_slot += 1
-                    client.publish("image_result", str(current_slot))
-
-                    if (current_slot > 4):
-                        print("Slots have all been filled")
+                map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
+                if (map_node_of_location not in path_planning.keys()):
+                    path_planning[Location.query.filter(Location.id == location_read).one().map_node]=[current_slot]
                 else:
-                    go_button_pressed = False
-                    return
+                    path_planning[Location.query.filter(Location.id == location_read).one().map_node].append(current_slot)
+
+                print ("This is path planning:")
+                print ("Slots: " + str(path_planning))
+                socketio.emit("auto_status","Letter on slot ## loaded. Insert next letter.")
+                current_slot += 1
+                client.publish("image_result", str(current_slot))
+
+                if (current_slot > 4):
+                    socketio.emit("auto_status","Letter on slot ## loaded and Spam is full now. Press Deliver Mail when ready.")
+                    print("Slots have all been filled")
+            else:
+                go_button_pressed = False
+                return
         else:                                    # no -- no qr_code so get new photo
             print('QR codes: %s' % qr_code)
-
             if (go_button_pressed == False): # Breaks the communication between robot and server
                 client.publish("image_result", "False")
             else:

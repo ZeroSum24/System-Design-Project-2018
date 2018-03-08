@@ -9,11 +9,7 @@
   <h5> The robot is not connected. Turn it on and wait. </h5> {% else %}
 
   <h5 id="auto_status"> Loading </h5>
-
-  <h5> Please insert first letter. </h5>
-  <h5> Letter to XXX loaded. Insert next letter. </h5>
-  <h5> Letter to XXX loaded. Spam is full. Press Deliver Mail when ready. </h5>
-  <h5> The robot is not ready to load. Wait or click callback. </h5> {% endif %} {% if delivery_status == "State.LOADING" and connection_status %}
+  {% endif %} {% if delivery_status == "State.LOADING" and connection_status %}
 
 
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
