@@ -15,7 +15,7 @@ def scanImage(file_path):
         image.load()
 
     # scan the image for barcodes
-    # return a "Fail" string or a int if successful
+    # return a "Fail" string or a string number if successful
     try:
         codes = decode(image)
         if str(codes) == "[]":
