@@ -48,6 +48,12 @@ seen_2 = False
 path_planning={}
 go_button_pressed = False
 last_auto_state = None
+
+# Resetting the robot's classifier.
+client.publish("go_manual", "False")
+client.publish("go_manual", "True")
+
+
 # Definition of environment variable for Notifications
 unseen_notifications= 0
 current_orientation = 0
