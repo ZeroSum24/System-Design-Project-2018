@@ -357,8 +357,13 @@ def on_message(client, userdata, msg):
 
         if qr_code != "Fail":          #Checks qr_code has been registered
             # yes -- the qr_code is right
+            try:
+                desk_from_image = int(qr_code)
+            except ValueError:
+                print("Value is wrong. QR codes should correspond to User_IDs: " + desk_from_image)
+                print("Asking for a new picture.")
+                client.publish("image_result", "False")
 
-            desk_from_image = int(qr_code)
             print('QR codes: %s' % str(desk_from_image))
 
             # Adds the location to path planning if the go button has not been pressed, looks up the unique id of person in the database
