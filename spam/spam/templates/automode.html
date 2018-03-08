@@ -5,33 +5,34 @@
 
 
   <h1>Mail Delivery - Automatic Mode</h1>
+
   {% if not connection_status %}
   <div class="alert alert-warning" role="alert">
-  The robot is not connected. Turn it on and wait.
+    The robot is not connected. Turn it on and wait.
   </div>
   {% else %}
 
-  <div class="alert alert-warning" role="alert" id="auto_status">      
+  <div class="alert alert-primary" role="alert" id="auto_status">
       {{ last_auto_state }}
   </div>
+  {% endif %}
 
 
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+  <script>
+  $(document).ready(function(){
+      // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
+      var socket = io.connect();
+      // this is a callback that triggers when the "auto_status" event is emitted by the server.
+      socket.on('auto_status', function(msg) {
+          document.getElementById("auto_status").innerHTML = msg;
+      });
+  });
+  </script>
 
-  {% endif %} {% if delivery_status == "State.LOADING" and connection_status %}
 
-
-<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
-<script>
-$(document).ready(function(){
-    // start up the SocketIO connection to the server - the namespace 'test' is also included here if necessary
-    var socket = io.connect();
-    // this is a callback that triggers when the "auto_status" event is emitted by the server.
-    socket.on('auto_status', function(msg) {
-        document.getElementById("auto_status").innerHTML = msg;
-    });
-});
-</script>
+  {% if delivery_status == "State.LOADING" and connection_status %}
 
 
   <form action="{{ url_for('automatic_mode') }}" method=post role="form">
