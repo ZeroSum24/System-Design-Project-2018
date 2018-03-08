@@ -156,6 +156,7 @@ def settings():
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
     if request.method == 'GET':
+        global last_auto_state
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","False")
 
