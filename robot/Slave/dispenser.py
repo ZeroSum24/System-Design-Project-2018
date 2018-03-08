@@ -66,6 +66,7 @@ def _base_run_to(pos, in_between_action = None, shifted_return = False):
     if shifted_return:
         pos -= 70
     in_between_action()
+    _coast()
     yield
     _motor_debrief(MOTORS.slider, pos, speed = 100)
 
@@ -96,7 +97,7 @@ def _motor_setup(motor, pos, speed = 500):
 def _motor_debrief(motor, pos, speed = 500):
     motor.stop_action=Motor.STOP_ACTION_COAST
     # solving a wierd bug, where the motor doesn't move w/o this line
-    motor.run_timed(speed_sp=-500, time_sp=500)
+    motor.run_timed(speed_sp=500, time_sp=500)
     motor.run_to_rel_pos(position_sp=-pos, speed_sp=speed)
     _wait_for_motor(motor)
 

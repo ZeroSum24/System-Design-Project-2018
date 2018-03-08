@@ -12,6 +12,7 @@ from thread_decorator import thread
 current_slot = 1
 slot_movement = None
 loading = False
+in_automatic = True
 
 def run(*cmd):
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
@@ -36,9 +37,7 @@ def on_connect(client, userdata,flags, rc):
     client.subscribe("image_result")
 
 def on_message(client, userdata, msg):
-    global slot_movement
-    global current_slot
-    global loading
+    global slot_movement, current_slot, loading, in_automatic
     print("Received on topic " + msg.topic +": "+str(msg.payload.decode()))
     if msg.topic == "dump":
         slots = json.loads(msg.payload.decode())
@@ -52,14 +51,18 @@ def on_message(client, userdata, msg):
             print("first picture")
             loading = True
             current_slot = 1
+            print("setting up on loading")
             slot_movement = stop(current_slot)
+            print("done setting up on loading")
             camera_picture()
         elif msg.payload.decode() == "State.DELIVERING":
             loading = False
+            print("going back on delivering")
             slot_go_back()
+            print("done going back on delivering")
             slot_movement = None
 
-    elif msg.topic == "image_result":
+    elif msg.topic == "image_result" and in_automatic == True:
         if msg.payload.decode() == "False": #test to check if its an int
             #"new_photo"
             print("qr not found - taking picture")
@@ -68,18 +71,22 @@ def on_message(client, userdata, msg):
             #"shift_slot"
             print("qr found")
             current_slot = int(msg.payload.decode())
+            print("going back between pictures")
             slot_go_back()
-            print("got slot " + str(current_slot))
+            print("done going back")
             if 1 <= current_slot <= 4:
-                print("check passed")
+                print("going to slot " + str(current_slot))
                 slot_movement = stop(current_slot)
+                print("done going to slot")
                 camera_picture()
 
     elif msg.topic == "go_manual":
-        if msg.payload.decode() == "True":
+        if msg.payload.decode() == "True" and in_automatic == True:
+            in_automatic = False
             slot_go_back()
 
-        if msg.payload.decode() == "False":
+        if msg.payload.decode() == "False" and in_automatic == False:
+            in_automatic = True
             current_slot = 1
             slot_movement = stop(current_slot)
             camera_picture()
@@ -88,10 +95,15 @@ def slot_go_back():
     global slot_movement
     try:
         if slot_movement != None:
+            print("enter slot_go_back")
             slot_movement.go_further()
+            print("first cmd")
             time.sleep(2)
+            print("first sleep")
             slot_movement.go_further()
+            print("second cmd")
             time.sleep(2)
+            print("second sleep")
     except StopIteration:
         print("StopIteration")
 
