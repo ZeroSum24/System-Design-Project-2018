@@ -100,6 +100,11 @@ def initdb_command():
 def shutdown_session(exception=None):
     db_session.remove()
 
+def emit_to_auto_status(msg):
+    global last_auto_state
+    print ("Sending by socketIO: " + msg)
+    socketio.emit("auto_status", msg, broadcast=True)
+    last_auto_state = msg
 
 
 @spam.route('/', methods=['GET', 'POST'])
@@ -486,9 +491,3 @@ def battery_calculate(voltage_reading):
     else:
         percent = 0
     return int(percent)
-
-def emit_to_auto_status(msg):
-    global last_auto_state
-    print ("Sending by socketIO:" + msg)
-    socketio.emit("auto_status", msg, broadcast=True)
-    last_auto_state = msg
