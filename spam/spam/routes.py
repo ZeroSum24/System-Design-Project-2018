@@ -371,10 +371,17 @@ def on_message(client, userdata, msg):
 
             if (go_button_pressed == False):
                 try:
-                    location_read = Staff.query.filter(Staff.id == desk_from_image).one().location_id
+                    user_read = Staff.query.filter(Staff.id == desk_from_image).one()
                 except:
                     socketio.emit("auto_status","Couldn't find the recipient of this letter in the office. Please use manual mode.")
                     print("Error incorrect desk allocation - wrong number from QR Code")
+                    client.publish("image_result", "False")
+                    return
+                try:
+                    location_read = user_read.location_id
+                except:
+                    socketio.emit("auto_status","Couldn't know in which desk XX works.")
+                    print("Error person without desk assigned.")
                     client.publish("image_result", "False")
                     return
 
