@@ -406,12 +406,12 @@ def on_message(client, userdata, msg):
 
                 print ("This is path planning:")
                 print ("Slots: " + str(path_planning))
-                emit_to_auto_status("Letter on slot {} loaded to {} on {}. Insert next letter.".format(current_slot,user_read.name, location_read.location_name))
+                emit_to_auto_status("Letter on slot {} loaded to {} on {}. Insert next letter.".format(current_slot,user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
                 current_slot += 1
                 client.publish("image_result", str(current_slot))
 
                 if (current_slot > 4):
-                    emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format(current_slot, user_read.name, location_read.location_name))
+                    emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format(current_slot, user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
                     print("Slots have all been filled")
             else:
                 go_button_pressed = False
