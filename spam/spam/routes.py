@@ -178,8 +178,7 @@ def automatic_mode():
 
         current_slot = 1
         path_planning = {}
-        print("To Manual: Error current slot updated " + str(current_slot))
-        print("To Manual: Slots: " + str(path_planning))
+        print("To Manual -- Slots: " + str(path_planning) + ". Error current slot updated: " + str(current_slot))
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
@@ -224,8 +223,7 @@ def mail_delivery():
     else:
         current_slot = 1
         path_planning = {}
-        print("To Manual: Error current slot updated " + str(current_slot))
-        print("To Manual: Slots: " + str(path_planning))
+        print("To Manual -- Slots: " + str(path_planning) + ". Error current slot updated: " + str(current_slot))
 
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
