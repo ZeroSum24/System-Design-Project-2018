@@ -58,7 +58,7 @@ def on_message(client, userdata, msg):
         elif msg.payload.decode() == "State.DELIVERING":
             loading = False
             print("going back on delivering")
-            slot_go_back()
+            slot_go_back(wait = False)
             print("done going back on delivering")
             slot_movement = None
 
@@ -91,19 +91,14 @@ def on_message(client, userdata, msg):
             slot_movement = stop(current_slot)
             camera_picture()
 
-def slot_go_back():
+def slot_go_back(wait = True):
     global slot_movement
     try:
         if slot_movement != None:
-            print("enter slot_go_back")
             slot_movement.go_further()
-            print("first cmd")
-            time.sleep(2)
-            print("first sleep")
+            if wait:
+                time.sleep(2)
             slot_movement.go_further()
-            print("second cmd")
-            time.sleep(2)
-            print("second sleep")
     except StopIteration:
         print("StopIteration")
 
