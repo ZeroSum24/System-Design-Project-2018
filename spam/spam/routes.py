@@ -400,11 +400,6 @@ def path_planning_go_button():
     if connection_status and delivery_status == "State.LOADING":
         publish_path_planning(path_planning_result)
 
-@spam.route('/reset_button')
-def reset_button():
-    #Once button is pressed sends a command moving the slot over one place and to dump each slot already loaded
-    go_button_pressed = True
-    client.publish("shift_slot", str(current_slot))
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
