@@ -12,7 +12,7 @@
   {% else %}
 
   <div class="alert alert-warning" role="alert" id="auto_status">
-    {% if last_auto_state == "None" %}
+    {% if last_auto_state is none %}
       Please insert the first letter.
     {% else %}
       {{ last_auto_state }}
