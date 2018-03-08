@@ -174,8 +174,6 @@ def automatic_mode():
             submit.append(Location.query.filter(Location.map_node == node).one())
 
         #Use path planner
-        print ("This is path planning:")
-        print (path_planning)
         path_planning_go_button()
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
