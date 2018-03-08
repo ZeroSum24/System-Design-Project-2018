@@ -277,8 +277,9 @@ def on_connect(client, userdata, flags, rc):
 
     # Resetting the robot's classifier.
     print("Resetting the classifier")
-    mqtt.publish("go_manual", "False")
     mqtt.publish("go_manual", "True")
+    mqtt.publish("go_manual", "False")
+
 
 #Receiving information from the robot.
 @mqtt.on_message()
