@@ -49,11 +49,6 @@ path_planning={}
 go_button_pressed = False
 last_auto_state = None
 
-# Resetting the robot's classifier.
-print("Resetting the classifier")
-mqtt.publish("go_manual", "False")
-mqtt.publish("go_manual", "True")
-
 # Definition of environment variable for Notifications
 unseen_notifications= 0
 current_orientation = 0
@@ -155,14 +150,13 @@ def settings():
 
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
+    global path_planning_result, path_planning, current_slot, last_auto_state
     if request.method == 'GET':
-        global last_auto_state
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","False")
 
         return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status, last_auto_state=last_auto_state)
     else:
-        global path_planning_result, path_planning, current_slot, last_auto_state
         submit=[]
 
         try:
@@ -280,6 +274,11 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("request_route")
     client.subscribe("image_processing")
     client.subscribe("battery_info_volts_2")
+
+    # Resetting the robot's classifier.
+    print("Resetting the classifier")
+    mqtt.publish("go_manual", "False")
+    mqtt.publish("go_manual", "True")
 
 #Receiving information from the robot.
 @mqtt.on_message()
