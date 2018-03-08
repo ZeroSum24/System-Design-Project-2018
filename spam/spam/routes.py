@@ -47,8 +47,9 @@ seen = False
 seen_2 = False
 path_planning={}
 go_button_pressed = False
+last_auto_state = None
 # Definition of environment variable for Notifications
-unseen_notifications=0
+unseen_notifications= 0
 current_orientation = 0
 
 def add_unseen_notification():
@@ -152,9 +153,9 @@ def automatic_mode():
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","False")
 
-        return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status)
+        return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status, last_auto_state=last_auto_state)
     else:
-        global path_planning_result, path_planning, current_slot
+        global path_planning_result, path_planning, current_slot, last_auto_state
         submit=[]
 
         try:
@@ -178,6 +179,7 @@ def automatic_mode():
 
         current_slot = 1
         path_planning = {}
+        last_auto_state = None
         print("To Manual -- Slots: " + str(path_planning) + ". Error current slot updated: " + str(current_slot))
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
@@ -194,6 +196,7 @@ def mail_delivery():
     global battery_info_volts_2
     global path_planning_result
     global path_planning
+    global last_auto_state
     if request.method == 'POST':
         submit=[]
         path_planning={}
@@ -223,6 +226,7 @@ def mail_delivery():
     else:
         current_slot = 1
         path_planning = {}
+        last_auto_state = None
         print("To Manual -- Slots: " + str(path_planning) + ". Error current slot updated: " + str(current_slot))
 
         command = request.args.get('emergency_command', default = "", type = str)
@@ -333,10 +337,6 @@ def on_message(client, userdata, msg):
             path_planning_result = router.return_from(*(msg.payload.decode().split('-')))
             print(path_planning_result)
             publish_path_planning(path_planning_result)
-
-    elif msg.topic == "go_manual":
-        if msg.payload.decode() == False:
-            socketio.emit("auto_status","Please insert first letter.")
 
     elif msg.topic == "image_processing":
         print("Image Recieved")
@@ -469,3 +469,8 @@ def battery_calculate(voltage_reading):
     else:
         percent = 0
     return int(percent)
+
+def emit_to_auto_status(msg):
+    global last_auto_state
+    socketio.emit("auto_status",msg)
+    last_auto_state = msg
