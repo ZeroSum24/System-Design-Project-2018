@@ -3,13 +3,6 @@
 
 #This is the Data Matrix module
 
-import os
-import io
-import cv2
-import numpy as np
-import sys, getopt
-from array import array
-
 from PIL import Image
 from pylibdmtx.pylibdmtx import decode
 
@@ -29,26 +22,15 @@ def scanImage(file_path):
             #Fail State is []
             return "Fail"
         else:
-            #Success State is [Decoded(data=b'2', type='QRCODE')])
-            print("Type: " + str(codes[24:]))
-            print(str(codes))
-            print(str(codes)[16])
-            return str(codes)[16]
+            #Success State is [Decoded(data=b'1', rect=Rect(left=105, top=92, width=-62, height=-62))]
+            success_state = str(codes)
+            print(success_state)
 
-        print("Image scan success")
+            a, usr_id, c = success_state.split("\'")
+            print(usr_id)
+
+            return usr_id
+
     except AssertionError:
         return "The File is not an image"
         # Throws an exception if its is not an image which we catch and feed back to Flask
-
-     # display_image(img)
-
-def display_image(img):
-    # displaying the altered image
-    cv2.namedWindow("opencv_image", cv2.WINDOW_NORMAL)
-    cv2.imshow("opencv_image", img)
-    k = cv2.waitKey(0) & 0xFF
-    if k == 27:         # wait for ESC key to exit
-        cv2.destroyAllWindows()
-    elif k == ord('s'): # wait for 's' key to save and exit
-        cv2.imwrite( "../opencv_image.jpg", img)
-        cv2.destroyAllWindows()
