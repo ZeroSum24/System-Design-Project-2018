@@ -29,7 +29,15 @@ def scanImage(file_path):
             a, usr_id, c = success_state.split("\'")
             print(usr_id)
 
-            return usr_id
+            try:        # catches anything that is not an integer
+                x = int(usr_id)
+            except ValueError:
+                if len(usr_id) == 1 and usr_id.isalpha() and usr_id.isupper():
+                    return user_id  # single upper character
+                else:
+                    return "Fail"
+
+            return usr_id    # only gets called if the value is an string number
 
     except AssertionError:
         return "The File is not an image"
