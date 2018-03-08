@@ -8,11 +8,7 @@
   <h3>You are in Automatic Mode.</h3> {% if not connection_status %}
   <h5> The robot is not connected. Turn it on and wait. </h5> {% else %}
 
-  {% if last_auto_state is None %}
-  <h5 id="auto_status"> Loading </h5>
-  {% else %}
   <h5 id="auto_status"> {{ last_auto_state }} </h5>
-  {% endif %}
 
 
 
