@@ -4,11 +4,20 @@
 <div class="jumbotron">
 
 
-  <h1>Mail Delivery</h1>
-  <h3>You are in Automatic Mode.</h3> {% if not connection_status %}
-  <h5> The robot is not connected. Turn it on and wait. </h5> {% else %}
+  <h1>Mail Delivery - Automatic Mode</h1>
+  {% if not connection_status %}
+  <div class="alert alert-warning" role="alert">
+  The robot is not connected. Turn it on and wait.
+  </div>
+  {% else %}
 
-  <h5 id="auto_status"> {{ last_auto_state }} </h5>
+  <div class="alert alert-warning" role="alert" id="auto_status">
+    {% if last_auto_state == "None" %}
+      Please insert the first letter.
+    {% else %}
+      {{ last_auto_state }}
+    {% endif %}
+  </div>
 
 
 
