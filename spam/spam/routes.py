@@ -177,6 +177,7 @@ def automatic_mode():
         path_planning_go_button()
 
         correct_slot = 1
+        print("Error correct slot updated " + str(correct_slot))
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
@@ -218,6 +219,8 @@ def mail_delivery():
     #else
     else:
         correct_slot = 1
+        print("Error correct slot updated " + str(correct_slot))
+        
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
             if connection_status:
