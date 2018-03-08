@@ -154,7 +154,7 @@ def automatic_mode():
 
         return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status)
     else:
-        global path_planning_result, path_planning, correct_slot
+        global path_planning_result, path_planning, current_slot
         submit=[]
 
         try:
@@ -176,8 +176,11 @@ def automatic_mode():
         #Use path planner
         path_planning_go_button()
 
-        correct_slot = 1
-        print("Error correct slot updated " + str(correct_slot))
+        current_slot = 1
+        path_planning = {}
+        print("To Manual: Error current slot updated " + str(current_slot))
+        print("To Manual: Slots: " + str(path_planning))
+
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
 
@@ -185,12 +188,13 @@ def automatic_mode():
 @spam.route('/view', methods=['GET', 'POST'])
 def mail_delivery():
     error = None
-    global correct_slot
+    global current_slot
     global connection_status
     global connection_status_2
     global battery_info_volts
     global battery_info_volts_2
     global path_planning_result
+    global path_planning
     if request.method == 'POST':
         submit=[]
         path_planning={}
@@ -218,9 +222,11 @@ def mail_delivery():
         return render_template('echo_submit.html', min_battery_level=min_battery_level, submit=submit, unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, connection_status_2=connection_status_2)
     #else
     else:
-        correct_slot = 1
-        print("Error correct slot updated " + str(correct_slot))
-        
+        current_slot = 1
+        path_planning = {}
+        print("To Manual: Error current slot updated " + str(current_slot))
+        print("To Manual: Slots: " + str(path_planning))
+
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
             if connection_status:
@@ -307,7 +313,6 @@ def on_message(client, userdata, msg):
             current_slot = 1
             print("Loading")
         elif delivery_status != "State.LOADING":
-
             path_planning = {}
             print("Path Planning reset")
         print("delivery_status updated")
