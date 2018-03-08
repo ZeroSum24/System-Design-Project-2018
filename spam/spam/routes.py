@@ -362,7 +362,9 @@ def on_message(client, userdata, msg):
             except ValueError:
                 print("Value is wrong. QR codes should correspond to User_IDs: " + desk_from_image)
                 print("Asking for a new picture.")
+                socketio.emit("auto_status","The code in the letter is corrupted. Please use manual mode.")
                 client.publish("image_result", "False")
+                return
 
             print('QR codes: %s' % str(desk_from_image))
 
@@ -375,6 +377,7 @@ def on_message(client, userdata, msg):
                     socketio.emit("auto_status","Couldn't find the recipient of this letter in the office. Please use manual mode.")
                     print("Error incorrect desk allocation - wrong number from QR Code")
                     client.publish("image_result", "False")
+                    return
 
                 map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
                 if (map_node_of_location not in path_planning.keys()):
