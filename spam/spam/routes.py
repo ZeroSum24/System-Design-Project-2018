@@ -50,8 +50,8 @@ go_button_pressed = False
 last_auto_state = None
 
 # Resetting the robot's classifier.
-client.publish("go_manual", "False")
-client.publish("go_manual", "True")
+mqtt.publish("go_manual", "False")
+mqtt.publish("go_manual", "True")
 
 
 # Definition of environment variable for Notifications
