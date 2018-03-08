@@ -50,9 +50,9 @@ go_button_pressed = False
 last_auto_state = None
 
 # Resetting the robot's classifier.
+print("Resetting the classifier")
 mqtt.publish("go_manual", "False")
 mqtt.publish("go_manual", "True")
-
 
 # Definition of environment variable for Notifications
 unseen_notifications= 0
