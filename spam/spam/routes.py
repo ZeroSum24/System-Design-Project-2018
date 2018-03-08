@@ -350,7 +350,7 @@ def on_message(client, userdata, msg):
         print("Image Recieved")
 
         if (delivery_status != "State.LOADING"):
-            socketio.emit("auto_status","The robot is not ready to load. Wait or click callback.")
+            emit_to_auto_status("The robot is not ready to load. Wait or click callback.")
             return
 
         # Save recieved bytearray back onto disk and read as image
@@ -366,7 +366,7 @@ def on_message(client, userdata, msg):
         if qr_code == "Invalid Data":
             print("Value is wrong. QR codes should correspond to User_IDs: " + desk_from_image)
             print("Asking for a new picture.")
-            socketio.emit("auto_status","The code in the letter is corrupted. Please use manual mode.")
+            emit_to_auto_status("The code in the letter is corrupted. Please use manual mode.")
             client.publish("image_result", "False")
             return
         elif qr_code != "Fail":          #Checks qr_code has been registered
@@ -381,14 +381,14 @@ def on_message(client, userdata, msg):
                 try:
                     user_read = Staff.query.filter(Staff.id == desk_from_image).one()
                 except:
-                    socketio.emit("auto_status","Couldn't find the recipient of this letter in the office. Please use manual mode.")
+                    emit_to_auto_status("Couldn't find the recipient of this letter in the office. Please use manual mode.")
                     print("Error incorrect desk allocation - wrong number from QR Code")
                     client.publish("image_result", "False")
                     return
                 try:
                     location_read = user_read.location_id
                 except:
-                    socketio.emit("auto_status","Couldn't know in which desk XX works.")
+                    emit_to_auto_status("Couldn't know in which desk XX works.")
                     print("Error person without desk assigned.")
                     client.publish("image_result", "False")
                     return
@@ -401,12 +401,12 @@ def on_message(client, userdata, msg):
 
                 print ("This is path planning:")
                 print ("Slots: " + str(path_planning))
-                socketio.emit("auto_status","Letter on slot ## loaded. Insert next letter.")
+                emit_to_auto_status("Letter on slot ## loaded. Insert next letter.")
                 current_slot += 1
                 client.publish("image_result", str(current_slot))
 
                 if (current_slot > 4):
-                    socketio.emit("auto_status","Letter on slot ## loaded and Spam is full now. Press Deliver Mail when ready.")
+                    emit_to_auto_status("Letter on slot ## loaded and Spam is full now. Press Deliver Mail when ready.")
                     print("Slots have all been filled")
             else:
                 go_button_pressed = False
