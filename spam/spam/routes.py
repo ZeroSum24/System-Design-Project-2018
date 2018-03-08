@@ -369,7 +369,7 @@ def on_message(client, userdata, msg):
         qr_code = image_processing.scanImage(image_location)
 
         if qr_code == "Invalid Data":
-            print("Value is wrong. QR codes should correspond to User_IDs: " + desk_from_image)
+            print("Value is wrong. QR codes should correspond to User_IDs: ")
             print("Asking for a new picture.")
             emit_to_auto_status("The code in the letter is corrupted. Please use manual mode.")
             client.publish("image_result", "False")
@@ -393,7 +393,7 @@ def on_message(client, userdata, msg):
                 try:
                     location_read = user_read.location_id
                 except:
-                    emit_to_auto_status("Couldn't know in which desk XX works.")
+                    emit_to_auto_status("Couldn't know in which desk ## works.")
                     print("Error person without desk assigned.")
                     client.publish("image_result", "False")
                     return
@@ -406,12 +406,12 @@ def on_message(client, userdata, msg):
 
                 print ("This is path planning:")
                 print ("Slots: " + str(path_planning))
-                emit_to_auto_status("Letter on slot ## loaded. Insert next letter.")
+                emit_to_auto_status("Letter on slot ## loaded to ##. Insert next letter.")
                 current_slot += 1
                 client.publish("image_result", str(current_slot))
 
                 if (current_slot > 4):
-                    emit_to_auto_status("Letter on slot ## loaded and Spam is full now. Press Deliver Mail when ready.")
+                    emit_to_auto_status("Last letter was loaded to ##. Press Deliver Mail when ready.")
                     print("Slots have all been filled")
             else:
                 go_button_pressed = False
