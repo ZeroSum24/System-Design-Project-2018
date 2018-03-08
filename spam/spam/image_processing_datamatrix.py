@@ -33,7 +33,7 @@ def scanImage(file_path):
                 x = int(usr_id)
             except ValueError:
                 if len(usr_id) == 1 and usr_id.isalpha() and usr_id.isupper():
-                    return user_id  # single upper character
+                    return usr_id  # single upper character
                 else:
                     return "Fail"
 
