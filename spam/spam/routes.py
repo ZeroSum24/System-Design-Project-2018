@@ -355,17 +355,16 @@ def on_message(client, userdata, msg):
         desk_from_image = 0
         qr_code = image_processing.scanImage(image_location)
 
-        if qr_code != "Fail":          #Checks qr_code has been registered
+        if qr_code == "Invalid Data":
+            print("Value is wrong. QR codes should correspond to User_IDs: " + desk_from_image)
+            print("Asking for a new picture.")
+            socketio.emit("auto_status","The code in the letter is corrupted. Please use manual mode.")
+            client.publish("image_result", "False")
+            return
+        elif qr_code != "Fail":          #Checks qr_code has been registered
             # yes -- the qr_code is right
-            try:
-                desk_from_image = int(qr_code)
-            except ValueError:
-                print("Value is wrong. QR codes should correspond to User_IDs: " + desk_from_image)
-                print("Asking for a new picture.")
-                socketio.emit("auto_status","The code in the letter is corrupted. Please use manual mode.")
-                client.publish("image_result", "False")
-                return
 
+            desk_from_image = int(qr_code)
             print('QR codes: %s' % str(desk_from_image))
 
             # Adds the location to path planning if the go button has not been pressed, looks up the unique id of person in the database
