@@ -17,7 +17,7 @@ import json
 from threading import Lock
 from time import sleep
 from spam.thread_decorator import thread
-from flask_socketio import emit
+from spam import socketio
 import image_processing_datamatrix as image_processing
 import pickle
 
@@ -292,7 +292,7 @@ def on_message(client, userdata, msg):
         global seen
         with lock:
             seen = True
-        emit("auto_status","IT WORKS.")
+        socketio.emit("auto_status","IT WORKS.")
         global battery_info_volts
         battery_info_volts = float(msg.payload.decode())
         print("battery_info_volts updated")
