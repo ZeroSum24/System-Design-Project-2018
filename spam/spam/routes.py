@@ -48,6 +48,7 @@ seen_2 = False
 path_planning={}
 go_button_pressed = False
 last_auto_state = None
+qnt_delivered = 0
 
 # Definition of environment variable for Notifications
 unseen_notifications= 0
@@ -267,8 +268,9 @@ def status():
     global battery_info_volts
     global battery_info_volts_2
     global delivery_status
+    global qnt_delivered
     min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
-    return render_template('status.html', min_battery_level=min_battery_level, unseen_notifications=get_unseen_notification(), active="Status", battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status, connection_status_2=connection_status_2)
+    return render_template('status.html', qnt_delivered=qnt_delivered, min_battery_level=min_battery_level, unseen_notifications=get_unseen_notification(), active="Status", battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, location_info=location_info, delivery_status= delivery_status, connection_status_2=connection_status_2)
 
 @mqtt.on_connect()
 def on_connect(client, userdata, flags, rc):
@@ -297,9 +299,12 @@ def on_message(client, userdata, msg):
     global path_planning_result, location_info, path_planning, current_slot, go_button_pressed
     if msg.topic == "location_info":
         with location_info_lock:
+            global qnt_delivered
             location_info = msg.payload.decode()
             instruction_info = path_planning_result.pop(0)
             while instruction_info[0] != "Report":
+                if instruction_info[0] == "Dump":
+                    qnt_delivered = qnt_delivered + len(instruction_info[1])
                 instruction_info = path_planning_result.pop(0)
             print("HERE")
             print(location_info)

@@ -73,6 +73,16 @@
           </td>
         </tr>
         {% endif %}
+
+        {% if connection_status and connection_status_2 %}
+        <tr>
+          <td>Pieces Delivered</td>
+          <td>
+            {{ qnt_delivered }}
+          </td>
+        </tr>
+        {% endif %}
+
       </tbody>
     </table>
 
