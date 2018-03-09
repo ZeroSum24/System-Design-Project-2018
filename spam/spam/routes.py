@@ -479,7 +479,6 @@ def get_desks_list():
 def get_people_list():
     people=[]
     for person in Staff.query.filter(Staff.location_id != None).all():
-        # if person.name != "ROBOT SPAM":
         people.append(person)
     return people
 
