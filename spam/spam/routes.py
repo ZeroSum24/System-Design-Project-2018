@@ -396,7 +396,7 @@ def on_message(client, userdata, msg):
                 try:
                     user_read = Staff.query.filter(Staff.id == desk_from_image).one()
                 except:
-                    emit_to_auto_status("Couldn't find the recipient of this letter in the office.\nPlease remove the letter from slot {} and insert a new letter.".format(current_slot)))
+                    emit_to_auto_status("Couldn't find the recipient of this letter in the office.\nPlease remove the letter from slot {} and insert a new letter.".format(current_slot))
                     print("Error incorrect desk allocation - wrong number from QR Code")
                     client.publish("image_result", current_slot)
                     return
