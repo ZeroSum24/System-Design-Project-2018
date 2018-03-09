@@ -341,15 +341,10 @@ def on_message(client, userdata, msg):
         print("delivery_status updated")
 
     elif msg.topic == "problem":
-        print("Here1")
         add_unseen_notification()
-        print("Here2")
         problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com").one().id, message=msg.payload.decode(), is_urgent=True)
-        print("Here3")
         db.session.add(problem)
-        print("Here4")
         db.session.commit()
-        print("Here5")
         print("Problem reported by robot.")
 
     elif msg.topic == "request_route":
@@ -483,9 +478,9 @@ def get_desks_list():
 
 def get_people_list():
     people=[]
-    for person in Staff.query.all():
-        if person.name != "ROBOT SPAM":
-            people.append(person)
+    for person in Staff.query.filter(Staff.location_id != None).all():
+        # if person.name != "ROBOT SPAM":
+        people.append(person)
     return people
 
 def transform_into_desk(who_to):
