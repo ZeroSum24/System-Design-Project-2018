@@ -64,6 +64,8 @@ def setup_procedure():
 		with second_brick_alive_lock:
 			if SECOND_BRICK_ALIVE == True:
 				break
+		print("spin")
+		time.sleep(2)
 	battery_alive_thread()
 	CLIENT.publish("delivery_status", str(State.LOADING))
 
@@ -93,6 +95,7 @@ def on_message(client, userdata, msg):
 			print('Set Flag')
 			DUMPED = True
 	elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
+		print("second brick alive")
 		SECOND_BRICK_ALIVE = True
 
 def generate_named_tuples(list):
