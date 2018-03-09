@@ -30,7 +30,7 @@ def camera_picture():
     # client.publish("image_processing", payload=pickle.dumps(img))
 
 def on_connect(client, userdata,flags, rc):
-    print("Connected with result code "+str(rc))
+    # print("Connected with result code "+str(rc))
     client.subscribe("dump")
     client.subscribe("delivery_status")
     client.subscribe("go_manual")
@@ -38,46 +38,46 @@ def on_connect(client, userdata,flags, rc):
 
 def on_message(client, userdata, msg):
     global slot_movement, current_slot, loading, in_automatic
-    print("Received on topic " + msg.topic +": "+str(msg.payload.decode()))
+    # print("Received on topic " + msg.topic +": "+str(msg.payload.decode()))
     if msg.topic == "dump":
         slots = json.loads(msg.payload.decode())
-        print(slots)
+        # print(slots)
         for slot in slots:
             dump(slot)
         client.publish("dump_confirmation", "dumped")
 
     elif msg.topic == "delivery_status":
         if msg.payload.decode() == "State.LOADING" and loading == False:
-            print("first picture")
+            # print("first picture")
             loading = True
             current_slot = 1
-            print("setting up on loading")
+            # print("setting up on loading")
             slot_movement = stop(current_slot)
-            print("done setting up on loading")
+            # print("done setting up on loading")
             camera_picture()
         elif msg.payload.decode() == "State.DELIVERING":
             loading = False
-            print("going back on delivering")
+            # print("going back on delivering")
             slot_go_back(wait = False)
-            print("done going back on delivering")
+            # print("done going back on delivering")
             slot_movement = None
 
     elif msg.topic == "image_result" and in_automatic == True:
         if msg.payload.decode() == "False": #test to check if its an int
             #"new_photo"
-            print("qr not found - taking picture")
+            # print("qr not found - taking picture")
             camera_picture()
         else: # the qr code was identified, and the slot goes to the right place
             #"shift_slot"
-            print("qr found")
+            # print("qr found")
             current_slot = int(msg.payload.decode())
-            print("going back between pictures")
+            # print("going back between pictures")
             slot_go_back()
-            print("done going back")
+            # print("done going back")
             if 1 <= current_slot <= 4:
-                print("going to slot " + str(current_slot))
+                # print("going to slot " + str(current_slot))
                 slot_movement = stop(current_slot)
-                print("done going to slot")
+                # print("done going to slot")
                 camera_picture()
 
     elif msg.topic == "go_manual":
@@ -100,7 +100,8 @@ def slot_go_back(wait = True):
                 time.sleep(2)
             slot_movement.go_further()
     except StopIteration:
-        print("StopIteration")
+        # print("StopIteration")
+        pass
 
 @thread
 def battery_alive_thread():

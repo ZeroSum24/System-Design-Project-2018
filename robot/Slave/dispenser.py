@@ -34,7 +34,7 @@ for motor in os.listdir(root):
         # of objects by string rather than dot notation)
         _ODOMETERS[getattr(MOTORS, _PORTMAP[name])] = path.join(root, motor, 'position')
 
-SHIFT_FOR_DROP = 50
+SHIFT_FOR_DROP = 60
 
 def _read_odometer(motor):
     """Read the odometer on one motor."""
@@ -61,7 +61,7 @@ def _dump_bracket(bracket):
 class stop:
     def __init__(self, bracket):
         if bracket == 1:
-            self.pos = 54
+            self.pos = 49
         elif bracket == 2:
             self.pos = 123
         elif bracket == 3:
@@ -136,7 +136,8 @@ def _drop_letter():
 def _wait_for_motor(motor):
     time.sleep(0.1) # Make sure that motor has time to start
     while motor.state==["running"]:
-        print(_read_odometer(motor))
+        # print(_read_odometer(motor))
+        pass
 
 def _run_to_rel_pos(motor, pos, speed, stop_action = Motor.STOP_ACTION_HOLD, precise = False):
     # making it into flag
@@ -146,7 +147,7 @@ def _run_to_rel_pos(motor, pos, speed, stop_action = Motor.STOP_ACTION_HOLD, pre
 
     if pos < 0:
         speed *= -1
-    print("reset odometry: " + str(_read_odometer(motor)))
+    # print("reset odometry: " + str(_read_odometer(motor)))
     motor.run_forever(speed_sp = speed)
     init_time = time.time()
     odometry = _read_odometer(motor)
@@ -155,19 +156,23 @@ def _run_to_rel_pos(motor, pos, speed, stop_action = Motor.STOP_ACTION_HOLD, pre
         if precise == False and odometry > abspos - 60:
             precise = True
             motor.run_forever(speed_sp = speed/5)
-        print("pos: " + str(pos))
-        print("odometer: " + str(_read_odometer(motor)))
-        print("time cap: " + str(abspos/100 + .9))
-        print("time: " + str(time.time() - init_time))
+        # print("pos: " + str(pos))
+        # print("odometer: " + str(_read_odometer(motor)))
+        # print("time cap: " + str(abspos/100 + .9))
+        # print("time: " + str(time.time() - init_time))
         odometry = _read_odometer(motor)
-        pass
     motor.stop(stop_action=stop_action)
-    print("final odometry: " + str(_read_odometer(motor)))
+    # print("final odometry: " + str(_read_odometer(motor)))
 
 
 def reset_dumper():
     MOTORS.slider.run_timed(speed_sp = -100, time_sp = 3000)
+    _wait_for_motor(MOTORS.slider)
     time.sleep(0.5)
+    # making sure the motor touches the end
+    MOTORS.slider.run_timed(speed_sp=-100, time_sp=500)
+    _wait_for_motor(MOTORS.slider)
+    time.sleep(0.5) # give the motor time to settle
 
 def dump(bracket):
     _dump_bracket(bracket)
