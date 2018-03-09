@@ -44,13 +44,13 @@ def _dump_bracket(bracket):
     if bracket == 1:
         pos = 0
     elif bracket == 2:
-        pos = 100
+        pos = 89
     elif bracket == 3:
-        pos = 175
+        pos = 165
     elif bracket == 4:
-        pos = 260
+        pos = 245
     elif bracket == 5:
-        pos = 325
+        pos = 315
 
     r = _run_to_dump(pos)
     r.send(None)
@@ -61,11 +61,11 @@ class stop:
         if bracket == 1:
             self.pos = 54
         elif bracket == 2:
-            self.pos = 132
+            self.pos = 123
         elif bracket == 3:
-            self.pos = 213
+            self.pos = 200
         elif bracket == 4:
-            self.pos = 291
+            self.pos = 275
         self.__call__()
 
     def __call__(self):
@@ -80,7 +80,7 @@ def _base_run_to(pos, in_between_action = None, shifted_return = False):
     if in_between_action is None:
         in_between_action = lambda: None
 
-    _motor_setup(MOTORS.slider, pos, speed = 100)
+    _motor_setup(MOTORS.slider, pos, speed = 200)
     _coast()
     yield
     if shifted_return:
@@ -88,7 +88,7 @@ def _base_run_to(pos, in_between_action = None, shifted_return = False):
     in_between_action()
     _coast()
     yield
-    _motor_debrief(MOTORS.slider, pos, speed = 100)
+    _motor_debrief(MOTORS.slider, pos, speed = 200)
 
     # making sure the motor touches the end
     MOTORS.slider.run_timed(speed_sp=-100, time_sp=500)
@@ -110,7 +110,7 @@ def _run_to_stop(pos):
 def _motor_setup(motor, pos, speed = 500):
     # solving a wierd bug, where the motor doesn't move w/o this line
     motor.run_timed(speed_sp=500, time_sp=500)
-    _run_to_rel_pos(motor, pos, speed)
+    _run_to_rel_pos(motor, pos, speed, precise = True)
 
 def _motor_debrief(motor, pos, speed = 500):
     # solving a wierd bug, where the motor doesn't move w/o this line
@@ -127,7 +127,7 @@ def _raise_dumper():
 
 def _drop_letter():
     # shifts slot to one over, to drop letter
-    _motor_debrief(MOTORS.slider, 70, speed = 100)
+    _motor_debrief(MOTORS.slider, 70, speed = 200)
 ########################
 
 def _wait_for_motor(motor):
@@ -135,7 +135,7 @@ def _wait_for_motor(motor):
     while motor.state==["running"]:
         print(_read_odometer(motor))
 
-def _run_to_rel_pos(motor, pos, speed, stop_action = Motor.STOP_ACTION_HOLD):
+def _run_to_rel_pos(motor, pos, speed, stop_action = Motor.STOP_ACTION_HOLD, precise = False):
     motor.reset()
     abspos = abs(pos)
     if pos < 0:
@@ -143,10 +143,15 @@ def _run_to_rel_pos(motor, pos, speed, stop_action = Motor.STOP_ACTION_HOLD):
 
     motor.run_forever(speed_sp = speed)
     init_time = time.time()
-    while (_read_odometer(motor) < abspos and time.time() - init_time < abspos/100):
-        print("pos: " + str(pos))
-        print(_read_odometer(motor))
-        pass
+    odometry = _read_odometer(motor)
+
+    # making it into flag
+    precise = not precise
+    while (odometry < abspos and time.time() - init_time < abspos/100 + .9):
+        if precise == False and odometry > abspos - 60:
+            precise = True
+            motor.run_forever(speed_sp = speed/5)
+        odometry = _read_odometer(motor)
     motor.stop(stop_action=stop_action)
 
 def dump(bracket):
