@@ -34,6 +34,8 @@ for motor in os.listdir(root):
         # of objects by string rather than dot notation)
         _ODOMETERS[getattr(MOTORS, _PORTMAP[name])] = path.join(root, motor, 'position')
 
+SHIFT_FOR_DROP = 50
+
 def _read_odometer(motor):
     """Read the odometer on one motor."""
     with open(_ODOMETERS[motor]) as file:
@@ -80,19 +82,20 @@ def _base_run_to(pos, in_between_action = None, shifted_return = False):
     if in_between_action is None:
         in_between_action = lambda: None
 
-    _motor_setup(MOTORS.slider, pos, speed = 200)
+    _motor_setup(MOTORS.slider, pos, speed = 500)
     _coast()
     yield
     if shifted_return:
-        pos -= 70
+        pos -= SHIFT_FOR_DROP
     in_between_action()
     _coast()
     yield
-    _motor_debrief(MOTORS.slider, pos, speed = 200)
+    _motor_debrief(MOTORS.slider, pos, speed = 500)
 
     # making sure the motor touches the end
     MOTORS.slider.run_timed(speed_sp=-100, time_sp=500)
     _wait_for_motor(MOTORS.slider)
+    time.sleep(0.5) # give the motor time to settle
     yield
 
 def _coast():
@@ -112,10 +115,10 @@ def _motor_setup(motor, pos, speed = 500):
     motor.run_timed(speed_sp=500, time_sp=500)
     _run_to_rel_pos(motor, pos, speed, precise = True)
 
-def _motor_debrief(motor, pos, speed = 500):
+def _motor_debrief(motor, pos, speed = 500, precise = True):
     # solving a wierd bug, where the motor doesn't move w/o this line
     motor.run_timed(speed_sp=500, time_sp=500)
-    _run_to_rel_pos(motor, -pos, speed, stop_action = Motor.STOP_ACTION_COAST)
+    _run_to_rel_pos(motor, -pos, speed, stop_action = Motor.STOP_ACTION_COAST, precise = precise)
 
 ## IN-BETWEEN ACTIONS ##
 def _raise_dumper():
@@ -127,7 +130,7 @@ def _raise_dumper():
 
 def _drop_letter():
     # shifts slot to one over, to drop letter
-    _motor_debrief(MOTORS.slider, 70, speed = 200)
+    _motor_debrief(MOTORS.slider, SHIFT_FOR_DROP, speed = 200, precise = False)
 ########################
 
 def _wait_for_motor(motor):
@@ -136,23 +139,35 @@ def _wait_for_motor(motor):
         print(_read_odometer(motor))
 
 def _run_to_rel_pos(motor, pos, speed, stop_action = Motor.STOP_ACTION_HOLD, precise = False):
+    # making it into flag
+    precise = not precise
     motor.reset()
     abspos = abs(pos)
+
     if pos < 0:
         speed *= -1
-
+    print("reset odometry: " + str(_read_odometer(motor)))
     motor.run_forever(speed_sp = speed)
     init_time = time.time()
     odometry = _read_odometer(motor)
 
-    # making it into flag
-    precise = not precise
     while (odometry < abspos and time.time() - init_time < abspos/100 + .9):
         if precise == False and odometry > abspos - 60:
             precise = True
             motor.run_forever(speed_sp = speed/5)
+        print("pos: " + str(pos))
+        print("odometer: " + str(_read_odometer(motor)))
+        print("time cap: " + str(abspos/100 + .9))
+        print("time: " + str(time.time() - init_time))
         odometry = _read_odometer(motor)
+        pass
     motor.stop(stop_action=stop_action)
+    print("final odometry: " + str(_read_odometer(motor)))
+
+
+def reset_dumper():
+    MOTORS.slider.run_timed(speed_sp = -100, time_sp = 3000)
+    time.sleep(0.5)
 
 def dump(bracket):
     _dump_bracket(bracket)

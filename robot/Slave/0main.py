@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import paho.mqtt.client as mqtt
-from dispenser import dump, stop
+from dispenser import dump, stop, reset_dumper
 import json
 import pickle
 from subprocess import Popen, PIPE
@@ -119,7 +119,7 @@ client.on_message = on_message
 
 client.connect("34.242.137.167", 1883, 60)
 
+reset_dumper()
 battery_alive_thread()
-
 # Loop forever.
 client.loop_forever()
