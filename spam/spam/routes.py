@@ -393,7 +393,7 @@ def on_message(client, userdata, msg):
                 except:
                     emit_to_auto_status("Couldn't find the recipient of this letter in the office. Please use manual mode.")
                     print("Error incorrect desk allocation - wrong number from QR Code")
-                    client.publish("image_result", "False")
+                    client.publish("image_result", current_slot)
                     return
                 try:
                     location_read = user_read.location_id
@@ -416,7 +416,7 @@ def on_message(client, userdata, msg):
                 client.publish("image_result", str(current_slot))
 
                 if (current_slot > 4):
-                    emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format(current_slot, user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
+                    emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format((current_slot-1), user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
                     print("Slots have all been filled")
             else:
                 go_button_pressed = False
