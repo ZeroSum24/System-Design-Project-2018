@@ -334,6 +334,7 @@ def on_message(client, userdata, msg):
             print("Returning")
         elif delivery_status == "State.LOADING":
             current_slot = 1
+            go_button_pressed = False
             print("Loading")
         elif delivery_status != "State.LOADING":
             path_planning = {}
@@ -373,22 +374,16 @@ def on_message(client, userdata, msg):
         desk_from_image = 0
         qr_code = image_processing.scanImage(image_location)
 
-        if qr_code == "Invalid Data":
-            print("Value is wrong. QR codes should correspond to User_IDs: ")
-            print("Asking for a new picture.")
-            emit_to_auto_status("The code in the letter is corrupted.\nPlease remove the letter from slot {} and insert a new letter.".format(current_slot))
-            client.publish("image_result", current_slot)
-            return
-        elif qr_code != "Fail":          #Checks qr_code has been registered
-            # yes -- the qr_code is right
+        if qr_code == "Fail":                                    # no -- no qr_code so get new photo
+            print('QR codes: %s' % qr_code)
+            if (go_button_pressed == False): # Breaks the communication between robot and server
+                client.publish("image_result", "False")
 
-            desk_from_image = int(qr_code)
-            print('QR codes: %s' % str(desk_from_image))
-
+        else:          #Checks qr_code has been registered
             # Adds the location to path planning if the go button has not been pressed, looks up the unique id of person in the database
-
             if (go_button_pressed == False):
                 try:
+                    desk_from_image = int(qr_code)
                     user_read = Staff.query.filter(Staff.id == desk_from_image).one()
                 except:
                     emit_to_auto_status("Couldn't find the recipient of this letter in the office.\nPlease remove the letter from slot {} and insert a new letter.".format(current_slot))
@@ -403,32 +398,21 @@ def on_message(client, userdata, msg):
                     else:
                         path_planning[Location.query.filter(Location.id == location_read).one().map_node].append(current_slot)
                 except:
-                    emit_to_auto_status("Couldn't know in which desk {} works.".format(user_read.name))
+                    emit_to_auto_status("Couldn't know in which desk {} works. Remove letter from slot {} and insert a new letter".format(user_read.name, current_slot))
                     print("Error person without desk assigned.")
-                    client.publish("image_result", "False")
+                    client.publish("image_result", current_slot)
                     return
-
-
 
                 print ("This is path planning:")
                 print ("Slots: " + str(path_planning))
                 emit_to_auto_status("Letter on slot {} loaded to {} on {}. Insert next letter.".format(current_slot,user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
                 current_slot += 1
-                client.publish("image_result", str(current_slot))
+                client.publish("image_result", current_slot)
 
                 if (current_slot > 4):
                     emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format((current_slot-1), user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
                     print("Slots have all been filled")
-            else:
-                go_button_pressed = False
-                return
-        else:                                    # no -- no qr_code so get new photo
-            print('QR codes: %s' % qr_code)
-            if (go_button_pressed == False): # Breaks the communication between robot and server
-                client.publish("image_result", "False")
-            else:
-                go_button_pressed = False
-                return
+
 
 @mqtt.on_log()
 def handle_logging(client, userdata, level, buf):

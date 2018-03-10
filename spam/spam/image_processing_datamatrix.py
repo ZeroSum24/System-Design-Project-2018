@@ -29,10 +29,8 @@ def scanImage(file_path):
             a, usr_id, c = success_state.split("\'")
             print(usr_id)
 
-            if (usr_id.isdigit()):
-                return usr_id    # only gets called if the value is an string number
-            else:
-                return "Invalid Data"  # any other data
+            return usr_id    # only gets called if the value is an string number
+
 
 
 
