@@ -87,6 +87,7 @@ def on_message(client, userdata, msg):
 
         if msg.payload.decode() == "False" and in_automatic == False:
             in_automatic = True
+            reset_dumper()
             current_slot = 1
             slot_movement = stop(current_slot)
             camera_picture()
