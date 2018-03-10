@@ -397,13 +397,13 @@ def on_message(client, userdata, msg):
                     return
                 try:
                     location_read = user_read.location_id
+                    map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
                 except:
                     emit_to_auto_status("Couldn't know in which desk {} works.".format(user_read.name))
                     print("Error person without desk assigned.")
                     client.publish("image_result", "False")
                     return
 
-                map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
                 if (map_node_of_location not in path_planning.keys()):
                     path_planning[Location.query.filter(Location.id == location_read).one().map_node]=[current_slot]
                 else:
