@@ -225,7 +225,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				success = forward(instruction.dist, tolerance = instruction.tolerance)
 
 			elif isinstance(instruction, Dump):
-				if PROFILING:
+				if not PROFILING:
 					CLIENT.publish("dump", json.dumps(instruction.slots))
 					while True:
 						with dumped_lock:
