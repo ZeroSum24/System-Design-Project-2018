@@ -329,6 +329,7 @@ def on_message(client, userdata, msg):
 
     elif msg.topic == "delivery_status":
         global delivery_status
+        path_planning = {}
         delivery_status = msg.payload.decode()
         if delivery_status == "State.RETURNING":
             print("Returning")
@@ -336,9 +337,6 @@ def on_message(client, userdata, msg):
             current_slot = 1
             go_button_pressed = False
             print("Loading")
-        elif delivery_status != "State.LOADING":
-            path_planning = {}
-            print("Path Planning reset")
         print("delivery_status updated")
 
     elif msg.topic == "problem":
@@ -426,7 +424,7 @@ def path_planning_go_button():
 
     print ("This is path planning:")
     print ("Slots: " + str(path_planning))
-
+    go_button_pressed = True
     path_planning_result = router.build_route(path_planning)
     if connection_status and delivery_status == "State.LOADING":
         publish_path_planning(path_planning_result)
