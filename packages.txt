@@ -7,3 +7,5 @@ g++
 emacs24
 python3-dev
 htop
+libzbar-dev
+libdmtx0a
