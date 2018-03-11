@@ -124,13 +124,22 @@ def _motor_debrief(motor, pos, speed = 500, precise = True):
 def _raise_dumper():
     # solving a wierd bug, where the motor doesn't move w/o this line
     MOTORS.dumper.run_timed(speed_sp=500, time_sp=500)
-    MOTORS.dumper.run_to_rel_pos(position_sp=145)
-    time.sleep(2) # wait for 2 seconds for the letter to slide out
-    MOTORS.dumper.run_to_rel_pos(position_sp=-145)
+    _run_to_rel_pos(MOTORS.dumper, 145, 500)
+    time.sleep(0.5) # wait for 2 seconds for the letter to slide out
+    _shaky_shaky()
+    time.sleep(1.5)
+    _run_to_rel_pos(MOTORS.dumper, -145, 500, precise = True, stop_action = Motor.STOP_ACTION_COAST)
 
 def _drop_letter():
     # shifts slot to one over, to drop letter
     _motor_debrief(MOTORS.slider, SHIFT_FOR_DROP, speed = 200, precise = False)
+
+def _shaky_shaky():
+    _run_to_rel_pos(MOTORS.dumper, -30, 300)
+    _run_to_rel_pos(MOTORS.dumper, 30, 300)
+    _run_to_rel_pos(MOTORS.dumper, -30, 300)
+    _run_to_rel_pos(MOTORS.dumper, 30, 300)
+
 ########################
 
 def _wait_for_motor(motor):
