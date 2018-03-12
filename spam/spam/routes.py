@@ -16,7 +16,6 @@ from time import sleep, time
 from spam.thread_decorator import thread
 from spam import socketio
 import image_processing
-import pickle
 
 # Ending imports; Beginning Variable assertion
 
@@ -415,7 +414,7 @@ def on_message(client, userdata, msg):
                 client.publish("image_result", current_slot)
 
                 if (current_slot > 4):
-                    emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format((current_slot-1), user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
+                    emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format(user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
                     print("Slots have all been filled")
 
 
