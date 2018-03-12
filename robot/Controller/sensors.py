@@ -16,11 +16,11 @@ _RIGHT.mode = 'COL-COLOR'
 
 def read_color():
     """Convert colors sensor output into members of the Colors Enum"""
-    return (Colors(_LEFT.value()+1), Colors(_RIGHT.value()+1))
+    return Colors(_RIGHT.value()+1)
 
 def sonar_poll():
     """Read the sonar sensor"""
     return _ULTRA_SONIC.distance_centimeters
 
 def read_reflect():
-    return left.value()
+    return _LEFT.value()

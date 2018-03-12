@@ -3,3 +3,9 @@
 [![Build Status](https://travis-ci.com/jcatarino/sdp2018.svg?token=dEjAyYzexNKMaiz3b5gz&branch=master)](https://travis-ci.com/jcatarino/sdp2018)
 
 SDP Project 2018 The University of Edinburgh
+
+# Networking
+Slave provides network between ev3s, controller provides bluetooth tethering for external network
+## Tethering between ev3s
+Connect the two bricks, small end in slave, large end in controller. Turn on 'Gadget' tethering on slave.  
+To disconnect turn off teathering before disconnecting cable and reboot slave
