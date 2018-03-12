@@ -6,9 +6,7 @@ import os
 from os import path
 from math import pi, sin, cos
 from collections import namedtuple
-from functools import partial
 import time
-from functools import wraps
 
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor

@@ -3,7 +3,6 @@
 # Potential method to reduce amount of data sent to the server per-photo
 import paho.mqtt.client as mqtt
 import sys
-import pickle
 
 broker_aws_host = "34.242.137.167"
 

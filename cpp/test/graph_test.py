@@ -5,7 +5,6 @@
 import unittest
 
 from sys import path
-from os.path import abspath
 # The file runs in the cpp directiory, from there this is a relative path to the
 # Controller directiory where the graph module is located
 path.append('../spam/spam')

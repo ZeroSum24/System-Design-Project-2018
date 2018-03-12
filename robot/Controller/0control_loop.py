@@ -2,13 +2,12 @@
 
 import sys
 import time
-from move import forward, rotate, left, right, approach, stop_motors, get_odometry
+from move import forward, rotate, approach, stop_motors, get_odometry
 import State
 import UniquePriorityQueue as uniq
 from queue import Empty
 from thread_decorator import thread, ThreadKiller, acknowledge
 import Directions
-import Junctions
 import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
@@ -98,9 +97,9 @@ def on_message(client, userdata, msg):
 		print("second brick alive")
 		SECOND_BRICK_ALIVE = True
 
-def generate_named_tuples(list):
+def generate_named_tuples(lst):
 	new_list = []
-	for i, listee in enumerate(list):
+	for listee in lst:
 		if listee[0] == "Report":
 			new_list.append(Report(listee[1]))
 		elif listee[0] == "Move":
