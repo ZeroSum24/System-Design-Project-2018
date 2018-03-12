@@ -3,3 +3,4 @@ __pycache__/
 Vagrantfile
 bashrc
 bootstrap.sh
+spam/spam.db

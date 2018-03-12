@@ -1,0 +1,34 @@
+{% extends 'index.html' %}
+
+{% block body %}
+
+<div class="jumbotron">
+
+  <div class="list-group">
+
+    {% for notification in notifications %}
+    {% if notification.is_urgent %}
+    <a href="{{ url_for('notifications') }}?solve_id={{notification.id}}" class="list-group-item list-group-item-action flex-column align-items-start list-group-item-danger">
+    {% else %}
+    <a href="{{ url_for('notifications') }}?solve_id={{notification.id}}" class="list-group-item list-group-item-action flex-column align-items-start">
+    {% endif %}
+
+      <div class="d-flex w-100 justify-content-between">
+        <h5 class="mb-1">{{notification.origin}}</h5>
+        <small>{{notification.timestamp}}</small>
+
+      </div>
+      <p class="mb-1">{{notification.message}}</p>
+      <span class="badge badge-primary">Solve</span>
+    </a>
+    {% else %}
+    <h1 align="center">You have no notifications to solve!</h1>
+    {% endfor %}
+
+  </div>
+
+</div>
+
+
+
+{% endblock body %}

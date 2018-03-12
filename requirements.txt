@@ -1,1 +1,14 @@
-# External python modules can be specified here 
+flask
+Flask-WTF
+sqlalchemy
+Flask-Migrate
+Jinja2
+flask-admin
+Flask-SQLAlchemy
+flask_mqtt
+paho-mqtt
+pillow
+pylibdmtx
+opencv-python
+setuptools
+flask_socketio
