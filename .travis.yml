@@ -1,5 +1,4 @@
 language: python
-# TODO: What version of python is on the ev3s
 python:
   - "3.5"
 

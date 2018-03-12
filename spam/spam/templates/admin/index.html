@@ -1,0 +1,11 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+
+<h1> Welcome to the Administration Page! </h1>
+<h4> Here, you can edit the information on the database. Please acess the database tables from the navigation bar. </h4>
+<h4> When you are done, just click the button below to go back to the main user interface. </h4>
+<a role="button" href="{{ url_for('automatic_mode') }}" class="btn btn-primary btn-lg">Back to the website</a>
+
+
+{% endblock body %}

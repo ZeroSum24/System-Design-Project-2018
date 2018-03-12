@@ -1,0 +1,101 @@
+{% extends "index.html" %} {% block body %}
+
+<div class="jumbotron">
+
+  <h2>Status -- Information</h2>
+  <div style="padding-top:5px">
+
+    <table class="table table-hover">
+      <thead>
+        <div style="padding-top:15px">
+          <tr>
+            <th>Information</th>
+            <th>Status</th>
+          </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Brick 10 Status</td>
+          <td>
+            {% if connection_status_2 %}
+            <span class="badge badge-pill badge-success">Brick Connected</span> {% else %}
+            <span class="badge badge-pill badge-danger">Brick Disconnected</span> {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>Brick 30 Status</td>
+          <td>
+            {% if connection_status %}
+            <span class="badge badge-pill badge-success">Brick Connected</span> {% else %}
+            <span class="badge badge-pill badge-danger">Brick Disconnected</span> {% endif %}
+          </td>
+        </tr>
+
+        {% if connection_status %}
+
+        <tr>
+          <td>Delivery Status</td>
+          <td>
+            {% if delivery_status == "State.PANICKING" %}
+            <span class="badge badge-pill badge-danger">Robot Panicked</span> {% elif delivery_status == "State.STOPPING" %}
+            <span class="badge badge-pill badge-warning">Robot Stopped</span> {% elif delivery_status == "State.LOADING" %}
+            <span class="badge badge-pill badge-success">Robot Parked</span> {% elif delivery_status == "State.RETURNING" %}
+            <span class="badge badge-pill badge-success">Robot Returning</span> {% elif delivery_status == "State.DELIVERING" %}
+            <span class="badge badge-pill badge-success">Robot Delivering</span> {% else %}
+            <span class="badge badge-pill badge-danger">Error >> {{ delivery_status }}</span> {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td>Robot Location</td>
+          <td>{{ location_info }}</td>
+        </tr>
+        {% endif %}
+        {% if connection_status_2 %}
+        <tr>
+          <td>Robot 10 Battery</td>
+          <td>
+            <div class="progress">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ battery_level_2 }}%" aria-valuenow="{{ battery_level }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            {{ battery_level_2 }}%
+          </td>
+        </tr>
+        {% endif %}
+
+        {% if connection_status %}
+        <tr>
+          <td>Brick 30 Battery</td>
+          <td>
+            <div class="progress">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ battery_level }}%" aria-valuenow="{{ battery_level }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            {{ battery_level }}%
+          </td>
+        </tr>
+        {% endif %}
+
+        {% if connection_status and connection_status_2 %}
+        <tr>
+          <td>Pieces Delivered</td>
+          <td>
+            {{ qnt_delivered }}
+          </td>
+        </tr>
+        {% endif %}
+
+      </tbody>
+    </table>
+
+    <div class="form-group row">
+      <div class="col-sm-10">
+        <!--TODO: check this works with the action-->
+        <div style="padding-top:10px">
+          <a href="{{ url_for('status') }}" class="btn btn-primary" role="button">Reload Status</a>
+        </div>
+      </div>
+    </div>
+    </div>
+</div>
+
+
+    {% endblock body %}
