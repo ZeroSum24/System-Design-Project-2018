@@ -2,13 +2,12 @@
 
 import sys
 import time
-from move import forward, rotate, left, right, approach, stop_motors, get_odometry
+from move import forward, rotate, approach, stop_motors, get_odometry
 import State
 import UniquePriorityQueue as uniq
 from queue import Empty
 from thread_decorator import thread, ThreadKiller, acknowledge
 import Directions
-import Junctions
 import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple

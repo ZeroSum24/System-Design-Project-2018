@@ -3,7 +3,6 @@
 import paho.mqtt.client as mqtt
 from dispenser import dump, stop, reset_dumper
 import json
-import pickle
 from subprocess import Popen, PIPE
 from PIL import Image
 import time
@@ -17,7 +16,7 @@ in_automatic = True
 
 def run(*cmd):
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True).wait()
-    stdout, stderr = proc.communicate()
+    stdout, _ = proc.communicate()
     return stdout
 
 # def _camera_picture():

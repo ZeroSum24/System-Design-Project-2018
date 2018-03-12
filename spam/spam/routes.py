@@ -1,7 +1,6 @@
 # all the imports
-import os
 from spam import spam
-from flask import request, session, g, redirect, url_for, abort, \
+from flask import request, session, redirect, url_for, abort, \
      render_template, flash
 from flask_sqlalchemy import SQLAlchemy
 from spam.database import db_session
@@ -12,7 +11,7 @@ from spam import router
 from flask_mqtt import Mqtt
 import json
 from threading import Lock
-from time import sleep, time
+from time import sleep
 from spam.thread_decorator import thread
 from spam import socketio
 import image_processing
