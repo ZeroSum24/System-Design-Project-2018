@@ -34,7 +34,7 @@ for motor in os.listdir(root):
         # of objects by string rather than dot notation)
         _ODOMETERS[getattr(MOTORS, _PORTMAP[name])] = path.join(root, motor, 'position')
 
-SHIFT_FOR_DROP = 60
+SHIFT_FOR_DROP = 70
 
 def _read_odometer(motor):
     """Read the odometer on one motor."""
@@ -63,7 +63,7 @@ class stop:
         if bracket == 1:
             self.pos = 49
         elif bracket == 2:
-            self.pos = 123
+            self.pos = 125
         elif bracket == 3:
             self.pos = 200
         elif bracket == 4:
@@ -128,7 +128,8 @@ def _raise_dumper():
     time.sleep(0.5) # wait for 2 seconds for the letter to slide out
     _shaky_shaky()
     time.sleep(1.5)
-    _run_to_rel_pos(MOTORS.dumper, -145, 500, precise = True, stop_action = Motor.STOP_ACTION_COAST)
+    _run_to_rel_pos(MOTORS.dumper, -150, 500, precise = True, stop_action = Motor.STOP_ACTION_COAST)
+    # fed a slightly larger value to reset itself on the bottom
 
 def _drop_letter():
     # shifts slot to one over, to drop letter
