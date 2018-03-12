@@ -158,8 +158,8 @@ def settings():
 
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
-    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed,
-    # manual_enter_time
+    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed
+    # , manual_enter_time
     if request.method == 'GET':
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         # manual_button_pressed = False
