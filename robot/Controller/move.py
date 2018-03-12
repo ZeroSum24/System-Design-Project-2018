@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 """Wrapper library for moving the ev3"""
 
-# pylint: disable=fixme, import-error, wildcard-import, missing-docstring,
-# pylint: disable=no-member, redefined-outer-name, invalid-name,
-# pylint: disable=global-statement, no-else-return, too-many-arguments,
-# pylint: disable=too-many-locals, too-many-branches
-
 import imp
 import os
 from os import path
-from math import pi, cos, sin
+from math import pi, sin, cos
 from collections import namedtuple
+from functools import partial
 import time
+from functools import wraps
 
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor
+from ev3dev.auto import *
 
 import Directions
 import Colors
