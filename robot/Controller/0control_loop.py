@@ -97,9 +97,9 @@ def on_message(client, userdata, msg):
 		print("second brick alive")
 		SECOND_BRICK_ALIVE = True
 
-def generate_named_tuples(list):
+def generate_named_tuples(lst):
 	new_list = []
-	for i, listee in enumerate(list):
+	for listee in lst:
 		if listee[0] == "Report":
 			new_list.append(Report(listee[1]))
 		elif listee[0] == "Move":

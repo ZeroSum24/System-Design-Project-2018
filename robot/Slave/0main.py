@@ -4,7 +4,6 @@ import paho.mqtt.client as mqtt
 from dispenser import dump, stop, reset_dumper
 import json
 from subprocess import Popen, PIPE
-from PIL import Image
 import time
 from thread_decorator import thread
 import os

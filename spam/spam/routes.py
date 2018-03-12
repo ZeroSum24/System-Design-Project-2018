@@ -1,6 +1,6 @@
 # all the imports
 from spam import spam
-from flask import request, session, redirect, url_for, abort, \
+from flask import request, session, redirect, url_for, \
      render_template, flash
 from flask_sqlalchemy import SQLAlchemy
 from spam.database import db_session
