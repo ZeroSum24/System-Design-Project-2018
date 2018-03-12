@@ -17,4 +17,3 @@ class Config(object):
    # MQTT_PASSWORD = ''  # set the password here if the broker demands authentication
    # MQTT_KEEPALIVE = 5  # set the time interval for sending a ping to the broker to 5 seconds
    # MQTT_TLS_ENABLED = False  # set TLS to disabled for testing purposes
-    
