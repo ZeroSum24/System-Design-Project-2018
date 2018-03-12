@@ -1,11 +1,7 @@
 # all the imports
-import os
 from spam import spam
-import sqlite3
-from flask import Flask, request, session, g, redirect, url_for, abort, \
+from flask import request, session, redirect, url_for, \
      render_template, flash
-import socket
-from sys import argv
 from flask_sqlalchemy import SQLAlchemy
 from spam.database import db_session
 from spam.database import init_db
@@ -15,11 +11,10 @@ from spam import router
 from flask_mqtt import Mqtt
 import json
 from threading import Lock
-from time import sleep, time
+from time import sleep
 from spam.thread_decorator import thread
 from spam import socketio
-import image_processing_datamatrix as image_processing
-import pickle
+import image_processing
 
 # Ending imports; Beginning Variable assertion
 
@@ -418,7 +413,7 @@ def on_message(client, userdata, msg):
                 client.publish("image_result", current_slot)
 
                 if (current_slot > 4):
-                    emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format((current_slot-1), user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
+                    emit_to_auto_status("Last letter was loaded to {} on {}. Press Deliver Mail when ready.".format(user_read.name, Location.query.filter(Location.id == location_read).one().location_name))
                     print("Slots have all been filled")
 
 

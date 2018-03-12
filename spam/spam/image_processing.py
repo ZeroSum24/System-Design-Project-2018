@@ -26,7 +26,7 @@ def scanImage(file_path):
             success_state = str(codes)
             print(success_state)
 
-            a, usr_id, c = success_state.split("\'")
+            _, usr_id, _ = success_state.split("\'")
             print(usr_id)
 
             return usr_id    # only gets called if the value is an string number
