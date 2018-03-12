@@ -15,7 +15,7 @@ from spam import router
 from flask_mqtt import Mqtt
 import json
 from threading import Lock
-from time import sleep
+from time import sleep, time
 from spam.thread_decorator import thread
 from spam import socketio
 import image_processing_datamatrix as image_processing
@@ -47,6 +47,8 @@ seen = False
 seen_2 = False
 path_planning={}
 go_button_pressed = False
+manual_button_pressed = False
+# manual_enter_time = 0
 last_auto_state = None
 qnt_delivered = 0
 
@@ -156,9 +158,13 @@ def settings():
 
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
-    global path_planning_result, path_planning, current_slot, last_auto_state
+    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed,
+    # manual_enter_time
     if request.method == 'GET':
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
+        # manual_button_pressed = False
+        # if manual_enter_time-time.time() > 3: #TODO create a prompt on the ui before switching back
+        manual_button_pressed = False
         mqtt.publish("go_manual","False")
         if last_auto_state is None:
             last_auto_state = "Please insert the first letter."
@@ -205,6 +211,8 @@ def mail_delivery():
     global path_planning_result
     global path_planning
     global last_auto_state
+    global manual_button_pressed
+    # global manual_enter_time
     if request.method == 'POST':
         submit=[]
         path_planning={}
@@ -235,6 +243,7 @@ def mail_delivery():
         current_slot = 1
         path_planning = {}
         last_auto_state = None
+        manual_button_pressed = True
         print("To Manual -- Slots: " + str(path_planning) + ". Error current slot updated: " + str(current_slot))
 
         command = request.args.get('emergency_command', default = "", type = str)
@@ -243,6 +252,7 @@ def mail_delivery():
                 mqtt.publish("emergency_command",command)
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","True")
+        # manual_enter_time = time.time()
         return render_template('recipients.html', min_battery_level=min_battery_level, active="Mail Delivery", error=error, people=get_people_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, delivery_status=delivery_status, connection_status_2=connection_status_2)
 
 @spam.route('/report', methods=['GET', 'POST'])
@@ -296,7 +306,7 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    global path_planning_result, location_info, path_planning, current_slot, go_button_pressed
+    global path_planning_result, location_info, path_planning, current_slot, go_button_pressed, manual_button_pressed
     if msg.topic == "location_info":
         with location_info_lock:
             global qnt_delivered
@@ -374,12 +384,12 @@ def on_message(client, userdata, msg):
 
         if qr_code == "Fail":                                    # no -- no qr_code so get new photo
             print('QR codes: %s' % qr_code)
-            if (go_button_pressed == False): # Breaks the communication between robot and server
+            if (go_button_pressed == False and manual_button_pressed == False): # Breaks the communication between robot and server
                 client.publish("image_result", "False")
 
         else:          #Checks qr_code has been registered
             # Adds the location to path planning if the go button has not been pressed, looks up the unique id of person in the database
-            if (go_button_pressed == False):
+            if (go_button_pressed == False and manual_button_pressed == False):
                 try:
                     desk_from_image = int(qr_code)
                     user_read = Staff.query.filter(Staff.id == desk_from_image).one()
