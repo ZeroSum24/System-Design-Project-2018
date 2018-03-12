@@ -18,7 +18,7 @@ from threading import Lock
 from time import sleep, time
 from spam.thread_decorator import thread
 from spam import socketio
-import image_processing_datamatrix as image_processing
+import image_processing
 import pickle
 
 # Ending imports; Beginning Variable assertion
