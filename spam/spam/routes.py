@@ -47,7 +47,7 @@ manual_button_pressed = False
 last_auto_state = None
 qnt_delivered = 0
 start_time_lock = Lock()
-start_time = None
+start_time = 0
 
 # Definition of environment variable for Notifications
 unseen_notifications= 0
@@ -159,7 +159,8 @@ def automatic_mode():
     if request.method == 'GET':
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         manual_button_pressed = False
-        wait_time = 7 - (time() - start_time)
+        with start_time_lock:
+            wait_time = 7 - (time() - start_time)
         if wait_time < 0:
             wait_time = 0
         timer = Timer(wait_time, lambda: mqtt.publish("go_manual","False"))
