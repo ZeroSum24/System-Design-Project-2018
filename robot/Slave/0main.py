@@ -32,7 +32,6 @@ def run(*cmd):
 
 def camera_picture():
     os.system('./take_photo.sh')
-    time.sleep(1)
     imgpath = "./image_sent.jpg"
     with open(imgpath,'rb') as img:
         data = img.read();
