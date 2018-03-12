@@ -1,11 +1,8 @@
 # all the imports
 import os
 from spam import spam
-import sqlite3
-from flask import Flask, request, session, g, redirect, url_for, abort, \
+from flask import request, session, g, redirect, url_for, abort, \
      render_template, flash
-import socket
-from sys import argv
 from flask_sqlalchemy import SQLAlchemy
 from spam.database import db_session
 from spam.database import init_db
