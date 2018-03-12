@@ -63,11 +63,11 @@ class stop:
         if bracket == 1:
             self.pos = 49
         elif bracket == 2:
-            self.pos = 125
+            self.pos = 116
         elif bracket == 3:
-            self.pos = 200
+            self.pos = 193
         elif bracket == 4:
-            self.pos = 275
+            self.pos = 273
         self.__call__()
 
     def __call__(self):
@@ -124,11 +124,11 @@ def _motor_debrief(motor, pos, speed = 500, precise = True):
 def _raise_dumper():
     # solving a wierd bug, where the motor doesn't move w/o this line
     MOTORS.dumper.run_timed(speed_sp=500, time_sp=500)
-    _run_to_rel_pos(MOTORS.dumper, 145, 500)
+    _run_to_rel_pos(MOTORS.dumper, 120, 500)
     time.sleep(0.5) # wait for 2 seconds for the letter to slide out
     _shaky_shaky()
-    time.sleep(1.5)
-    _run_to_rel_pos(MOTORS.dumper, -150, 500, precise = True, stop_action = Motor.STOP_ACTION_COAST)
+    time.sleep(2)
+    _run_to_rel_pos(MOTORS.dumper, -160, 500, precise = True, stop_action = Motor.STOP_ACTION_COAST)
     # fed a slightly larger value to reset itself on the bottom
 
 def _drop_letter():
@@ -136,10 +136,12 @@ def _drop_letter():
     _motor_debrief(MOTORS.slider, SHIFT_FOR_DROP, speed = 200, precise = False)
 
 def _shaky_shaky():
-    _run_to_rel_pos(MOTORS.dumper, -30, 300)
-    _run_to_rel_pos(MOTORS.dumper, 30, 300)
-    _run_to_rel_pos(MOTORS.dumper, -30, 300)
-    _run_to_rel_pos(MOTORS.dumper, 30, 300)
+    _run_to_rel_pos(MOTORS.dumper, -30, 500)
+    _run_to_rel_pos(MOTORS.dumper, 30, 500)
+    _run_to_rel_pos(MOTORS.dumper, -30, 500)
+    _run_to_rel_pos(MOTORS.dumper, 30, 500)
+    _run_to_rel_pos(MOTORS.dumper, -30, 500)
+    _run_to_rel_pos(MOTORS.dumper, 30, 500)
 
 ########################
 
