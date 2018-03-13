@@ -63,7 +63,7 @@ class stop:
         if bracket == 1:
             self.pos = 49
         elif bracket == 2:
-            self.pos = 123
+            self.pos = 126
         elif bracket == 3:
             self.pos = 193
         elif bracket == 4:
