@@ -167,6 +167,12 @@ def automatic_mode():
         timer.start()
         if last_auto_state is None:
             last_auto_state = "Please insert the first letter."
+
+        command = request.args.get('emergency_command', default = "", type = str)
+        if command != "":
+            if connection_status:
+                mqtt.publish("emergency_command",command)
+
         return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status, last_auto_state=last_auto_state)
     else:
         submit=[]
