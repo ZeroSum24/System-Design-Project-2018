@@ -118,7 +118,7 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <a role="button" class="btn btn-success" href="{{ url_for('mail_delivery') }}?emergency_command=Resume" method=get>Start</a>
+                <a role="button" class="btn btn-success" href="{{ url_for('automatic_mode') }}?emergency_command=Resume" method=get>Start</a>
               </div>
             </div>
           </div>
@@ -144,7 +144,7 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <a role="button" class="btn btn-danger" href="{{ url_for('mail_delivery') }}?emergency_command=Stop" method=get>Stop Now!</a>
+                <a role="button" class="btn btn-danger" href="{{ url_for('automatic_mode') }}?emergency_command=Stop" method=get>Stop Now!</a>
               </div>
             </div>
           </div>
@@ -170,7 +170,7 @@
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <a role="button" class="btn btn-warning" href="{{ url_for('mail_delivery') }}?emergency_command=Callback" method=get>Callback</a>
+                <a role="button" class="btn btn-warning" href="{{ url_for('automatic_mode') }}?emergency_command=Callback" method=get>Callback</a>
               </div>
             </div>
           </div>
