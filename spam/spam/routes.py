@@ -10,8 +10,8 @@ from spam.models import Staff, Location, Problem
 from spam import router
 from flask_mqtt import Mqtt
 import json
-from threading import Lock
-from time import sleep
+from threading import Lock, Timer
+from time import sleep, time
 from spam.thread_decorator import thread
 from spam import socketio
 import image_processing
@@ -46,6 +46,8 @@ manual_button_pressed = False
 # manual_enter_time = 0
 last_auto_state = None
 qnt_delivered = 0
+start_time_lock = Lock()
+start_time = 0
 
 # Definition of environment variable for Notifications
 unseen_notifications= 0
@@ -153,16 +155,24 @@ def settings():
 
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
-    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed
-    # , manual_enter_time
+    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed, start_time
     if request.method == 'GET':
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
-        # manual_button_pressed = False
-        # if manual_enter_time-time.time() > 3: #TODO create a prompt on the ui before switching back
         manual_button_pressed = False
-        mqtt.publish("go_manual","False")
+        with start_time_lock:
+            wait_time = 7 - (time() - start_time)
+        if wait_time < 0:
+            wait_time = 0
+        timer = Timer(wait_time, lambda: mqtt.publish("go_manual","False"))
+        timer.start()
         if last_auto_state is None:
             last_auto_state = "Please insert the first letter."
+
+        command = request.args.get('emergency_command', default = "", type = str)
+        if command != "":
+            if connection_status:
+                mqtt.publish("emergency_command",command)
+
         return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status, last_auto_state=last_auto_state)
     else:
         submit=[]
@@ -239,6 +249,9 @@ def mail_delivery():
         path_planning = {}
         last_auto_state = None
         manual_button_pressed = True
+        with start_time_lock:
+            global start_time
+            start_time = time()
         print("To Manual -- Slots: " + str(path_planning) + ". Error current slot updated: " + str(current_slot))
 
         command = request.args.get('emergency_command', default = "", type = str)
@@ -247,7 +260,6 @@ def mail_delivery():
                 mqtt.publish("emergency_command",command)
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         mqtt.publish("go_manual","True")
-        # manual_enter_time = time.time()
         return render_template('recipients.html', min_battery_level=min_battery_level, active="Mail Delivery", error=error, people=get_people_list(), unseen_notifications=get_unseen_notification(), battery_level=battery_calculate(battery_info_volts), battery_level_2=battery_calculate(battery_info_volts_2), connection_status=connection_status, delivery_status=delivery_status, connection_status_2=connection_status_2)
 
 @spam.route('/report', methods=['GET', 'POST'])
