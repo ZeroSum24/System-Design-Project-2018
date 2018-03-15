@@ -16,7 +16,7 @@ from spam.thread_decorator import thread
 from spam import socketio
 import image_processing
 from spam import assist
-from flask_assistant import Assistant, tell
+from flask_assistant import Assistant, tell, ask
 
 
 # Ending imports; Beginning Variable assertion
