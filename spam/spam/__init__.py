@@ -18,7 +18,7 @@ from spam.models import Staff, Location, Problem
 admin.add_view(ModelView(Staff, db.session))
 admin.add_view(ModelView(Problem, db.session))
 admin.add_view(ModelView(Location, db.session))
-assist = Assistant(app, route='/fulfillment')
+assist = Assistant(spam, route='/fulfillment')
 
 
 from spam import routes, models
