@@ -548,14 +548,14 @@ def connection_chat():
 
 @assist.action('Deliver Mail - yes')
 def deliver_yes_chat(user):
-    print user
+    print (user)
 
     speech = "Deliver Mail feature has not yet been implemented"
     return ask(speech)
 
 @assist.action('Desk Query')
 def desk_chat(user):
-    print user
+    print (user)
 
     speech = "Desk Query feature has not yet been implemented"
     return ask(speech)
@@ -587,7 +587,7 @@ def state_chat():
 
 @assist.action('User Query')
 def desk_chat(desk):
-    print desk
+    print (desk)
 
     speech = "User Query feature has not yet been implemented"
     return ask(speech)
