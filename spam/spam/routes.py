@@ -500,7 +500,7 @@ def battery_calculate(voltage_reading):
     return int(percent)
 
 @assist.action('Battery')
-def battery():
+def battery_chat():
     speech = ""
     if connection_status:
         speech = speech + "The battery of brick number 30 is {} percent.".format(battery_calculate(battery_info_volts))
@@ -508,4 +508,86 @@ def battery():
         speech = speech + "The battery of brick number 10 is {} percent.".format(battery_calculate(battery_info_volts_2))
     if (not connection_status) and (not connection_status_2):
         speech = speech + "Please connect the bricks to know their battery status."
+    return ask(speech)
+
+@assist.action('Callback')
+def callback_chat():
+    publish_emergency_commands('Callback')
+    speech = "I have instructed the robot to return to reception."
+    return ask(speech)
+
+@assist.action('Resume')
+def resume_chat():
+    publish_emergency_commands('Resume')
+    speech = "I have instructed the robot to resume."
+    return ask(speech)
+
+@assist.action('Stop')
+def stop_chat():
+    publish_emergency_commands('Stop')
+    speech = "I have instructed the robot to stop."
+    return ask(speech)
+
+@assist.action('Connection Status')
+def connection_chat():
+    connection_10 = ""
+    connection_30 = ""
+
+    if connection_status:
+        connection_30 = "Connected"
+    else:
+        connection_30 = "Disconnected"
+
+    if connection_status_2:
+        connection_10 = "Connected"
+    else:
+        connection_10 = "Disconnected"
+
+    speech = "Brick number 30 is {}. Brick number 10 is {}.".format(connection_30, connection_10)
+    return ask(speech)
+
+@assist.action('Deliver Mail - yes')
+def deliver_yes_chat(user):
+    print user
+
+    speech = "Deliver Mail feature has not yet been implemented"
+    return ask(speech)
+
+@assist.action('Desk Query')
+def desk_chat(user):
+    print user
+
+    speech = "Desk Query feature has not yet been implemented"
+    return ask(speech)
+
+@assist.action('Location Status')
+def location_chat():
+    speech = "Location Status feature has not yet been implemented"
+    return ask(speech)
+
+@assist.action('Notifications')
+def notification_chat():
+    speech = "You have {} new notifications. Would you like me to read them ?".format(unseen_notifications)
+    return ask(speech)
+
+@assist.action('Notifications')
+def notification_yes_chat():
+    speech = "I can't ready notifications just yet. Sorry."
+    return ask(speech)
+
+@assist.action('Parcel Quantity')
+def parcel_chat():
+    speech = "So far, I have delivered {} objects.".format(qnt_delivered)
+    return ask(speech)
+
+@assist.action('Robot State')
+def state_chat():
+    speech = "Location Status feature has not yet been implemented"
+    return ask(speech)
+
+@assist.action('User Query')
+def desk_chat(desk):
+    print desk
+
+    speech = "User Query feature has not yet been implemented"
     return ask(speech)
