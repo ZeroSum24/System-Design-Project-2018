@@ -15,6 +15,7 @@ from time import sleep, time
 from spam.thread_decorator import thread
 from spam import socketio
 import image_processing
+from spam import assist
 
 # Ending imports; Beginning Variable assertion
 
