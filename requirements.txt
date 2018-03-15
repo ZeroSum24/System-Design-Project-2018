@@ -12,3 +12,4 @@ pylibdmtx
 opencv-python
 setuptools
 flask_socketio
+flask-assistant

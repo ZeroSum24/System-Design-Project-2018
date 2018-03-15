@@ -495,3 +495,13 @@ def battery_calculate(voltage_reading):
     else:
         percent = 0
     return int(percent)
+
+@assist.action('Battery')
+def battery():
+    speech = ""
+    if connection_status:
+        speech = speech + "The battery of brick number thirty is {} percent.".format(battery_calculate(battery_info_volts))
+    if connection_status_2:
+        speech = speech + "The battery of brick number ten is {} percent.".format(battery_calculate(battery_info_volts_2))
+
+    return ask(speech)
