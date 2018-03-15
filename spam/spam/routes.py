@@ -503,9 +503,9 @@ def battery_calculate(voltage_reading):
 def battery():
     speech = ""
     if connection_status:
-        speech = speech + "The battery of brick number thirty is {} percent.".format(battery_calculate(battery_info_volts))
+        speech = speech + "The battery of brick number 30 is {} percent.".format(battery_calculate(battery_info_volts))
     if connection_status_2:
-        speech = speech + "The battery of brick number ten is {} percent.".format(battery_calculate(battery_info_volts_2))
+        speech = speech + "The battery of brick number 10 is {} percent.".format(battery_calculate(battery_info_volts_2))
     if (not connection_status) and (not connection_status_2):
         speech = speech + "Please connect the bricks to know their battery status."
-    return tell(speech)
+    return ask(speech)
