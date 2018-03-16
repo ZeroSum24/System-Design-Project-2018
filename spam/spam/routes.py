@@ -499,6 +499,9 @@ def battery_calculate(voltage_reading):
         percent = 0
     return int(percent)
 
+
+
+
 @assist.action('Battery')
 def battery_chat():
     speech = ""
@@ -507,43 +510,41 @@ def battery_chat():
     if connection_status_2:
         speech = speech + "The battery of brick number 10 is {} percent.".format(battery_calculate(battery_info_volts_2))
     if (not connection_status) and (not connection_status_2):
-        speech = speech + "Please connect the bricks to know their battery status."
+        speech = speech + "To see the battery levels, I need the bricks connected."
     return ask(speech)
 
 @assist.action('Callback')
 def callback_chat():
     publish_emergency_commands('Callback')
-    speech = "I have instructed the robot to return to reception."
+    speech = "I am returning to the reception."
     return ask(speech)
 
 @assist.action('Resume')
 def resume_chat():
     publish_emergency_commands('Resume')
-    speech = "I have instructed the robot to resume."
+    speech = "I resumed operations."
     return ask(speech)
 
 @assist.action('Stop')
 def stop_chat():
     publish_emergency_commands('Stop')
-    speech = "I have instructed the robot to stop."
+    speech = "I stopped and I'm waiting for your instructions."
     return ask(speech)
 
 @assist.action('Connection Status')
 def connection_chat():
-    connection_10 = ""
-    connection_30 = ""
+    speech = ""
 
-    if connection_status:
-        connection_30 = "Connected"
+    if connection_status and connection_status_2:
+        speech = "Both bricks are connected."
+    elif connection_status and not connection_status_2:
+        speech = "Brick 30 is connected, however brick 10 is disconnected."
+
+    elif connection_status_2 and not connection_status:
+        speech = "Brick 10 is connectedm however brick 30 is disconnected."
     else:
-        connection_30 = "Disconnected"
+        speech = "Both bricks are disconnected."
 
-    if connection_status_2:
-        connection_10 = "Connected"
-    else:
-        connection_10 = "Disconnected"
-
-    speech = "Brick number 30 is {}. Brick number 10 is {}.".format(connection_30, connection_10)
     return ask(speech)
 
 @assist.action('Deliver Mail - yes')
