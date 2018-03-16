@@ -13,13 +13,11 @@ else
 fi
 
 copy() {
-    local output=`expect <<"    EOF"
+    expect <<"    EOF" >/dev/null 2>&1
     spawn scp * robot@ev3dev:~/
     expect "robot@ev3dev's password:"
     send "maker\n"
-    EOF`
-    $debug $output
-    return $?
+    EOF
 }
 
 get_brick_number() {
@@ -29,23 +27,42 @@ get_brick_number() {
     elif [[ "$directory" == "Slave" ]]; then
         echo 10
     else
-        debug "Got: $directory, expected one of Controller, Slave"
+        $debug "Got: $directory, expected one of Controller, Slave"
     fi
+}
+
+base_installs() {
+    expect <<"    EOF" >/dev/null 2>&1
+    spawn ssh robot@ev3dev chmod +x ~/00runme.sh
+    spawn ssh robot@ev3dev echo "maker" | sudo -S apt-get update
+    spawn ssh robot@ev3dev echo "maker" | sudo -S apt-get install -y python3-pip
+    spawn ssh robot@ev3dev echo "maker" | sudo -S pip3 install paho-mqtt
+    expect "robot@ev3dev's password:"
+    send "maker\n"
+    EOF
+}
+
+extra_install() {
+    expect <<"    EOF" >/dev/null 2>&1
+    spawn ssh robot@ev3dev echo "maker" | sudo -S apt-get install -y fswebcam
+    expect "robot@ev3dev's password:"
+    send "maker\n"
+    EOF
 }
 
 install() {
     local directory=$1
-    local number=$(get_brick_number)
+    local number=$(get_brick_number "$directory")
     read -p "Please plug in Brick $number (Press enter to continue)"
     cd "./$directory"
     printf "%s" "Installing..."
     until copy; do
         sleep 5
     done
-    # TODO: Install required libraries
-    ssh robot@ev3dev <<"    EOF"
-    chmod +x ~/00runme.sh
-    EOF
+    base_installs
+    if [[ "$directory" == "Slave" ]]; then
+        extra_install
+    fi
     echo "done"
     cd ../
 }
