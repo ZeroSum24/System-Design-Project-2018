@@ -589,6 +589,15 @@ def state_chat():
 @assist.action('User Query')
 def desk_chat(desk):
     print (desk)
-
-    speech = "User Query feature has not yet been implemented"
-    return ask(speech)
+    speech = ""
+    try:
+        desk_obj = Location.query.filter(Location.location_name == desk).one()
+    except:
+        speech = "I couldn't find desk {} in the system.".format(desk)
+        return ask(speech)
+    try:
+        people = map(lambda x: x.name, desk_obj.staff)
+        speech = "Here's who works on {}: ".format(desk) + " .".join(str(x) for x in people)
+    except:
+        speech = "No one works on desk {}.".format(desk)
+        return ask(speech)
