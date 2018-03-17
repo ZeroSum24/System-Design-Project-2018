@@ -598,6 +598,7 @@ def desk_chat(desk):
     try:
         people = map(lambda x: x.name, desk_obj.staff)
         speech = "Here's who works on {}: ".format(desk) + " .".join(str(x) for x in people)
+        return ask(speech)
     except:
         speech = "No one works on desk {}.".format(desk)
         return ask(speech)
