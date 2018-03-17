@@ -5,7 +5,7 @@ sudo apt upgrade
 
 sudo apt install python3 python3-pip mosquitto nano make g++ emacs24 python3-dev htop libzbar-dev libdmtx0a
 
-pip3 install -r requirements.txt
+pip3 install -r ../requirements.txt
 
 curl https://getcaddy.com | bash -s personal hook.service
 
