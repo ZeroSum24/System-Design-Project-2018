@@ -16,4 +16,4 @@ export FLASK_APP=spam.py
 export DEV_ACCESS_TOKEN='2ad4f817b64442e08cb03d783394746c'
 export CLIENT_ACCESS_TOKEN='230a5f0ab9094da381916abe10264faa'
 
-nohup python3 -m flask run --host=0.0.0.0 --port=5000 &
+sudo nohup python3 -m flask run --host=0.0.0.0 --port=5000 &
