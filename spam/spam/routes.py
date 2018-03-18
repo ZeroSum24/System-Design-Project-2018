@@ -557,9 +557,14 @@ def deliver_yes_chat(user):
 @assist.action('Desk Query')
 def desk_chat(user):
     print (user)
-
-    speech = "Desk Query feature has not yet been implemented"
-    return ask(speech)
+    speech = ""
+    try:
+        desk = Staff.query.filter(Staff.name == user).one().staff.location_name
+        speech = "User {} works in {}.".format(user, desk)
+        return ask(speech)
+    except:
+        speech = "I couldn't find user {} in the system.".format(user)
+        return ask(speech)
 
 @assist.action('Location Status')
 def location_chat():
@@ -597,7 +602,7 @@ def desk_chat(desk):
         return ask(speech)
     try:
         people = map(lambda x: x.name, desk_obj.staff)
-        speech = "Here's who works on {}: ".format(desk) + " .".join(str(x) for x in people)
+        speech = "Here's who works on {}: ".format(desk) + ", ".join(str(x) for x in people)
         return ask(speech)
     except:
         speech = "No one works on desk {}.".format(desk)
