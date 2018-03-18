@@ -534,7 +534,6 @@ def stop_chat():
 @assist.action('Connection Status')
 def connection_chat():
     speech = ""
-
     if connection_status and connection_status_2:
         speech = "Both bricks are connected."
     elif connection_status and not connection_status_2:
@@ -547,10 +546,14 @@ def connection_chat():
 
     return ask(speech)
 
+#TODO: IMPLEMENT
 @assist.action('Deliver Mail - yes')
 def deliver_yes_chat(user):
     print (user)
-
+    # if manual mode
+        # Answer its not possible to send this command in manual mode
+    # else
+        # Do the same thing as if mail deliver button was pressed in automatic mode.
     speech = "Deliver Mail feature has not yet been implemented"
     return ask(speech)
 
@@ -560,7 +563,7 @@ def desk_chat(user):
     speech = ""
     try:
         desk = Staff.query.filter(Staff.name == user).one().staff.location_name
-        speech = "User {} works in {}.".format(user, desk)
+        speech = "{} works in {}.".format(user, desk)
         return ask(speech)
     except:
         speech = "I couldn't find user {} in the system.".format(user)
@@ -568,7 +571,9 @@ def desk_chat(user):
 
 @assist.action('Location Status')
 def location_chat():
-    speech = "Location Status feature has not yet been implemented"
+    if location_info == "Nothing reported yet.":
+        return ask("I haven't reported any location yet. Check again later.")
+    speech = "I was last seen in point {}".format(location_info[0])
     return ask(speech)
 
 @assist.action('Notifications')
@@ -578,7 +583,10 @@ def notification_chat():
 
 @assist.action('Notifications')
 def notification_yes_chat():
-    speech = "I can't ready notifications just yet. Sorry."
+    speech = ""
+    notifications = Problem.query.order_by('timestamp desc').limit(unseen_notifications)
+    for notification in notifications:
+        speech.append("From {}: {}. ".format(notification.origin.name, notification.message))
     return ask(speech)
 
 @assist.action('Parcel Quantity')
@@ -588,7 +596,19 @@ def parcel_chat():
 
 @assist.action('Robot State')
 def state_chat():
-    speech = "Location Status feature has not yet been implemented"
+    speech = ""
+    if delivery_status == "State.LOADING":
+        speech = "The robot is Parked and Loading."
+    elif delivery_status == "State.DELIVERING":
+        speech = "The robot is Delivering mail."
+    elif delivery_status == "State.RETURNING":
+        speech = "The robot is Returning to reception."
+    elif delivery_status == "State.STOPPING":
+        speech = "The robot is Stopped and waiting for instructions."
+    elif delivery_status == "State.PANICKING":
+        speech = "The robot has stopped and needs help, please check the notifications."
+    else:
+        speech = "I couldn't find the robot's state."
     return ask(speech)
 
 @assist.action('User Query')
