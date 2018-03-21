@@ -416,7 +416,7 @@ def on_message(client, userdata, msg):
                     else:
                         path_planning[Location.query.filter(Location.id == location_read).one().map_node].append(current_slot)
                 except:
-                    emit_to_auto_status("Couldn't know in which desk {} works. Remove letter from slot {} and insert a new letter".format(user_read.name, current_slot))
+                    emit_to_auto_status("{} has not currently been allocated a desk. Remove letter from slot {} and insert a new letter".format(user_read.name, current_slot))
                     print("Error person without desk assigned.")
                     client.publish("image_result", current_slot)
                     return
