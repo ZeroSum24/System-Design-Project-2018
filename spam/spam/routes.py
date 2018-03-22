@@ -511,25 +511,25 @@ def battery_chat():
         speech = speech + "The battery of brick number 10 is {} percent.".format(battery_calculate(battery_info_volts_2))
     if (not connection_status) and (not connection_status_2):
         speech = speech + "To see the battery levels, I need the bricks connected."
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('Callback')
 def callback_chat():
     publish_emergency_commands('Callback')
     speech = "I am returning to the reception."
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('Resume')
 def resume_chat():
     publish_emergency_commands('Resume')
     speech = "I resumed operations."
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('Stop')
 def stop_chat():
     publish_emergency_commands('Stop')
     speech = "I stopped and I'm waiting for your instructions."
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('Connection Status')
 def connection_chat():
@@ -544,7 +544,7 @@ def connection_chat():
     else:
         speech = "Both bricks are disconnected."
 
-    return ask(speech)
+    return tell(speech)
 
 #TODO: IMPLEMENT
 @assist.action('Deliver Mail - yes')
@@ -555,7 +555,7 @@ def deliver_yes_chat(user):
     # else
         # Do the same thing as if mail deliver button was pressed in automatic mode.
     speech = "Deliver Mail feature has not yet been implemented"
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('Desk Query')
 def desk_chat(user):
@@ -564,17 +564,17 @@ def desk_chat(user):
     try:
         desk = Staff.query.filter(Staff.name == user).one().staff.location_name
         speech = "{} works in {}.".format(user, desk)
-        return ask(speech)
+        return tell(speech)
     except:
         speech = "I couldn't find user {} in the system.".format(user)
-        return ask(speech)
+        return tell(speech)
 
 @assist.action('Location Status')
 def location_chat():
     if location_info == "Nothing reported yet.":
-        return ask("I haven't reported any location yet. Check again later.")
+        return tell("I haven't reported any location yet. Check again later.")
     speech = "I was last seen in point {}".format(location_info[0])
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('Notifications')
 def notification_chat():
@@ -587,12 +587,12 @@ def notification_yes_chat():
     notifications = Problem.query.order_by('timestamp desc').limit(unseen_notifications)
     for notification in notifications:
         speech.append("From {}: {}. ".format(notification.origin.name, notification.message))
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('Parcel Quantity')
 def parcel_chat():
     speech = "So far, I have delivered {} objects.".format(qnt_delivered)
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('Robot State')
 def state_chat():
@@ -609,7 +609,7 @@ def state_chat():
         speech = "The robot has stopped and needs help, please check the notifications."
     else:
         speech = "I couldn't find the robot's state."
-    return ask(speech)
+    return tell(speech)
 
 @assist.action('User Query')
 def desk_chat(desk):
@@ -619,11 +619,11 @@ def desk_chat(desk):
         desk_obj = Location.query.filter(Location.location_name == desk).one()
     except:
         speech = "I couldn't find desk {} in the system.".format(desk)
-        return ask(speech)
+        return tell(speech)
     try:
         people = map(lambda x: x.name, desk_obj.staff)
         speech = "Here's who works on {}: ".format(desk) + ", ".join(str(x) for x in people)
-        return ask(speech)
+        return tell(speech)
     except:
         speech = "No one works on desk {}.".format(desk)
-        return ask(speech)
+        return tell(speech)
