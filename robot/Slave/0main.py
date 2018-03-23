@@ -60,6 +60,7 @@ def on_message(client, userdata, msg):
         for slot in slots:
             dump(slot)
         client.publish("dump_confirmation", "dumped")
+        print (asciiart.mail_delivered_static())
 
     elif msg.topic == "delivery_status":
         if msg.payload.decode() == "State.LOADING" and loading == False:
