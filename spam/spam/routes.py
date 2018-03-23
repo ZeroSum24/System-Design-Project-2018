@@ -560,11 +560,16 @@ def deliver_yes_chat(user):
                 speech = "Spam has to be in automatic mode"
             else:
                 if user:
-                    where_to = transform_into_desk(user)
-                    if(Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
-                        path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
+                    desk = None
+                    try:
+                        desk = Staff.query.filter(Staff.name == user).one().staff.map_node
+                    except:
+                        speech = "I couldn't find user {} in the system.".format(user)
+                        return tell(speech)
+                    if(desk not in path_planning.keys()):
+                        path_planning[desk]=[5]
                     else:
-                        path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
+                        path_planning[desk].append(5)
                 speech = "Delivering."
                 path_planning_go_button()
 
