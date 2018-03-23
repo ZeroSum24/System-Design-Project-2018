@@ -15,8 +15,6 @@ current_slot = 1
 slot_movement = None
 loading = False
 in_automatic = True
-asciiart = ""
-
 
 def run(*cmd):
     proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True).wait()
