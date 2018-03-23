@@ -67,7 +67,7 @@ def setup_procedure():
 		with second_brick_alive_lock:
 			if SECOND_BRICK_ALIVE == True:
 				break
-		print("spin")
+		#print("spin")
 		time.sleep(2)
 	battery_alive_thread()
 	CLIENT.publish("delivery_status", str(State.LOADING))

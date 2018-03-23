@@ -7,6 +7,7 @@ from subprocess import Popen, PIPE
 import time
 from thread_decorator import thread
 import os
+import imp
 
 current_slot = 1
 slot_movement = None
