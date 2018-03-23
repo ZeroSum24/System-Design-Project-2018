@@ -16,6 +16,10 @@ curl https://getcaddy.com | bash -s personal hook.service
 sudo caddy -service install -conf Caddyfile
 sudo caddy -service start
 
+cd ..
+make
+cd ./spam
+
 export FLASK_APP=spam.py
 export DEV_ACCESS_TOKEN='2ad4f817b64442e08cb03d783394746c'
 export CLIENT_ACCESS_TOKEN='230a5f0ab9094da381916abe10264faa'
