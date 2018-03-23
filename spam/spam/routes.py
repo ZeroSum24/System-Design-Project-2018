@@ -552,6 +552,7 @@ def deliver_yes_chat(user):
     print (user)
     if not connection_status:
         speech = "Spam is not connected"
+    else:
         if delivery_status != "State.LOADING":
             speech = "Spam is not in loading mode"
         else:
@@ -566,6 +567,7 @@ def deliver_yes_chat(user):
                         path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
                 speech = "Delivering."
                 path_planning_go_button()
+
     return tell(speech)
 
 @assist.action('Deliver Mail')
@@ -574,6 +576,7 @@ def deliver__chat(user):
     print (user)
     if not connection_status:
         speech = "Spam is not connected"
+    else:
         if delivery_status != "State.LOADING":
             speech = "Spam is not in loading mode"
         else:
