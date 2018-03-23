@@ -615,10 +615,17 @@ def location_chat():
 
 @assist.action('Notifications')
 def notification_chat():
-    speech = "You have {} new notifications. Would you like me to read them ?".format(unseen_notifications)
+    
+    if unseen_notifications == 0:
+        speech = "You have no new notifications. Hip hip hooray!"
+        return tell(speech)
+    else if unseen_notifications == 1:
+        speech = "You have one new notification. Would you like me to read it?"
+    else:
+        speech = "You have {} new notifications. Would you like me to read them?".format(unseen_notifications)
     return ask(speech)
 
-@assist.action('Notifications')
+@assist.action('Notifications - yes')
 def notification_yes_chat():
     speech = ""
     notifications = Problem.query.order_by('timestamp desc').limit(unseen_notifications)
