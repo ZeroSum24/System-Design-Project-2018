@@ -46,7 +46,6 @@ seen_2 = False
 path_planning={}
 go_button_pressed = False
 manual_button_pressed = False
-# manual_enter_time = 0
 last_auto_state = None
 qnt_delivered = 0
 start_time_lock = Lock()
@@ -549,13 +548,41 @@ def connection_chat():
 #TODO: IMPLEMENT
 @assist.action('Deliver Mail - yes')
 def deliver_yes_chat(user):
+    global delivery_status, manual_button_pressed
     print (user)
-    # if manual mode
-        # Answer its not possible to send this command in manual mode
-    # else
-        # Do the same thing as if mail deliver button was pressed in automatic mode.
-    speech = "Deliver Mail feature has not yet been implemented"
+    if delivery_status != "State.LOADING":
+        speech = "Spam is not in loading mode"
+    else:
+        if manual_button_pressed:
+            speech = "Spam has to be in automatic mode"
+        else:
+            if user:
+                speech = "Starting delivery with a parcel for {}.".format(user)
+                where_to = transform_into_desk(user)
+                if(Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
+                    path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
+                else:
+                    path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
+            else:
+                speech = "Starting delivery without a parcel recipient."
+            path_planning_go_button()
     return tell(speech)
+
+@assist.action('Deliver Mail')
+def deliver__chat(user):
+    global delivery_status, manual_button_pressed
+    print (user)
+    if delivery_status != "State.LOADING":
+        speech = "Spam is not in loading mode"
+    else:
+        if manual_button_pressed:
+            speech = "Spam has to be in automatic mode"
+        else:
+            if user:
+                speech = "Do you want to start delivery with a parcel for {}?".format(user)
+            else:
+                speech = "Do you want to start delivery without a parcel recipient?"
+    return ask(speech)
 
 @assist.action('Desk Query')
 def desk_chat(user):
