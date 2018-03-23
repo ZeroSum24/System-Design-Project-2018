@@ -12,7 +12,9 @@ import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
 from threading import Lock
+import asciiart
 import imp
+import speech_lib
 
 PROFILING = False
 
@@ -77,6 +79,7 @@ def on_connect(client, userdata, flags, rc):
 	client.subscribe("emergency_command")
 	client.subscribe("dump_confirmation")
 	client.subscribe("battery_info_volts_2")
+	client.subscribe("ascii_art")
 
 def on_message(client, userdata, msg):
 	global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
