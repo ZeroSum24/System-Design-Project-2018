@@ -10,6 +10,19 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
     DEBUG = True
+
+    MAIL_SERVER : "box.spamrobot.ml"
+    MAIL_PORT : 587
+    MAIL_USE_TLS : True
+    MAIL_USE_SSL : False
+    MAIL_DEBUG : app.debug
+    MAIL_USERNAME : "notification@spamrobot.ml"
+    MAIL_PASSWORD : "spamnotification"
+    MAIL_DEFAULT_SENDER : "!spam"
+    MAIL_MAX_EMAILS : None
+    MAIL_SUPPRESS_SEND : app.testing
+    MAIL_ASCII_ATTACHMENTS : False
+    
    # MQTT_BROKER_URL = localhost # use the free broker from HIVEMQ
    # MQTT_BROKER_PORT = 1883  # default port for non-tls connection
    # MQTT_USERNAME = ''  # set the username here if you need authentication for the broker

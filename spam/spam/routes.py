@@ -17,6 +17,7 @@ from spam import socketio
 import image_processing
 from spam import assist
 from flask_assistant import Assistant, tell, ask
+from flask_mail import Message
 
 
 # Ending imports; Beginning Variable assertion
@@ -510,6 +511,8 @@ def battery_chat():
         speech = speech + "The battery of brick number 10 is {} percent.".format(battery_calculate(battery_info_volts_2))
     if (not connection_status) and (not connection_status_2):
         speech = speech + "To see the battery levels, I need the bricks connected."
+
+    msg = Message("Hello", recipients=["greg@spamrobot.ml", "cata.catarino@gmail.com"])
     return tell(speech)
 
 @assist.action('Callback')
