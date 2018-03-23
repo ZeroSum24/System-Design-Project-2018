@@ -10,7 +10,19 @@ CC = g++
 # building a shared library)
 CFLAGS = -Wall -std=c++11 -fPIC
 
-INCLUDES = -I./include/ -I/usr/include/python3.5m/
+# Detect when travis is running tests
+TRAVIS=
+ifeq ($(MAKECMDGOALS),travis)
+TRAVIS=x
+endif
+
+# Travis needs different includes
+INCLUDES = -I./include/
+ifdef (TRAVIS)
+INCLUDES += -I/usr/include/python3.4m/
+else
+INCLUDES += -I/usr/include/python3.5m/
+endif
 
 # Test include directory
 TEST_INCLUDES = -I./test/include/
@@ -62,3 +74,6 @@ test: $(TEST) $(MAIN)
 
 $(TEST): $(TEST_OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_INCLUDES) -o $(TEST) $(TEST_OBJS)
+
+.PHONY: travis
+travis: test
