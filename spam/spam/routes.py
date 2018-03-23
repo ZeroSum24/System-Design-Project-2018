@@ -615,11 +615,11 @@ def location_chat():
 
 @assist.action('Notifications')
 def notification_chat():
-    
+
     if unseen_notifications == 0:
         speech = "You have no new notifications. Hip hip hooray!"
         return tell(speech)
-    else if unseen_notifications == 1:
+    elif unseen_notifications == 1:
         speech = "You have one new notification. Would you like me to read it?"
     else:
         speech = "You have {} new notifications. Would you like me to read them?".format(unseen_notifications)
