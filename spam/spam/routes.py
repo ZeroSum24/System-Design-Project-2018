@@ -13,7 +13,7 @@ import json
 from threading import Lock, Timer
 from time import sleep, time
 from spam.thread_decorator import thread
-from spam import socketio
+from spam import socketio, mail
 import image_processing
 from spam import assist
 from flask_assistant import Assistant, tell, ask
@@ -39,6 +39,7 @@ location_info = "Nothing reported yet."
 connection_status = False
 connection_status_2 = False
 path_planning_result = []
+recipients = []
 lock = Lock()
 lock_2 = Lock()
 current_slot = 1
@@ -158,7 +159,7 @@ def settings():
 
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
-    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed, start_time
+    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed, start_time, recipients
     if request.method == 'GET':
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         manual_button_pressed = False
@@ -183,6 +184,7 @@ def automatic_mode():
         try:
             who_to = request.form.get('inputSlot5')
             where_to = transform_into_desk(who_to)
+            recipients.append(Staff.query.filter(who_to == Staff.id).one().email);
 
             if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
@@ -220,6 +222,7 @@ def mail_delivery():
     global path_planning
     global last_auto_state
     global manual_button_pressed
+    global recipients
     # global manual_enter_time
     if request.method == 'POST':
         submit=[]
@@ -227,6 +230,7 @@ def mail_delivery():
         for i in range(1,6):
             try:
                 who_to = request.form.get('inputSlot'+str(i))
+                recipients.append(Staff.query.filter(who_to == Staff.id).one().email);
                 where_to = transform_into_desk(who_to)
                 if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
                     path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[i]
@@ -237,6 +241,7 @@ def mail_delivery():
             except:
                 # When nothing is selected
                 pass
+        send_dispatch_mail()
         #Use path planner
         print ("This is path planning:")
         print (path_planning)
@@ -252,6 +257,7 @@ def mail_delivery():
         path_planning = {}
         last_auto_state = None
         manual_button_pressed = True
+        recipients.clear()
         with start_time_lock:
             global start_time
             start_time = time()
@@ -316,7 +322,7 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    global path_planning_result, location_info, path_planning, current_slot, go_button_pressed, manual_button_pressed
+    global path_planning_result, location_info, path_planning, current_slot, go_button_pressed, manual_button_pressed, recipients
     if msg.topic == "location_info":
         with location_info_lock:
             global qnt_delivered
@@ -411,6 +417,7 @@ def on_message(client, userdata, msg):
                 try:
                     location_read = user_read.location_id
                     map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
+                    recipients.append(user_read.email);
                     if (map_node_of_location not in path_planning.keys()):
                         path_planning[Location.query.filter(Location.id == location_read).one().map_node]=[current_slot]
                     else:
@@ -448,6 +455,19 @@ def path_planning_go_button():
     path_planning_result = router.build_route(path_planning)
     if connection_status and delivery_status == "State.LOADING":
         publish_path_planning(path_planning_result)
+    send_dispatch_mail()
+
+def send_dispatch_mail():
+    global recipients
+    with mail.connect() as conn:
+        for user in recipients:
+            message = u'Dear %s,\n!spam thinks you would like to know that your mail is on the way.\n!spam \xE2\x9D\xA4' % user.name
+            subject = 'Delivery out'
+            msg = Message(recipients=[user.email],
+                          body=message,
+                          subject=subject)
+            conn.send(msg)
+    recipients.clear()
 
 
 #Functions that send information to the robot
@@ -511,8 +531,6 @@ def battery_chat():
         speech = speech + "The battery of brick number 10 is {} percent.".format(battery_calculate(battery_info_volts_2))
     if (not connection_status) and (not connection_status_2):
         speech = speech + "To see the battery levels, I need the bricks connected."
-
-    msg = Message("Hello", sender=('!spam', 'notification@spamrobot.ml') , recipients=["greg@spamrobot.ml", "cata.catarino@gmail.com"])
     return tell(speech)
 
 @assist.action('Callback')

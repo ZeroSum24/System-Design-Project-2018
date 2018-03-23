@@ -12,8 +12,8 @@ class Config(object):
     DEBUG = True
 
     MAIL_SERVER = "box.spamrobot.ml"
-    MAIL_PORT = 25
-    MAIL_USE_TLS = True
+    MAIL_PORT = 587
+    MAIL_USE_TLS = False
     MAIL_USE_SSL = False
     #MAIL_DEBUG = app.debug
     MAIL_USERNAME = "notification@spamrobot.ml"
