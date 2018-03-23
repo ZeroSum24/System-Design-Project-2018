@@ -13,7 +13,8 @@ else
 fi
 
 copy() {
-    # Note: Heredoc must be indented with tabs
+    # Note: Heredoc must be indented with tabs (`` used instead of $() for
+    # syntax highlighting)
     local output=`expect <<-EOF
 	spawn scp * robot@ev3dev:~/
 	expect "robot@ev3dev's password:"
