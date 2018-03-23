@@ -8,7 +8,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_socketio import SocketIO
 from flask_assistant import Assistant, ask, tell
 from flask_mail import Mail
-    
+
 spam = Flask(__name__)
 spam.config.from_object(Config)
 db = SQLAlchemy(spam)
@@ -20,7 +20,7 @@ admin.add_view(ModelView(Staff, db.session))
 admin.add_view(ModelView(Problem, db.session))
 admin.add_view(ModelView(Location, db.session))
 assist = Assistant(spam, route='/fulfillment')
-mail = Mail(app)
+mail = Mail(spam)
 
 
 from spam import routes, models
