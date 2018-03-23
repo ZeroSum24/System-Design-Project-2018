@@ -1,5 +1,6 @@
 language: python
-install: true
+python:
+  - "3.5"
 script:
   - make clean
   - make travis-test
