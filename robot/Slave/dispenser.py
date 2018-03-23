@@ -63,7 +63,7 @@ class stop:
         if bracket == 1:
             self.pos = 49
         elif bracket == 2:
-            self.pos = 116
+            self.pos = 126
         elif bracket == 3:
             self.pos = 193
         elif bracket == 4:
@@ -117,7 +117,7 @@ def _motor_setup(motor, pos, speed = 500):
 
 def _motor_debrief(motor, pos, speed = 500, precise = True):
     # solving a wierd bug, where the motor doesn't move w/o this line
-    motor.run_timed(speed_sp=500, time_sp=500)
+    motor.run_timed(speed_sp=-500, time_sp=500)
     _run_to_rel_pos(motor, -pos, speed, stop_action = Motor.STOP_ACTION_COAST, precise = precise)
 
 ## IN-BETWEEN ACTIONS ##
