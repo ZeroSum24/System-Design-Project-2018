@@ -1,5 +1,11 @@
-spamrobot.ml
+spamrobot.ml {
+    proxy / localhost:5000 {
+    transparent
+  }
+}
 
-proxy / localhost:5000{
-  transparent
+www.spamrobot.ml {
+    proxy / localhost:5000 {
+    transparent
+  }
 }
