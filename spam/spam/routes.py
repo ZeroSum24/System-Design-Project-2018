@@ -512,7 +512,7 @@ def battery_chat():
     if (not connection_status) and (not connection_status_2):
         speech = speech + "To see the battery levels, I need the bricks connected."
 
-    msg = Message("Hello", recipients=["greg@spamrobot.ml", "cata.catarino@gmail.com"])
+    msg = Message("Hello", sender=('!spam', 'notification@spamrobot.ml') , recipients=["greg@spamrobot.ml", "cata.catarino@gmail.com"])
     return tell(speech)
 
 @assist.action('Callback')
