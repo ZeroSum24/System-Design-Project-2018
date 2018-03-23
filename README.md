@@ -38,7 +38,7 @@ Follow these steps to prepare the server:
 * SSH into the server where you intend to deploy. For detailed instructions, visit https://goo.gl/47rw6n.
 * On the SSH session:
 
-  1. ```run $ git clone <your repository url>```
+  * ```run $ git clone <your repository url>```
   * ```run $ cd sdp2018/spam```
   * ```run $ ./install.sh``` (this may take a few minutes)
 
@@ -49,7 +49,7 @@ Follow these steps to prepare the server:
 Creating the Google Assistant App is a straightfoward process. Just read through the following instructions and you will be good to go:
 * Create a Dialogflow agent at https://dialogflow.com/
 * Click on the settings button → Export and Import → Restore from zip → select sdp2018/dialogflow.zip
-* Head to Fulfillment → Enable Webhook → Insert “https://<your domain>/fulfillment”
+* Head to Fulfillment → Enable Webhook → Insert ```https://<your domain>/fulfillment```
 
 ### 4. Setup the Office Environment
 To change the map layout of the robot, open the configuration file in sdp2018/spam/spam/map.conf
@@ -84,4 +84,6 @@ In case there is a problem with connection, refer to the OS instructions at http
 <br/>
 
 ### Contact Us:
-Thanks for purchasing <b> <i> !spam </i> </b> and checking out our code. Further user information can be be found in the <a href ="docs/group-10-userguide.pdf"> User Guide </a>. If you have any problems, need support, or need help to install/troubleshoot, contact  <b> <i> !spam </i> </b> at ```support@spamrobot.ml```.
+Thanks for purchasing <b> <i> !spam </i> </b> and checking out our code. Further user information can be be found in the <a href ="docs/group-10-userguide.pdf"> User Guide </a>.
+
+If you have any problems, need support, or need help to install/troubleshoot, contact  <b> <i> !spam </i> </b> at ```support@spamrobot.ml```.
