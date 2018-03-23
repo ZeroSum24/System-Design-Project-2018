@@ -360,12 +360,13 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 					NEXT_NODE = instructione.where
 					break
 					with next_node_lock:
+						pass
 
 		sys.exit()
 
 def panic_loop():
-		speech_lib.panicking()  # robot plays panicking message
-		CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
+	speech_lib.panicking()  # robot plays panicking message
+	CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
 	with final_cmd_lock:
 		global FINAL_CMD
 		FINAL_CMD = []
@@ -388,5 +389,5 @@ def main():
 	control_loop()
 
 if __name__ == "__main__":
-	print(asscii_art.spam())
+	print(asciiart.spam())
 	main()
