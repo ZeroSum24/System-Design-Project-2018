@@ -8,6 +8,8 @@ from math import pi, sin, cos
 from collections import namedtuple
 import time
 
+import speech_lib
+
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor
 from ev3dev.auto import *
@@ -359,6 +361,7 @@ def forward(dist, tolerance=50, junction_type=Junctions.DESK, correction=True):
                         stopped = True
                         stop_motors()
                         time_of_stoppage = time.time()
+                        speech_lib.obstacle_detected()
                         continue
                     if stopped:
                         if time.time() - time_of_stoppage < _STOP_TIMEOUT:

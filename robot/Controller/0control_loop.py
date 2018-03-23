@@ -13,6 +13,8 @@ import json
 from collections import namedtuple
 from threading import Lock
 
+import speech_lib
+
 PROFILING = False
 
 CHOSEN_PATH = None
@@ -353,6 +355,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 def panic_loop():
 	with next_node_lock:
+		speech_lib.panicking()  # robot plays panicking message
 		CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
 	with final_cmd_lock:
 		global FINAL_CMD
