@@ -14,7 +14,7 @@ fi
 
 copy() {
     expect <<"    EOF" >/dev/null 2>&1
-    spawn scp * robot@ev3dev:~/
+    spawn scp -r * robot@ev3dev:~/
     expect "robot@ev3dev's password:"
     send "maker\n"
     EOF
