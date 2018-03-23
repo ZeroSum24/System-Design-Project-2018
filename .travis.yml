@@ -1,5 +1,1 @@
-language: python
-python:
-  - "3.4"
-
 script: make travis-test
