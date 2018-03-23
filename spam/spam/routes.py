@@ -461,7 +461,7 @@ def send_dispatch_mail():
     global recipients
     for user in recipients:
         subject = 'Delivery out'
-        msg = Message(subject, sender = ("!spam", "notification@spamrobot.ml"), recipients=[user.email])
+        msg = Message(subject, sender = ("!spam", "notification@spamrobot.ml"), recipients=[Staff.query.filter(user == Staff.name).one().email])
         msg.body = u'Dear %s,\n!spam thinks you would like to know that your mail is on the way.\n!spam \xE2\x9D\xA4' % user.name
         mail.send(msg)
     recipients.clear()
