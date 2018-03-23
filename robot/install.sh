@@ -13,14 +13,11 @@ else
 fi
 
 copy() {
-    # `` used instead of $() for syntax highlighting)
-    local output=`expect <<"    EOF"
+    expect <<"    EOF" >/dev/null 2>&1
     spawn scp * robot@ev3dev:~/
     expect "robot@ev3dev's password:"
     send "maker\n"
-    EOF`
-    $debug $output
-    return $?
+    EOF
 }
 
 get_brick_number() {
@@ -30,7 +27,7 @@ get_brick_number() {
     elif [[ "$directory" == "Slave" ]]; then
         echo 10
     else
-        debug "Got: $directory, expected one of Controller, Slave"
+        $debug "Got: $directory, expected one of Controller, Slave"
     fi
 }
 
@@ -55,7 +52,7 @@ extra_install() {
 
 install() {
     local directory=$1
-    local number=$(get_brick_number)
+    local number=$(get_brick_number "$directory")
     read -p "Please plug in Brick $number (Press enter to continue)"
     cd "./$directory"
     printf "%s" "Installing..."
