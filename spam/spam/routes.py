@@ -629,7 +629,7 @@ def notification_yes_chat():
     speech = ""
     notifications = Problem.query.order_by('timestamp desc').limit(unseen_notifications)
     for notification in notifications:
-        speech = speech + ("From {}: {}. ".format(notification.origin.name, notification.message))
+        speech = speech + ("From {}: {}. ".format(Staff.query.filter(notification.origin == Staff.id).one().name, notification.message))
     return tell(speech)
 
 @assist.action('Parcel Quantity')
