@@ -1,2 +1,5 @@
 language: python
-script: make travis-test
+install: true
+script:
+  - make clean
+  - make travis-test
