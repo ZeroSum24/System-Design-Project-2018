@@ -1,14 +1,6 @@
 language: python
 python:
   - "3.5"
-
-sudo: required
-services:
-  - docker
-
-# This command relies on /home/travis/build/jcatarino/sdp2018 being a stable
-# path
-# make test-all will run all tests in any subdirectory of the test directory
-# at the root of the repo if it exists and the tests in the tests directory in
-# cpp
-script: docker run --rm -v /home/travis/build/jcatarino/sdp2018:/src -w /src alexshand/sdp2018-test-env make test-all
+script:
+  - make clean
+  - make travis-test
