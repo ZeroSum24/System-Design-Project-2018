@@ -60,19 +60,20 @@ with open('ip.conf') as f:
     IP = imp.load_source('ip', '', f).ip
 
 def setup_procedure():
-	CLIENT.on_connect = on_connect
-	CLIENT.on_message = on_message
-	# TODO do IO exceptions
-	CLIENT.connect(IP, 1883, 60)
-	instruction_thread()
-	while True:
-		with second_brick_alive_lock:
-			if SECOND_BRICK_ALIVE == True:
-				break
-		#print("spin")
-		time.sleep(2)
-	battery_alive_thread()
-	CLIENT.publish("delivery_status", str(State.LOADING))
+    speech_lib.set_volume(100)
+    CLIENT.on_connect = on_connect
+    CLIENT.on_message = on_message
+    # TODO do IO exceptions
+    CLIENT.connect(IP, 1883, 60)
+    instruction_thread()
+    while True:
+        with second_brick_alive_lock:
+            if SECOND_BRICK_ALIVE == True:
+                break
+        #print("spin")
+        time.sleep(2)
+    battery_alive_thread()
+    CLIENT.publish("delivery_status", str(State.LOADING))
 
 def on_connect(client, userdata, flags, rc):
     print(asciiart.spam())
@@ -366,6 +367,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 def panic_loop():
 	with next_node_lock:
+        speech_lib.panicking()
 		CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
 	with final_cmd_lock:
 		global FINAL_CMD

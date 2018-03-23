@@ -60,6 +60,7 @@ def on_message(client, userdata, msg):
             dump(slot)
         client.publish("dump_confirmation", "dumped")
         print (asciiart.mail_delivered_static())
+        client.publish("ascii_art", asciiart.mail_delivered_static())
 
     elif msg.topic == "delivery_status":
         if msg.payload.decode() == "State.LOADING" and loading == False:
@@ -77,6 +78,7 @@ def on_message(client, userdata, msg):
             # print("done going back on delivering")
             slot_movement = None
             print(asciiart.delivering_mail())
+            client.publish("ascii_art", asciiart.delivering_mail())
 
     elif msg.topic == "image_result" and in_automatic == True:
         if msg.payload.decode() == "False":  # test to check if its an int
@@ -114,11 +116,11 @@ def on_message(client, userdata, msg):
             current_slot = 1
             slot_movement = stop(current_slot)
             camera_picture()
-            
-    elif msg.topic == "ascii_art":
-        global asciiart
-        asciiart = msg.payload.decode()
-        print (asciiart)
+
+    # elif msg.topic == "ascii_art":
+    #     global asciiart
+    #     asciiart = msg.payload.decode()
+    #     print (asciiart)
 
 def slot_go_back(wait=True):
     global slot_movement
