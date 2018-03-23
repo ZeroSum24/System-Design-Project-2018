@@ -1,6 +1,7 @@
 
 <body class="stackedit">
-  <div class="stackedit__html" align="center"><p><img src="./spam/spam/static/img/logo.png" alt="!spam logo is here"></p></div>
+  <div class="stackedit__html" align="center"><p><img style="border-radius: 8%;" src="./spam/spam/static/img/logo.png" alt="!spam logo is here">
+  </p></div>
 
 # Welcome to the Installation of  <b> <i> !spam </i> </b>
 
