@@ -270,4 +270,3 @@ def mail_delivered_anim():
 
     time.sleep(5)
 
-mail_delivered_anim()

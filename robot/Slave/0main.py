@@ -42,7 +42,7 @@ def camera_picture():
 
 def on_connect(client, userdata, flags, rc):
     # print("Connected with result code "+str(rc))
-    print(asscii_art.spam())
+    print(asciiart.spam())
     client.subscribe("dump")
     client.subscribe("delivery_status")
     client.subscribe("go_manual")
