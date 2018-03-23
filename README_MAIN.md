@@ -2,6 +2,7 @@
 <body class="stackedit">
   <div class="stackedit__html" align="center"><p><img src="./spam/spam/static/img/logo.png" alt="!spam logo is here"></p></div>
 
+<br/>
 # Welcome to the Installation of  <b> <i> !spam </i> </b>
 
 The sections below provide the capability to self-host our software, that is, install  <b> <i> !spam </i> </b> on a custom domain and Ubuntu server. This also allows a custom conversational interface and a custom install on the robot. Note the advanced installation is not recommended for offices without an IT administrator.
@@ -54,12 +55,10 @@ Creating the Google Assistant App is a straightfoward process. Just read through
 To change the map layout of the robot, open the configuration file in sdp2018/spam/spam/map.conf
 in which paths are defined as follows (note the trailing commas):
 <br/>
-<br/>
 ```<Initial Node> : {<End Node> : (<Distance in cm>, <initial orientation>, <final orientation>),
             <End Node> :(<Distance in cm>, <initial orientation>, <final orientation>),
 		            ...},
 ```
-<br/>
 <br/>
 Specifying each edge in one direction is enough. The distance is measured from the centre of one junction to the centre of another. Orientation is the way in which the robot will be facing relative to the 0° starting point orientation - assuming it is north,  270° would be west. Desks are encoded as 0 distance from a junction and only include the orientations for distinguishing which side of the line they are, eg. 90° for a desk on the east of a line going north. The desk’s final orientation is always the opposite of initial orientation, eg. 270° in this case. Only edit the indicated regions.
 
