@@ -12,6 +12,7 @@ import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
 from threading import Lock
+import asciiart
 
 PROFILING = False
 
@@ -73,6 +74,7 @@ def on_connect(client, userdata, flags, rc):
 	client.subscribe("emergency_command")
 	client.subscribe("dump_confirmation")
 	client.subscribe("battery_info_volts_2")
+	client.subscribe("ascii_art")
 
 def on_message(client, userdata, msg):
 	global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
@@ -89,13 +91,16 @@ def on_message(client, userdata, msg):
 		elif string == "Callback":
 			STATE_QUEUE.put(T_RETURNING)
 	elif msg.topic == "dump_confirmation":
-		#print('Got Confirmation')
+		print('Got Confirmation')
 		with dumped_lock:
-			#print('Set Flag')
+			print('Set Flag')
 			DUMPED = True
 	elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
-		#print("second brick alive")
+		print("second brick alive")
 		SECOND_BRICK_ALIVE = True
+	elif msg.topic == "ascii_art":
+		ascii_art = msg.payload.decode()
+		print(ascii_art)
 
 def generate_named_tuples(lst):
 	new_list = []
@@ -132,7 +137,7 @@ def get_voltage():
 def control_loop():
 	global STATE
 	while True:
-		#print(STATE)
+		print(STATE)
 		if STATE == State.LOADING:
 			STATE = loading_loop() # these are going to be blocking
 		elif STATE == State.DELIVERING:
@@ -148,7 +153,7 @@ def control_loop():
 			STATE = panic_loop()
 
 def get_path(returning=False):
-	#print(returning)
+	print(returning)
 	global CHOSEN_PATH
 	with chosen_path_lock:
 		CHOSEN_PATH = None
@@ -169,6 +174,7 @@ def loading_loop():
 		STATE_QUEUE.clear()
 	get_path()
 	CLIENT.publish("delivery_status", str(State.DELIVERING))
+	CLIENT.publish("ascii_art", assciiart.delivering_mail())
 	return State.DELIVERING
 
 def check_state(current_state):
@@ -177,7 +183,7 @@ def check_state(current_state):
 	except Empty:
 		return None
 	else:
-		#print("got {}".format(state))
+		print("got {}".format(state))
 		if state[1] != current_state:
 			with STATE_QUEUE.mutex:
 				STATE_QUEUE.clear()
@@ -220,7 +226,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 			success = True
 
 			if isinstance(instruction, Move):
-				#print("moving")
+				print("moving")
 				success = forward(instruction.dist, tolerance = instruction.tolerance)
 
 			elif isinstance(instruction, Dump):
@@ -233,7 +239,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 								break
 
 			elif isinstance(instruction, Rotate):
-				#print("rotating")
+				print("rotating")
 				if instruction.angle <= 180:
 					direction = Directions.ROT_RIGHT
 					angle = instruction.angle
@@ -243,7 +249,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				success = rotate(angle, tolerance = instruction.tolerance, direction = direction)
 
 			elif isinstance(instruction, ToDesk):
-				#print("approaching desk")
+				print("approaching desk")
 				angle = instruction.angle
 				if instruction.is_left:
 					direction = Directions.ROT_LEFT
@@ -252,7 +258,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				approach(angle=angle, direction=direction)
 
 			elif isinstance(instruction, FromDesk):
-				#print("leaving desk")
+				print("leaving desk")
 				angle = instruction.angle
 				if instruction.is_left:
 					direction = Directions.ROT_LEFT
@@ -261,22 +267,23 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				success = approach(angle=angle, tolerance=instruction.tolerance, direction=direction, reverse=True)
 
 			elif isinstance(instruction, Report):
-				#print("reporting")
+				print("reporting")
 				CLIENT.publish("location_info", payload=instruction.where)
 
 			if not success:
-				#print("panicking")
+				print("panicking")
 				STATE_QUEUE.put(T_PANICKING)
 				break
 
 			if len(chosen_path) == 0:
 				if state == State.DELIVERING:
-					#print("Returning")
+					print("Returning")
 					STATE_QUEUE.put(T_RETURNING)
-					#print(STATE_QUEUE)
+					# CLIENT.publish("asscii_art", assciiart.returning())
+					print(STATE_QUEUE)
 					break
 				elif state == State.RETURNING:
-					#print("Loading")
+					print("Loading")
 					STATE_QUEUE.put(T_LOADING)
 					break
 
@@ -284,7 +291,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 		with next_node_lock:
 			if isinstance(instruction, Report):
 				NEXT_NODE = instruction.where
-		#print(NEXT_NODE)
+		print(NEXT_NODE)
 		# TODO right now the code spins here forever after executing the movement
 		# commands - does not need to
 		while True:
