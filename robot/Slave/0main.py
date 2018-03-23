@@ -9,11 +9,13 @@ from thread_decorator import thread
 import os
 
 import speech_lib as speech_lib
+import asciiart
 
 current_slot = 1
 slot_movement = None
 loading = False
 in_automatic = True
+asciiart = ""
 
 
 def run(*cmd):
@@ -97,6 +99,8 @@ def on_message(client, userdata, msg):
                 camera_picture()
             else:
                 speech_lib.all_slots_full()  # tell the receptionist that all slots are full
+                print(asciiart.full())
+                client.publish("ascii_art", asciiart.full())
 
     elif msg.topic == "go_manual":
         if msg.payload.decode() == "True" and in_automatic == True:
@@ -109,7 +113,10 @@ def on_message(client, userdata, msg):
             current_slot = 1
             slot_movement = stop(current_slot)
             camera_picture()
-
+    elif msg.topic == "ascii_art":
+        global asciiart
+        asciiart = msg.payload.decode()
+        print (asciiart)
 
 def slot_go_back(wait=True):
     global slot_movement
