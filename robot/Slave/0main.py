@@ -29,7 +29,7 @@ def run(*cmd):
 #     # client.publish("image_processing", payload=pickle.dumps(img))
 
 def camera_picture():
-    os.system('./take_photo.sh')
+    os.system('bash ./take_photo.sh')
     imgpath = "./image_sent.jpg"
     with open(imgpath,'rb') as img:
         data = img.read();
@@ -125,7 +125,10 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-client.connect("34.242.137.167", 1883, 60)
+with open('ip.conf') as f:
+    IP = imp.load_source('ip', '', f).ip
+
+client.connect(IP, 1883, 60)
 
 reset_dumper()
 battery_alive_thread()

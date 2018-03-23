@@ -1,4 +1,8 @@
-#! /bin/bash
+#!/usr/bin/env bash
+
+. ../ip.conf
+
+sed -i "1 s/.*/$domain/" Caddyfile
 
 sudo apt update
 sudo apt upgrade
@@ -11,6 +15,10 @@ curl https://getcaddy.com | bash -s personal hook.service
 
 sudo caddy -service install -conf Caddyfile
 sudo caddy -service start
+
+cd ..
+make
+cd ./spam
 
 export FLASK_APP=spam.py
 export DEV_ACCESS_TOKEN='2ad4f817b64442e08cb03d783394746c'
