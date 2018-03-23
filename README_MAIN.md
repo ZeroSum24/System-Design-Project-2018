@@ -1,11 +1,11 @@
 
 # Welcome Travellers to the Installation of <i> !spam </i>
 
-The sections below provide the capability to self-host our software, that is, install !spam on a custom domain and Ubuntu server. This also allows a custom conversational interface. Note the advanced installation is not recommended for offices without an IT administrator.
+The sections below provide the capability to self-host our software, that is, install <i> !spam </i> on a custom domain and Ubuntu server. This also allows a custom conversational interface and a custom install on the robot. Note the advanced installation is not recommended for offices without an IT administrator.
 
-Please also note a domain is necessary for issuing an SSL certificate for Google Assistant compatibility. !spam uses Caddy which in turn uses Let’s Encrypt as Certificate Authority (CA). Certificates are automatically managed, issued and renewed.
+Please also note a domain is necessary for issuing an SSL certificate for Google Assistant compatibility. <i> !spam </i> uses Caddy which in turn uses Let’s Encrypt as Certificate Authority (CA). Certificates are automatically managed, issued and renewed.
 
-### 6.2.1 Codebase
+### 1. Codebase
 To prepare the codebase for the deployment: <b>run $ </b> ```git fork https://github.com/jcatarino/sdp2018.git``` .
 From the GitHub website, set the two variables in ```ip.conf``` located in the top directory to the desired domain name and IP address respectively.
 You will see the following directories in the repository:
@@ -17,7 +17,7 @@ Running ```install.sh``` in this directory will install all the components requi
 
 ##### /robot:
 Contains the code for the robot.
-Running ```install.sh``` in this directory will guide you through the installation of the code onto the robot in the case code modification is desired. This should be run after modifying ip.conf (in step 2). The script requires a DICE machine to run.
+Running ```install.sh``` in this directory will guide you through the installation of the code onto the robot in the case code modification is desired. This should be run after modifying ```ip.conf``` (in step 2). The script requires a DICE machine to run.
 ##### /cpp:
 Path planning code.
 This should not need to be edited. But if it is ,  ```/spam/install.sh``` should be run (refer to 3.c. in section 6.2.2), to re-compile.
@@ -27,8 +27,7 @@ Optional data for Google Assistant integration.
  See section 6.2.3 for installation instructions.
 
 
-
-### 6.2.2 Setup the server
+### 2. Setup the server
 Follow these steps to prepare the server:
 * On the DNS domain manager, add an A record with the target to the server’s IP.
 * SSH into the server where you intend to deploy. For detailed instructions, visit https://goo.gl/47rw6n.
@@ -39,12 +38,27 @@ Follow these steps to prepare the server:
 
 * Check the website is accessible using a web browser.
 
-### 6.2.3 Setup the Google Assistant App
+### 3. Setup the Google Assistant App
 * Create a Dialogflow agent at https://dialogflow.com/
 * Click on the settings button → Export and Import → Restore from zip → select sdp2018/dialogflow.zip
 * Head to Fulfillment → Enable Webhook → Insert “https://<your domain>/fulfillment”
 
-#### 3.1 Connecting the robot to the internet
+### 4. Setup the Office Environment
+To change the map layout of the robot, open the configuration file in sdp2018/spam/spam/map.conf
+in which paths are defined as follows (note the trailing commas):
+<br/>
+<br/>
+```<Initial Node> : {<End Node> : (<Distance in cm>, <initial orientation>, <final orientation>),
+            <End Node> :(<Distance in cm>, <initial orientation>, <final orientation>),
+		            ...},
+```
+<br/>
+<br/>
+Specifying each edge in one direction is enough. The distance is measured from the centre of one junction to the centre of another. Orientation is the way in which the robot will be facing relative to the 0° starting point orientation - assuming it is north,  270° would be west. Desks are encoded as 0 distance from a junction and only include the orientations for distinguishing which side of the line they are, eg. 90° for a desk on the east of a line going north. The desk’s final orientation is always the opposite of initial orientation, eg. 270° in this case. Only edit the indicated regions.
+
+After updating the map on the robot, the desks on the server side need to be updated too. Update the list of desks by heading to the website → Settings → Location and their owners by heading to the website → Settings → Staff as shown in 4.1.7.
+
+### 5. Connecting the robot to the internet
 
 The EV3 bricks use Bluetooth to connect to the internet, so we recommend using your phone’s Bluetooth tethering functionality to provide it.
 
@@ -59,3 +73,8 @@ On the EV3 brick, select the phone you just paired with.
 * You should now see on the screen “State: Online” and the bricks IP address above whenever it’s connected.
 
 In case there is a problem with connection, refer to the OS instructions at https://goo.gl/g3Fk4N.
+
+
+
+### Contact Us:
+Thanks for purchasing <i> !spam </i> and checking out our code. If you have any problems, need support, or need help to install/troubleshoot, contact <i> !spam </i> at support@spamrobot.ml.
