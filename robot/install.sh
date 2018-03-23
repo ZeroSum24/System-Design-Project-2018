@@ -13,13 +13,12 @@ else
 fi
 
 copy() {
-    # Note: Heredoc must be indented with tabs (`` used instead of $() for
-    # syntax highlighting)
-    local output=`expect <<-EOF
-	spawn scp * robot@ev3dev:~/
-	expect "robot@ev3dev's password:"
-	send "maker\n"
-	EOF`
+    # `` used instead of $() for syntax highlighting)
+    local output=`expect <<"    EOF"
+    spawn scp * robot@ev3dev:~/
+    expect "robot@ev3dev's password:"
+    send "maker\n"
+    EOF`
     $debug $output
     return $?
 }
@@ -46,11 +45,11 @@ install() {
     done
     # Backticks aren't required here but my editor syntax highlights wrong
     # without them
-    `ssh robot@ev3dev <<-EOF
-	chmod +x ~/00runme.sh
-	EOF`  
-   echo "done"
-   cd ../
+    `ssh robot@ev3dev <<"    EOF"
+    chmod +x ~/00runme.sh
+    EOF`  
+    echo "done"
+    cd ../
 }
 
 echo ' _  _____ _____        __  __ '
