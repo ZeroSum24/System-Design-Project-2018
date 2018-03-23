@@ -5,6 +5,14 @@ all_slots_full_audio = 'slots_full.mp3' # path to audio file
 envelope_scanned_audio = 'envelope_scanned.mp3'
 deliver_mail_to_audio = 'deliver_mail_to.mp3'
 
+# audio to play when panicking
+def panicking():
+    say_text('An error has occurred. Assistance needed.')
+
+# obstacle detected
+def obstacle_detected():
+    say_text('Obstacle detected.')
+
 # all slots full
 def all_slots_full():
     #os.system(playmp3 + all_slots_full_audio)  # will play the file at all_slots_full_audio
@@ -14,6 +22,10 @@ def all_slots_full():
 def envelope_scanned():
     #os.system(playmp3 + envelope_scanned_audio)  #
     say_text('envelope scanned')
+
+
+def please_insert_envelope():
+    say_text('Please insert envelope')
 
 #
 def deliver_mail_to():
