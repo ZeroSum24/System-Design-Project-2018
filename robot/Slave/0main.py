@@ -46,6 +46,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("delivery_status")
     client.subscribe("go_manual")
     client.subscribe("image_result")
+    client.subscribe("ascii_art")
 
 
 def on_message(client, userdata, msg):
