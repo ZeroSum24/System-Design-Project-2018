@@ -2,19 +2,17 @@
 
 . ../ip.conf
 
-sed -i "1 s/.*/$domain/" Caddyfile
+sed -i "1 s/.*/$domain, www.$domain {/" Caddyfile
 
 sudo apt update
-sudo apt upgrade
+sudo apt upgrade -y
 
-sudo apt install python3 python3-pip mosquitto nano make g++ emacs24 python3-dev htop libzbar-dev libdmtx0a
+sudo apt install -y python3 python3-pip mosquitto nano make g++ emacs24 python3-dev htop libzbar-dev libdmtx0a
 
 pip3 install -r ../requirements.txt
 
-curl https://getcaddy.com | bash -s personal hook.service
-
-sudo caddy -service install -conf Caddyfile
-sudo caddy -service start
+curl https://getcaddy.com | bash -s personal
+sudo nohup caddy &
 
 cd ..
 make
