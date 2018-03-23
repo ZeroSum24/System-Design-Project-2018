@@ -1,9 +1,12 @@
 
-# Welcome Travellers to the Installation of <i> !spam </i>
+<body class="stackedit">
+  <div class="stackedit__html" align="center"><p><img src="./spam/spam/static/img/logo.png" alt="!spam logo is here"></p>
 
-The sections below provide the capability to self-host our software, that is, install <i> !spam </i> on a custom domain and Ubuntu server. This also allows a custom conversational interface and a custom install on the robot. Note the advanced installation is not recommended for offices without an IT administrator.
+# Welcome to the Installation of  <b> <i> !spam </i> </b>
 
-Please also note a domain is necessary for issuing an SSL certificate for Google Assistant compatibility. <i> !spam </i> uses Caddy which in turn uses Let’s Encrypt as Certificate Authority (CA). Certificates are automatically managed, issued and renewed.
+The sections below provide the capability to self-host our software, that is, install  <b> <i> !spam </i> </b> on a custom domain and Ubuntu server. This also allows a custom conversational interface and a custom install on the robot. Note the advanced installation is not recommended for offices without an IT administrator.
+
+Please also note a domain is necessary for issuing an SSL certificate for Google Assistant compatibility.  <b> <i> !spam </i> </b> uses Caddy which in turn uses Let’s Encrypt as Certificate Authority (CA). Certificates are automatically managed, issued and renewed.
 
 ### 1. Codebase
 To prepare the codebase for the deployment: <b>run $ </b> ```git fork https://github.com/jcatarino/sdp2018.git``` .
@@ -18,13 +21,14 @@ Running ```install.sh``` in this directory will install all the components requi
 ##### /robot:
 Contains the code for the robot.
 Running ```install.sh``` in this directory will guide you through the installation of the code onto the robot in the case code modification is desired. This should be run after modifying ```ip.conf``` (in step 2). The script requires a DICE machine to run.
+
 ##### /cpp:
 Path planning code.
-This should not need to be edited. But if it is ,  ```/spam/install.sh``` should be run (refer to 3.c. in section 6.2.2), to re-compile.
+This should not need to be edited. But if it is ,  ```/spam/install.sh``` should be run (refer to the command in section 2.3), to re-compile.
 
 ##### /dialogflow.zip:
 Optional data for Google Assistant integration.
- See section 6.2.3 for installation instructions.
+ See section 3. for installation instructions.
 
 
 ### 2. Setup the server
@@ -32,13 +36,16 @@ Follow these steps to prepare the server:
 * On the DNS domain manager, add an A record with the target to the server’s IP.
 * SSH into the server where you intend to deploy. For detailed instructions, visit https://goo.gl/47rw6n.
 * On the SSH session:
-  * ```run $ git clone <your repository url>```
+
+  1. ```run $ git clone <your repository url>```
   * ```run $ cd sdp2018/spam```
   * ```run $ ./install.sh``` (this may take a few minutes)
+
 
 * Check the website is accessible using a web browser.
 
 ### 3. Setup the Google Assistant App
+Creating the Google Assistant App is a straightfoward process. Just read through the following instructions and you will be good to go:
 * Create a Dialogflow agent at https://dialogflow.com/
 * Click on the settings button → Export and Import → Restore from zip → select sdp2018/dialogflow.zip
 * Head to Fulfillment → Enable Webhook → Insert “https://<your domain>/fulfillment”
@@ -77,4 +84,7 @@ In case there is a problem with connection, refer to the OS instructions at http
 
 
 ### Contact Us:
-Thanks for purchasing <i> !spam </i> and checking out our code. If you have any problems, need support, or need help to install/troubleshoot, contact <i> !spam </i> at support@spamrobot.ml.
+Thanks for purchasing <b> <i> !spam </i> </b> and checking out our code. Further user information can be be found in <a href ="docs/group-10-userguide.pdf"> User guide </a>. If you have any problems, need support, or need help to install/troubleshoot, contact  <b> <i> !spam </i> </b> at ```support@spamrobot.ml```.
+
+
+file:///.docs/group-10-userguide.pdf
