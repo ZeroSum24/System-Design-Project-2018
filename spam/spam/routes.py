@@ -548,40 +548,42 @@ def connection_chat():
 #TODO: IMPLEMENT
 @assist.action('Deliver Mail - yes')
 def deliver_yes_chat(user):
-    global delivery_status, manual_button_pressed
+    global delivery_status, manual_button_pressed, connection_status
     print (user)
-    if delivery_status != "State.LOADING":
-        speech = "Spam is not in loading mode"
-    else:
-        if manual_button_pressed:
-            speech = "Spam has to be in automatic mode"
+    if !connection_status:
+        speech = "Spam is not connected"
+        if delivery_status != "State.LOADING":
+            speech = "Spam is not in loading mode"
         else:
-            if user:
-                speech = "Starting delivery with a parcel for {}.".format(user)
-                where_to = transform_into_desk(user)
-                if(Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
-                    path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
-                else:
-                    path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
+            if manual_button_pressed:
+                speech = "Spam has to be in automatic mode"
             else:
-                speech = "Starting delivery without a parcel recipient."
-            path_planning_go_button()
+                if user:
+                    where_to = transform_into_desk(user)
+                    if(Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
+                        path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
+                    else:
+                        path_planning[Location.query.filter(Location.id == where_to).one().map_node].append(5)
+                speech = "Delivering."
+                path_planning_go_button()
     return tell(speech)
 
 @assist.action('Deliver Mail')
 def deliver__chat(user):
-    global delivery_status, manual_button_pressed
+    global delivery_status, manual_button_pressed, connection_status
     print (user)
-    if delivery_status != "State.LOADING":
-        speech = "Spam is not in loading mode"
-    else:
-        if manual_button_pressed:
-            speech = "Spam has to be in automatic mode"
+    if !connection_status:
+        speech = "Spam is not connected"
+        if delivery_status != "State.LOADING":
+            speech = "Spam is not in loading mode"
         else:
-            if user:
-                speech = "Do you want to start delivery with a parcel for {}?".format(user)
+            if manual_button_pressed:
+                speech = "Spam has to be in automatic mode"
             else:
-                speech = "Do you want to start delivery without a parcel recipient?"
+                if user:
+                    speech = "Do you want to start delivery with a parcel for {}?".format(user)
+                else:
+                    speech = "Do you want to start delivery without a parcel recipient?"
     return ask(speech)
 
 @assist.action('Desk Query')
