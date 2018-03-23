@@ -10,7 +10,13 @@ CC = g++
 # building a shared library)
 CFLAGS = -Wall -std=c++11 -fPIC
 
-INCLUDES = -I./include/ -I/usr/include/python3.5m/
+# Travis needs different includes
+INCLUDES = -I./include/
+ifeq ($(MAKECMDGOALS),travis)
+INCLUDES += -I/usr/include/python3.4m/
+else
+INCLUDES += -I/usr/include/python3.5m/
+endif
 
 # Test include directory
 TEST_INCLUDES = -I./test/include/
@@ -62,3 +68,6 @@ test: $(TEST) $(MAIN)
 
 $(TEST): $(TEST_OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_INCLUDES) -o $(TEST) $(TEST_OBJS)
+
+.PHONY: travis
+travis: test
