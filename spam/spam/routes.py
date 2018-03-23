@@ -459,16 +459,12 @@ def path_planning_go_button():
 
 def send_dispatch_mail():
     global recipients
-    with mail.connect() as conn:
-        for user in recipients:
-            message = u'Dear %s,\n!spam thinks you would like to know that your mail is on the way.\n!spam \xE2\x9D\xA4' % user.name
-            subject = 'Delivery out'
-            msg = Message(recipients=[user.email],
-                          body=message,
-                          subject=subject)
-            conn.send(msg)
+    for user in recipients:
+        subject = 'Delivery out'
+        msg = Message(subject, sender = ("!spam", "notification@spamrobot.ml"), recipients=[user.email])
+        msg.body = u'Dear %s,\n!spam thinks you would like to know that your mail is on the way.\n!spam \xE2\x9D\xA4' % user.name
+        mail.send(msg)
     recipients.clear()
-
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
