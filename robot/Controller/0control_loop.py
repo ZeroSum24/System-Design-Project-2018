@@ -76,11 +76,11 @@ def setup_procedure():
 
 def on_connect(client, userdata, flags, rc):
     print(asciiart.spam())
-	client.subscribe("path_direction")
-	client.subscribe("emergency_command")
-	client.subscribe("dump_confirmation")
-	client.subscribe("battery_info_volts_2")
-	client.subscribe("ascii_art")
+    client.subscribe("path_direction")
+    client.subscribe("emergency_command")
+    client.subscribe("dump_confirmation")
+    client.subscribe("battery_info_volts_2")
+    client.subscribe("ascii_art")
 
 def on_message(client, userdata, msg):
 	global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
@@ -101,9 +101,9 @@ def on_message(client, userdata, msg):
 		with dumped_lock:
 			#print('Set Flag')
 			DUMPED = True
-	elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
-		#print("second brick alive")
-		SECOND_BRICK_ALIVE = True
+    elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
+        #print("second brick alive")
+        SECOND_BRICK_ALIVE = True
 
     elif msg.topic == "ascii_art":
         global asciiart
