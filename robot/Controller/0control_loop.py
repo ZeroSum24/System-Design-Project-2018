@@ -83,24 +83,24 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("ascii_art")
 
 def on_message(client, userdata, msg):
-	global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
-	if msg.topic == "path_direction":
-		with chosen_path_lock:
-			CHOSEN_PATH = generate_named_tuples(json.loads(msg.payload.decode()))
-	elif msg.topic == "emergency_command":
-		string = msg.payload.decode()
-		if string == "Resume":
-			with state_resumed_lock:
-				STATE_QUEUE.put((2, STATE_RESUMED))
-		elif string == "Stop":
-			STATE_QUEUE.put(T_STOPPING)
-		elif string == "Callback":
-			STATE_QUEUE.put(T_RETURNING)
-	elif msg.topic == "dump_confirmation":
-		#print('Got Confirmation')
-		with dumped_lock:
-			#print('Set Flag')
-			DUMPED = True
+    global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
+    if msg.topic == "path_direction":
+        with chosen_path_lock:
+            CHOSEN_PATH = generate_named_tuples(json.loads(msg.payload.decode()))
+    elif msg.topic == "emergency_command":
+        string = msg.payload.decode()
+        if string == "Resume":
+            with state_resumed_lock:
+                STATE_QUEUE.put((2, STATE_RESUMED))
+        elif string == "Stop":
+            STATE_QUEUE.put(T_STOPPING)
+        elif string == "Callback":
+            STATE_QUEUE.put(T_RETURNING)
+    elif msg.topic == "dump_confirmation":
+        #print('Got Confirmation')
+        with dumped_lock:
+            #print('Set Flag')
+            DUMPED = True
     elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
         #print("second brick alive")
         SECOND_BRICK_ALIVE = True
