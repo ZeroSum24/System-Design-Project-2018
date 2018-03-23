@@ -125,7 +125,10 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-client.connect("34.242.137.167", 1883, 60)
+with open('ip.conf') as f:
+    IP = imp.load_source('ip', '', f).ip
+
+client.connect(IP, 1883, 60)
 
 reset_dumper()
 battery_alive_thread()

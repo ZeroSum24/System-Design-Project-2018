@@ -15,6 +15,9 @@ from time import sleep, time
 from spam.thread_decorator import thread
 from spam import socketio
 import image_processing
+from spam import assist
+from flask_assistant import Assistant, tell, ask
+
 
 # Ending imports; Beginning Variable assertion
 
@@ -413,7 +416,7 @@ def on_message(client, userdata, msg):
                     else:
                         path_planning[Location.query.filter(Location.id == location_read).one().map_node].append(current_slot)
                 except:
-                    emit_to_auto_status("Couldn't know in which desk {} works. Remove letter from slot {} and insert a new letter".format(user_read.name, current_slot))
+                    emit_to_auto_status("{} has not currently been allocated a desk. Remove letter from slot {} and insert a new letter".format(user_read.name, current_slot))
                     print("Error person without desk assigned.")
                     client.publish("image_result", current_slot)
                     return
@@ -495,3 +498,132 @@ def battery_calculate(voltage_reading):
     else:
         percent = 0
     return int(percent)
+
+
+
+
+@assist.action('Battery')
+def battery_chat():
+    speech = ""
+    if connection_status:
+        speech = speech + "The battery of brick number 30 is {} percent.".format(battery_calculate(battery_info_volts))
+    if connection_status_2:
+        speech = speech + "The battery of brick number 10 is {} percent.".format(battery_calculate(battery_info_volts_2))
+    if (not connection_status) and (not connection_status_2):
+        speech = speech + "To see the battery levels, I need the bricks connected."
+    return tell(speech)
+
+@assist.action('Callback')
+def callback_chat():
+    publish_emergency_commands('Callback')
+    speech = "I am returning to the reception."
+    return tell(speech)
+
+@assist.action('Resume')
+def resume_chat():
+    publish_emergency_commands('Resume')
+    speech = "I resumed operations."
+    return tell(speech)
+
+@assist.action('Stop')
+def stop_chat():
+    publish_emergency_commands('Stop')
+    speech = "I stopped and I'm waiting for your instructions."
+    return tell(speech)
+
+@assist.action('Connection Status')
+def connection_chat():
+    speech = ""
+    if connection_status and connection_status_2:
+        speech = "Both bricks are connected."
+    elif connection_status and not connection_status_2:
+        speech = "Brick 30 is connected, however brick 10 is disconnected."
+
+    elif connection_status_2 and not connection_status:
+        speech = "Brick 10 is connectedm however brick 30 is disconnected."
+    else:
+        speech = "Both bricks are disconnected."
+
+    return tell(speech)
+
+#TODO: IMPLEMENT
+@assist.action('Deliver Mail - yes')
+def deliver_yes_chat(user):
+    print (user)
+    # if manual mode
+        # Answer its not possible to send this command in manual mode
+    # else
+        # Do the same thing as if mail deliver button was pressed in automatic mode.
+    speech = "Deliver Mail feature has not yet been implemented"
+    return tell(speech)
+
+@assist.action('Desk Query')
+def desk_chat(user):
+    print (user)
+    speech = ""
+    try:
+        desk = Staff.query.filter(Staff.name == user).one().staff.location_name
+        speech = "{} works in {}.".format(user, desk)
+        return tell(speech)
+    except:
+        speech = "I couldn't find user {} in the system.".format(user)
+        return tell(speech)
+
+@assist.action('Location Status')
+def location_chat():
+    if location_info == "Nothing reported yet.":
+        return tell("I haven't reported any location yet. Check again later.")
+    speech = "I was last seen in point {}".format(location_info[0])
+    return tell(speech)
+
+@assist.action('Notifications')
+def notification_chat():
+    speech = "You have {} new notifications. Would you like me to read them ?".format(unseen_notifications)
+    return ask(speech)
+
+@assist.action('Notifications')
+def notification_yes_chat():
+    speech = ""
+    notifications = Problem.query.order_by('timestamp desc').limit(unseen_notifications)
+    for notification in notifications:
+        speech.append("From {}: {}. ".format(notification.origin.name, notification.message))
+    return tell(speech)
+
+@assist.action('Parcel Quantity')
+def parcel_chat():
+    speech = "So far, I have delivered {} objects.".format(qnt_delivered)
+    return tell(speech)
+
+@assist.action('Robot State')
+def state_chat():
+    speech = ""
+    if delivery_status == "State.LOADING":
+        speech = "The robot is Parked and Loading."
+    elif delivery_status == "State.DELIVERING":
+        speech = "The robot is Delivering mail."
+    elif delivery_status == "State.RETURNING":
+        speech = "The robot is Returning to reception."
+    elif delivery_status == "State.STOPPING":
+        speech = "The robot is Stopped and waiting for instructions."
+    elif delivery_status == "State.PANICKING":
+        speech = "The robot has stopped and needs help, please check the notifications."
+    else:
+        speech = "I couldn't find the robot's state."
+    return tell(speech)
+
+@assist.action('User Query')
+def desk_chat(desk):
+    print (desk)
+    speech = ""
+    try:
+        desk_obj = Location.query.filter(Location.location_name == desk).one()
+    except:
+        speech = "I couldn't find desk {} in the system.".format(desk)
+        return tell(speech)
+    try:
+        people = map(lambda x: x.name, desk_obj.staff)
+        speech = "Here's who works on {}: ".format(desk) + ", ".join(str(x) for x in people)
+        return tell(speech)
+    except:
+        speech = "No one works on desk {}.".format(desk)
+        return tell(speech)

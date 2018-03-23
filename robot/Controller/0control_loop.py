@@ -12,6 +12,7 @@ import paho.mqtt.client as mqtt
 import json
 from collections import namedtuple
 from threading import Lock
+import imp
 
 PROFILING = False
 
@@ -53,11 +54,14 @@ FromDesk = namedtuple('FromDesk', 'is_left angle tolerance')
 
 CLIENT = mqtt.Client()
 
+with open('ip.conf') as f:
+    IP = imp.load_source('ip', '', f).ip
+
 def setup_procedure():
 	CLIENT.on_connect = on_connect
 	CLIENT.on_message = on_message
 	# TODO do IO exceptions
-	CLIENT.connect("34.242.137.167", 1883, 60)
+	CLIENT.connect(IP, 1883, 60)
 	instruction_thread()
 	while True:
 		with second_brick_alive_lock:
