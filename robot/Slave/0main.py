@@ -44,6 +44,7 @@ def camera_picture():
 
 def on_connect(client, userdata, flags, rc):
     # print("Connected with result code "+str(rc))
+    print(asscii_art.spam())
     client.subscribe("dump")
     client.subscribe("delivery_status")
     client.subscribe("go_manual")
@@ -77,6 +78,7 @@ def on_message(client, userdata, msg):
             slot_go_back(wait=False)
             # print("done going back on delivering")
             slot_movement = None
+            print(asciiart.delivering_mail())
 
     elif msg.topic == "image_result" and in_automatic == True:
         if msg.payload.decode() == "False":  # test to check if its an int

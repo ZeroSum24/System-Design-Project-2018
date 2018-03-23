@@ -93,9 +93,10 @@ def on_message(client, userdata, msg):
 		elif string == "Callback":
 			STATE_QUEUE.put(T_RETURNING)
 	elif msg.topic == "dump_confirmation":
-		print('Got Confirmation')
+		print (asciiart.mail_delivered_static())
+		# print('Got Confirmation')
 		with dumped_lock:
-			print('Set Flag')
+			# print('Set Flag')
 			DUMPED = True
 	elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
 		print("second brick alive")
@@ -143,8 +144,11 @@ def control_loop():
 		if STATE == State.LOADING:
 			STATE = loading_loop() # these are going to be blocking
 		elif STATE == State.DELIVERING:
+			print(asciiart.delivering_mail())
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
+			print(asciiart.returning())
+			CLIENT.publish("asscii_art", asciiart.returning())
 			get_path(returning=True)
 			STATE = movement_loop() # same function as above
 			if PROFILING:
@@ -176,7 +180,6 @@ def loading_loop():
 		STATE_QUEUE.clear()
 	get_path()
 	CLIENT.publish("delivery_status", str(State.DELIVERING))
-	CLIENT.publish("ascii_art", assciiart.delivering_mail())
 	return State.DELIVERING
 
 def check_state(current_state):
@@ -281,7 +284,6 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				if state == State.DELIVERING:
 					print("Returning")
 					STATE_QUEUE.put(T_RETURNING)
-					# CLIENT.publish("asscii_art", assciiart.returning())
 					print(STATE_QUEUE)
 					break
 				elif state == State.RETURNING:
@@ -357,11 +359,11 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 				if isinstance(instructione, Report):
 					NEXT_NODE = instructione.where
 					break
+					with next_node_lock:
 
 		sys.exit()
 
 def panic_loop():
-	with next_node_lock:
 		speech_lib.panicking()  # robot plays panicking message
 		CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
 	with final_cmd_lock:
@@ -386,4 +388,5 @@ def main():
 	control_loop()
 
 if __name__ == "__main__":
+	print(asscii_art.spam())
 	main()
