@@ -1,6 +1,6 @@
 
 <body class="stackedit">
-  <div class="stackedit__html" align="center"><p><img style="border-radius: 8%;" src="./spam/spam/static/img/logo.png" alt="!spam logo is here">
+  <div class="stackedit__html" align="center"><p><img style="border-radius: 10%;" src="./spam/spam/static/img/logo.png" alt="!spam logo is here">
   </p></div>
 
 # Welcome to the Installation of  <b> <i> !spam </i> </b>
@@ -81,7 +81,7 @@ On the EV3 brick, select the phone you just paired with.
 
 In case there is a problem with connection, refer to the OS instructions at https://goo.gl/g3Fk4N.
 
-
+<br/>
 
 ### Contact Us:
 Thanks for purchasing <b> <i> !spam </i> </b> and checking out our code. Further user information can be be found in the <a href ="docs/group-10-userguide.pdf"> User Guide </a>. If you have any problems, need support, or need help to install/troubleshoot, contact  <b> <i> !spam </i> </b> at ```support@spamrobot.ml```.
