@@ -39,8 +39,8 @@ Follow these steps to prepare the server:
 * On the SSH session:
 
   1. ```run $ git clone <your repository url>```
-  2. ```run $ cd sdp2018/spam```
-  3. ```run $ ./install.sh``` (this may take a few minutes)
+  * ```run $ cd sdp2018/spam```
+  * ```run $ ./install.sh``` (this may take a few minutes)
 
 
 * Check the website is accessible using a web browser.
