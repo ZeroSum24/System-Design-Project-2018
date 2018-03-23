@@ -7,7 +7,6 @@ from subprocess import Popen, PIPE
 import time
 from thread_decorator import thread
 import os
-import imp
 
 import speech_lib as speech_lib
 import asciiart
@@ -115,6 +114,7 @@ def on_message(client, userdata, msg):
             current_slot = 1
             slot_movement = stop(current_slot)
             camera_picture()
+            
     elif msg.topic == "ascii_art":
         global asciiart
         asciiart = msg.payload.decode()
@@ -150,10 +150,7 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
-with open('ip.conf') as f:
-    IP = imp.load_source('ip', '', f).ip
-
-client.connect(IP, 1883, 60)
+client.connect("34.242.137.167", 1883, 60)
 
 reset_dumper()
 battery_alive_thread()

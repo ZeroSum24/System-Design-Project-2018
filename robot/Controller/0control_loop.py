@@ -75,6 +75,7 @@ def setup_procedure():
 	CLIENT.publish("delivery_status", str(State.LOADING))
 
 def on_connect(client, userdata, flags, rc):
+    print(asciiart.spam())
 	client.subscribe("path_direction")
 	client.subscribe("emergency_command")
 	client.subscribe("dump_confirmation")
@@ -103,6 +104,11 @@ def on_message(client, userdata, msg):
 	elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
 		#print("second brick alive")
 		SECOND_BRICK_ALIVE = True
+
+    elif msg.topic == "ascii_art":
+        global asciiart
+        asciiart = msg.payload.decode()
+        print (asciiart)
 
 def generate_named_tuples(lst):
 	new_list = []

@@ -7,33 +7,42 @@ deliver_mail_to_audio = 'deliver_mail_to.mp3'
 
 # audio to play when panicking
 def panicking():
-    say_text('An error has occurred. Assistance needed.')
+    say_mp3('error.mp3')
+    #say_text('An error has occurred. Assistance needed.')
 
 # obstacle detected
 def obstacle_detected():
-    say_text('Obstacle detected.')
+    say_mp3('obstacle.mp3')
+    #say_text('Obstacle detected.')
 
 # all slots full
 def all_slots_full():
     #os.system(playmp3 + all_slots_full_audio)  # will play the file at all_slots_full_audio
-    say_text('all slots full')
+    say_mp3('full.mp3')
+    #say_text('all slots full')
 
 # envelope scanned(?)
 def envelope_scanned():
     #os.system(playmp3 + envelope_scanned_audio)  #
-    say_text('envelope scanned')
+    say_mp3('scanned.mp3')
+    #say_text('envelope scanned')
 
 
 def please_insert_envelope():
-    say_text('Please insert envelope')
+    say_mp3('insert.mp3')
+    #say_text('Please insert envelope')
 
 #
 def deliver_mail_to():
+    say_mp3('delivered.mp3')
     #os.system(playmp3 + deliver_mail_to_audio)
-    say_text('mail delivered')
+    #say_text('mail delivered')
+
+def say_mp3(fname):
+    os.system('mpg123 {}'.format(fname))
 
 def say_text(text_input):  # read text with espeak
-    os.system('espeak \'' + text_input + '\' --stdout | aplay')
+    os.system("espeak '" + text_input + "' --stdout | aplay")
 
 
 def set_volume(percentage):
@@ -46,5 +55,3 @@ def get_volume():
 
 def beep(frequency, length):
     os.system('beep -f ' + str(frequency) + ' -l ' + str(length))
-
-
