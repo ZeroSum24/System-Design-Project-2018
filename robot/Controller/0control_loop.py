@@ -148,7 +148,7 @@ def control_loop():
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
 			print(asciiart.returning())
-			CLIENT.publish("asscii_art", asciiart.returning())
+			CLIENT.publish("ascii_art", asciiart.returning())
 			get_path(returning=True)
 			STATE = movement_loop() # same function as above
 			if PROFILING:
