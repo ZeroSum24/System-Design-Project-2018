@@ -57,7 +57,7 @@ FromDesk = namedtuple('FromDesk', 'is_left angle tolerance')
 CLIENT = mqtt.Client()
 
 with open('ip.conf') as f:
-    IP = imp.load_source('ip', '', f).ip
+	IP = imp.load_source('ip', '', f).ip
 
 def setup_procedure():
 	CLIENT.on_connect = on_connect
@@ -75,12 +75,12 @@ def setup_procedure():
 	CLIENT.publish("delivery_status", str(State.LOADING))
 
 def on_connect(client, userdata, flags, rc):
-    print(asciiart.spam())
-    client.subscribe("path_direction")
-    client.subscribe("emergency_command")
-    client.subscribe("dump_confirmation")
-    client.subscribe("battery_info_volts_2")
-    client.subscribe("ascii_art")
+	print(asciiart.spam())
+	client.subscribe("path_direction")
+	client.subscribe("emergency_command")
+	client.subscribe("dump_confirmation")
+	client.subscribe("battery_info_volts_2")
+	client.subscribe("ascii_art")
 
 def on_message(client, userdata, msg):
 	global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
@@ -101,14 +101,14 @@ def on_message(client, userdata, msg):
 		with dumped_lock:
 			#print('Set Flag')
 			DUMPED = True
-    elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
-        #print("second brick alive")
-        SECOND_BRICK_ALIVE = True
+	elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
+		#print("second brick alive")
+		SECOND_BRICK_ALIVE = True
 
-    elif msg.topic == "ascii_art":
-        global asciiart
-        asciiart = msg.payload.decode()
-        print (asciiart)
+	elif msg.topic == "ascii_art":
+		global asciiart
+		asciiart = msg.payload.decode()
+		print (asciiart)
 
 def generate_named_tuples(lst):
 	new_list = []
@@ -138,9 +138,9 @@ def battery_alive_thread():
 		time.sleep(5)
 
 def get_voltage():
-    with open('/sys/class/power_supply/legoev3-battery/voltage_now') as fin:
-        voltage = fin.readline()
-    return voltage
+	with open('/sys/class/power_supply/legoev3-battery/voltage_now') as fin:
+		voltage = fin.readline()
+	return voltage
 
 def control_loop():
 	global STATE
@@ -346,7 +346,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 		elif isinstance(instruction, ToDesk):
 			get_odometry(rotating=True)
 			final = [ToDesk(instruction.is_left, instruction.angle - get_odometry(rotating=True)),
-			         chosen_path.pop(0), chosen_path.pop(0)] # atm it dispenses the letter even after recall
+					 chosen_path.pop(0), chosen_path.pop(0)] # atm it dispenses the letter even after recall
 
 		with final_cmd_lock:
 			global FINAL_CMD
