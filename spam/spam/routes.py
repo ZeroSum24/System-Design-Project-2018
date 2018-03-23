@@ -550,7 +550,7 @@ def connection_chat():
 def deliver_yes_chat(user):
     global delivery_status, manual_button_pressed, connection_status
     print (user)
-    if !connection_status:
+    if not connection_status:
         speech = "Spam is not connected"
         if delivery_status != "State.LOADING":
             speech = "Spam is not in loading mode"
@@ -572,7 +572,7 @@ def deliver_yes_chat(user):
 def deliver__chat(user):
     global delivery_status, manual_button_pressed, connection_status
     print (user)
-    if !connection_status:
+    if not connection_status:
         speech = "Spam is not connected"
         if delivery_status != "State.LOADING":
             speech = "Spam is not in loading mode"
