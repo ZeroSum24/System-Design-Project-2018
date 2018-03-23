@@ -25,7 +25,7 @@ Running ```install.sh``` in this directory will guide you through the installati
 
 ##### /cpp:
 Path planning code.
-This should not need to be edited. But if it is ,  ```/spam/install.sh``` should be run (refer to the command in section 2.3), to re-compile.
+This should not need to be edited. But if it is ,  ```/spam/install.sh``` should be run (refer to the <i> install.sh </i> command in section 2. ) to re-compile.
 
 ##### /dialogflow.zip:
 Optional data for Google Assistant integration.
@@ -38,7 +38,7 @@ Follow these steps to prepare the server:
 * SSH into the server where you intend to deploy. For detailed instructions, visit https://goo.gl/47rw6n.
 * On the SSH session:
 
-  1. ```run $ git clone <your repository url>```
+  * ```run $ git clone <your repository url>```
   * ```run $ cd sdp2018/spam```
   * ```run $ ./install.sh``` (this may take a few minutes)
 
