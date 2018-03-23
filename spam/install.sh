@@ -1,4 +1,8 @@
-#! /bin/bash
+#!/usr/bin/env bash
+
+. ../ip.conf
+
+sed -i "1 s/.*/$domain/" Caddyfile
 
 sudo apt update
 sudo apt upgrade
