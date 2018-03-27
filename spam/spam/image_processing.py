@@ -8,8 +8,6 @@ from pylibdmtx.pylibdmtx import decode
 
 def scanImage(file_path):
 
-    print("Entered image testing")
-
     with open(file_path, 'rb') as image_file:
         image = Image.open(image_file)
         image.load()
