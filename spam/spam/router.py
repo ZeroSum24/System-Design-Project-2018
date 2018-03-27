@@ -75,6 +75,9 @@ def return_from(start, direction):
     for src, dest in _pairwise(nodes):
         dist, src_ang, dest_ang = _get_edge_stats(src, dest)
         route.append(Report('{}-{}'.format(src, facing)))
+        print(facing)
+        print(src_ang)
+        print('')
         route.append(Rotate((src_ang-facing)%360, 30))
         route.append(Report('{}-{}'.format(src, src_ang)))
         facing = (dest_ang + 180) % 360
