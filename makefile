@@ -6,7 +6,7 @@
 PYTHON = python3
 # Directory where the tests can be found
 TESTDIR = ./test
-# Search recursivly for python files with test in their name
+# Search recursively for python files with test in their name
 PY_TEST_FILES := $(shell find $(TESTDIR) -type f -name *test*.py 2>/dev/null)
 
 # Directory containing C++ files

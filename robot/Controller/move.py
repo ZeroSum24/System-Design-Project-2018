@@ -8,6 +8,8 @@ from math import pi, sin, cos
 from collections import namedtuple
 import time
 
+import speech_lib
+
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor
 from ev3dev.auto import *
@@ -56,6 +58,7 @@ _DEFAULT_MULTIPLIER = None
 # Supplies information expected by the movement functions
 _MOTOR_PARAMS = None
 _SONAR_DIST = None
+_STOP_TIMEOUT = None
 _JUNCTION_MARKERS = None
 # PID calibration flag
 _PID_CALIBRATION = False
@@ -65,7 +68,7 @@ def init():
     global _ODOMETERS, _MOTORS, _WHEEL_CIRCUM, _BASE_ROT_TO_WHEEL_ROT
     global _DEFAULT_RUN_SPEED, _DEFAULT_TURN_SPEED, _SCALERS, _ROBOT_DIAMETER
     global _DEFAULT_MULTIPLIER, _MAXREF, _MINREF, _TARGET, _KP, _KD, _KI
-    global  _MOTOR_PARAMS, _SONAR_DIST, _JUNCTION_MARKERS
+    global  _MOTOR_PARAMS, _SONAR_DIST, _STOP_TIMEOUT,_JUNCTION_MARKERS
 
     # Read config file (In python modules are just objects, the basic import
     # syntax just parses a file as the definition of a module and places the
@@ -146,6 +149,7 @@ def init():
     _KD = config.KD
     _KI = config.KI
     _SONAR_DIST = config.sonar_dist
+    _STOP_TIMEOUT = config.stop_timeout
     _JUNCTION_MARKERS = config.junction_markers
 init()
 
@@ -342,6 +346,9 @@ def forward(dist, tolerance=50, junction_type=Junctions.DESK, correction=True):
         traveled = 0
         previous_time = time.time()
 
+        stopped = False
+        time_of_stoppage = 0
+
         search_color = _JUNCTION_MARKERS[junction_type]
 
         run_motor(_MOTORS.left, reset=True)
@@ -350,8 +357,21 @@ def forward(dist, tolerance=50, junction_type=Junctions.DESK, correction=True):
         while True:
             try:
                 if sonar_poll() < _SONAR_DIST:
-                    stop_motors()
-                    break
+                    if not stopped:
+                        stopped = True
+                        stop_motors()
+                        time_of_stoppage = time.time()
+                        speech_lib.obstacle_detected()
+                        continue
+                    if stopped:
+                        if time.time() - time_of_stoppage < _STOP_TIMEOUT:
+                            continue
+                        else:
+                            return False
+                else:
+                    if stopped:
+                        stopped = False
+                        continue
             except EXCEPTIONS:
                 stop_motors()
                 raise SonarDisconnectedError('Sonar disconnected')
@@ -419,68 +439,6 @@ def rotate(angle, tolerance=50, direction=Directions.ROT_RIGHT):
         if traveled > upper:
             stop_motors()
             return False
-
-
-def test_angle_accuracy():
-    primary_speed = -_DEFAULT_RUN_SPEED # overshoots when this value is negative,
-                                        # regardless whether turning right or left
-    r = primary_speed                # turning left/right is done by swapping
-    l = primary_speed//2                   # which primary speed is divided
-    non_driver_speed = _delta_deg(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER)
-
-    run_motor(_MOTORS.front, r, reset = True)
-    run_motor(_MOTORS.back, l, reset = True)
-    run_motor(_MOTORS.left, non_driver_speed)
-    run_motor(_MOTORS.right, -non_driver_speed)
-
-    previous_time = time.time()
-    base_angle_so_far = 0.0
-    while base_angle_so_far < 90:
-        delta_time = time.time() - previous_time
-        previous_time = time.time()
-        base_angle_so_far += abs(_omega(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER)*delta_time*180/pi)
-        print(str(base_angle_so_far) + "<< time-based")
-        print(str(_parse_to_omega(_MOTORS.back, _MOTORS.front)) + "<< odometry-based")
-        time.sleep(0.05)
-    stop_motors()
-
-def desk_approach():
-    primary_speed = _DEFAULT_RUN_SPEED
-    non_driver_speed = _delta_deg(primary_speed//3, primary_speed, _WHEEL_CIRCUM, _ROBOT_DIAMETER)
-
-    run_motor(_MOTORS.front, -primary_speed, reset = True)
-    run_motor(_MOTORS.back, -primary_speed//3, reset = True)
-    run_motor(_MOTORS.left, non_driver_speed)
-    run_motor(_MOTORS.right, -non_driver_speed)
-
-    while _parse_to_omega(_MOTORS.back, _MOTORS.front) < 45:
-        time.sleep(0.05)
-
-    run_motor(_MOTORS.left, primary_speed//3, reset = True)
-    run_motor(_MOTORS.right, primary_speed, reset = True)
-    run_motor(_MOTORS.front, non_driver_speed)
-    run_motor(_MOTORS.back, -non_driver_speed)
-
-    while _parse_to_omega(_MOTORS.right, _MOTORS.left) < 45:
-        time.sleep(0.05)
-
-    run_motor(_MOTORS.left, -primary_speed//3, reset = True)
-    run_motor(_MOTORS.right, -primary_speed, reset = True)
-    run_motor(_MOTORS.front, -non_driver_speed)
-    run_motor(_MOTORS.back, non_driver_speed)
-
-    while _parse_to_omega(_MOTORS.right, _MOTORS.left) < 45:
-        time.sleep(0.05)
-
-    run_motor(_MOTORS.front, primary_speed, reset = True)
-    run_motor(_MOTORS.back, primary_speed//3, reset = True)
-    run_motor(_MOTORS.left, -non_driver_speed)
-    run_motor(_MOTORS.right, non_driver_speed)
-
-    while _parse_to_omega(_MOTORS.back, _MOTORS.front) < 45:
-        time.sleep(0.05)
-
-    stop_motors()
 
 def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back, lefty=_MOTORS.left, righty=_MOTORS.right):
     primary_speed = speed*cos(angle*pi/180)
@@ -599,8 +557,6 @@ if __name__ == '__main__':
     btn.on_right = _changeD
     btn.on_down = _changeI
     btn.on_up = _reset
-    #desk_approach()
-    #test_angle_accuracy()
     forward(99999, 50)
 
 ### End PID Tuning ###
