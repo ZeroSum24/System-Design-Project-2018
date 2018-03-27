@@ -8,10 +8,11 @@ from os import chdir
 # interface required for this to work removes all typechecking from either side
 # so the objects below are required for safety, also using objects makes the
 # code using the library easier
-try:
-    chdir("./spam")
-except FileNotFoundError:
-    pass
+for _ in range(2):
+    try:
+        chdir("./spam")
+    except FileNotFoundError:
+        pass
 _COBJ = cdll.LoadLibrary('./libgraph.so')
 
 class Edge:
