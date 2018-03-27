@@ -155,7 +155,7 @@ def control_loop():
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
 			asciiart.returning()
-			client.publish("ascii_art_robot", "delivering")
+			CLIENT.publish("ascii_art_robot", "delivering")
 			get_path(returning=True)
 			STATE = movement_loop() # same function as above
 			if PROFILING:
@@ -226,6 +226,7 @@ def movement_loop():
 				global STATE_RESUMED
 				STATE_RESUMED = STATE
 			move_thread = move_asynch(chosen_path, STATE)
+
 
 @thread
 def move_asynch(chosen_path, state): #all global returns will have to be passed in queues
