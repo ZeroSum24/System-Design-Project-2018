@@ -13,10 +13,11 @@ import json
 from threading import Lock, Timer
 from time import sleep, time
 from spam.thread_decorator import thread
-from spam import socketio
+from spam import socketio, mail
 import image_processing
 from spam import assist
 from flask_assistant import Assistant, tell, ask
+from flask_mail import Message
 
 
 # Ending imports; Beginning Variable assertion
@@ -38,6 +39,7 @@ location_info = "Nothing reported yet."
 connection_status = False
 connection_status_2 = False
 path_planning_result = []
+recipients = []
 lock = Lock()
 lock_2 = Lock()
 current_slot = 1
@@ -46,7 +48,6 @@ seen_2 = False
 path_planning={}
 go_button_pressed = False
 manual_button_pressed = False
-# manual_enter_time = 0
 last_auto_state = None
 qnt_delivered = 0
 start_time_lock = Lock()
@@ -158,7 +159,7 @@ def settings():
 
 @spam.route('/auto_view', methods=['GET', 'POST'])
 def automatic_mode():
-    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed, start_time
+    global path_planning_result, path_planning, current_slot, last_auto_state, manual_button_pressed, start_time, recipients
     if request.method == 'GET':
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         manual_button_pressed = False
@@ -183,6 +184,7 @@ def automatic_mode():
         try:
             who_to = request.form.get('inputSlot5')
             where_to = transform_into_desk(who_to)
+            recipients.append(Staff.query.filter(who_to == Staff.id).one().email);
 
             if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
                 path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[5]
@@ -220,6 +222,7 @@ def mail_delivery():
     global path_planning
     global last_auto_state
     global manual_button_pressed
+    global recipients
     # global manual_enter_time
     if request.method == 'POST':
         submit=[]
@@ -227,6 +230,7 @@ def mail_delivery():
         for i in range(1,6):
             try:
                 who_to = request.form.get('inputSlot'+str(i))
+                recipients.append(Staff.query.filter(who_to == Staff.id).one().email);
                 where_to = transform_into_desk(who_to)
                 if( Location.query.filter(Location.id == where_to).one().map_node not in path_planning.keys()):
                     path_planning[Location.query.filter(Location.id == where_to).one().map_node]=[i]
@@ -237,6 +241,7 @@ def mail_delivery():
             except:
                 # When nothing is selected
                 pass
+        send_dispatch_mail()
         #Use path planner
         print ("This is path planning:")
         print (path_planning)
@@ -252,6 +257,7 @@ def mail_delivery():
         path_planning = {}
         last_auto_state = None
         manual_button_pressed = True
+        recipients.clear()
         with start_time_lock:
             global start_time
             start_time = time()
@@ -316,7 +322,7 @@ def on_message(client, userdata, msg):
     #page update the information for both location and battery regardless of
     #which one has changed
     print("Msg Recieved Cap")
-    global path_planning_result, location_info, path_planning, current_slot, go_button_pressed, manual_button_pressed
+    global path_planning_result, location_info, path_planning, current_slot, go_button_pressed, manual_button_pressed, recipients
     if msg.topic == "location_info":
         with location_info_lock:
             global qnt_delivered
@@ -361,7 +367,7 @@ def on_message(client, userdata, msg):
 
     elif msg.topic == "problem":
         add_unseen_notification()
-        problem = Problem(origin=Staff.query.filter(Staff.email == "robot@spam.com").one().id, message=msg.payload.decode(), is_urgent=True)
+        problem = Problem(origin=Staff.query.filter(Staff.email == "notification@spamrobot.ml").one().id, message=msg.payload.decode(), is_urgent=True)
         db.session.add(problem)
         db.session.commit()
         print("Problem reported by robot.")
@@ -411,6 +417,7 @@ def on_message(client, userdata, msg):
                 try:
                     location_read = user_read.location_id
                     map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
+                    recipients.append(user_read.email);
                     if (map_node_of_location not in path_planning.keys()):
                         path_planning[Location.query.filter(Location.id == location_read).one().map_node]=[current_slot]
                     else:
@@ -448,7 +455,16 @@ def path_planning_go_button():
     path_planning_result = router.build_route(path_planning)
     if connection_status and delivery_status == "State.LOADING":
         publish_path_planning(path_planning_result)
+    send_dispatch_mail()
 
+def send_dispatch_mail():
+    global recipients
+    for user in recipients:
+        subject = 'Delivery out'
+        msg = Message(subject, sender = ("!spam", "notification@spamrobot.ml"), recipients=[user])
+        msg.body = u'Dear %s,\n!spam thinks you would like to know that your mail is on the way.\n\n!spam <3' % Staff.query.filter(Staff.email == user).one().name
+        mail.send(msg)
+    recipients.clear()
 
 #Functions that send information to the robot
 def publish_path_planning(path_direction):
@@ -549,13 +565,51 @@ def connection_chat():
 #TODO: IMPLEMENT
 @assist.action('Deliver Mail - yes')
 def deliver_yes_chat(user):
+    global delivery_status, manual_button_pressed, connection_status
     print (user)
-    # if manual mode
-        # Answer its not possible to send this command in manual mode
-    # else
-        # Do the same thing as if mail deliver button was pressed in automatic mode.
-    speech = "Deliver Mail feature has not yet been implemented"
+    if not connection_status:
+        speech = "Spam is not connected"
+    else:
+        if delivery_status != "State.LOADING":
+            speech = "Spam is not in loading mode"
+        else:
+            if manual_button_pressed:
+                speech = "Spam has to be in automatic mode"
+            else:
+                if user:
+                    desk = None
+                    try:
+                        desk = Staff.query.filter(Staff.name == user).one().staff.map_node
+                    except:
+                        speech = "I couldn't find user {} in the system.".format(user)
+                        return tell(speech)
+                    if(desk not in path_planning.keys()):
+                        path_planning[desk]=[5]
+                    else:
+                        path_planning[desk].append(5)
+                speech = "Delivering."
+                path_planning_go_button()
+
     return tell(speech)
+
+@assist.action('Deliver Mail')
+def deliver__chat(user):
+    global delivery_status, manual_button_pressed, connection_status
+    print (user)
+    if not connection_status:
+        speech = "Spam is not connected"
+    else:
+        if delivery_status != "State.LOADING":
+            speech = "Spam is not in loading mode"
+        else:
+            if manual_button_pressed:
+                speech = "Spam has to be in automatic mode"
+            else:
+                if user:
+                    speech = "Do you want to start delivery with a parcel for {}?".format(user)
+                else:
+                    speech = "Do you want to start delivery without a parcel recipient?"
+    return ask(speech)
 
 @assist.action('Desk Query')
 def desk_chat(user):
@@ -578,15 +632,21 @@ def location_chat():
 
 @assist.action('Notifications')
 def notification_chat():
-    speech = "You have {} new notifications. Would you like me to read them ?".format(unseen_notifications)
+    if unseen_notifications == 0:
+        speech = "You have no new notifications. Hip hip hooray!"
+        return tell(speech)
+    elif unseen_notifications == 1:
+        speech = "You have one new notification. Would you like me to read it?"
+    else:
+        speech = "You have {} new notifications. Would you like me to read them?".format(unseen_notifications)
     return ask(speech)
 
-@assist.action('Notifications')
+@assist.action('Notifications - yes')
 def notification_yes_chat():
     speech = ""
     notifications = Problem.query.order_by('timestamp desc').limit(unseen_notifications)
     for notification in notifications:
-        speech.append("From {}: {}. ".format(notification.origin.name, notification.message))
+        speech = speech + ("From {}: {}. ".format(Staff.query.filter(notification.origin == Staff.id).one().name, notification.message))
     return tell(speech)
 
 @assist.action('Parcel Quantity')

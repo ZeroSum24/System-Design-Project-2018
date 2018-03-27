@@ -2,4 +2,4 @@
 
 {
 exec python3 ./0control_loop.py
-} >>err.txt 2>&1
+} 2>err.txt

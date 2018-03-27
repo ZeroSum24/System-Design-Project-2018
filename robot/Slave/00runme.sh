@@ -2,4 +2,4 @@
 
 {
 exec python3 ./0main.py
-} >>err.txt 2>&1
+} 2>err.txt
