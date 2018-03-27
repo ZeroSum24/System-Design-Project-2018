@@ -47,7 +47,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("delivery_status")
     client.subscribe("go_manual")
     client.subscribe("image_result")
-    client.subscribe("ascii_art")
+    client.subscribe("ascii_art_robot")
 
 
 def on_message(client, userdata, msg):
@@ -59,8 +59,8 @@ def on_message(client, userdata, msg):
         for slot in slots:
             dump(slot)
         client.publish("dump_confirmation", "dumped")
-        print (asciiart.mail_delivered_static())
-        client.publish("ascii_art", asciiart.mail_delivered_static())
+        asciiart.mail_delivered_anim()
+        client.publish("ascii_art_slave", "delivered")
 
     elif msg.topic == "delivery_status":
         if msg.payload.decode() == "State.LOADING" and loading == False:
@@ -77,8 +77,8 @@ def on_message(client, userdata, msg):
             slot_go_back(wait=False)
             # print("done going back on delivering")
             slot_movement = None
-            print(asciiart.delivering_mail())
-            client.publish("ascii_art", asciiart.delivering_mail())
+            asciiart.delivering_mail()
+            client.publish("ascii_art_slave", "delivering")
 
     elif msg.topic == "image_result" and in_automatic == True:
         if msg.payload.decode() == "False":  # test to check if its an int
@@ -102,8 +102,8 @@ def on_message(client, userdata, msg):
                 camera_picture()
             else:
                 speech_lib.all_slots_full()  # tell the receptionist that all slots are full
-                print(asciiart.full())
-                client.publish("ascii_art", asciiart.full())
+                asciiart.full()
+                client.publish("ascii_art_slave", "full")
 
     elif msg.topic == "go_manual":
         if msg.payload.decode() == "True" and in_automatic == True:
@@ -117,10 +117,8 @@ def on_message(client, userdata, msg):
             slot_movement = stop(current_slot)
             camera_picture()
 
-    # elif msg.topic == "ascii_art":
-    #     global asciiart
-    #     asciiart = msg.payload.decode()
-    #     print (asciiart)
+    elif msg.topic == "ascii_art_robot":
+        asciiart.returning()
 
 def slot_go_back(wait=True):
     global slot_movement

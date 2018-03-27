@@ -81,7 +81,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("emergency_command")
     client.subscribe("dump_confirmation")
     client.subscribe("battery_info_volts_2")
-    client.subscribe("ascii_art")
+    client.subscribe("ascii_art_slave")
 
 def on_message(client, userdata, msg):
     global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
@@ -105,11 +105,13 @@ def on_message(client, userdata, msg):
     elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
         #print("second brick alive")
         SECOND_BRICK_ALIVE = True
-
-    elif msg.topic == "ascii_art":
-        global asciiart
-        asciiart = msg.payload.decode()
-        print (asciiart)
+    elif msg.topic == "ascii_art_slave":
+        if msg.payload.decode() == "full":
+            asciiart.full()
+        elif msg.payload.decode() == "delivered":
+            asciiart.mail_delivered_anim()
+        elif msg.payload.decode() == "delivering":
+            asciiart.delivering_mail()
 
 def generate_named_tuples(lst):
 	new_list = []
@@ -152,7 +154,9 @@ def control_loop():
 		elif STATE == State.DELIVERING:
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
-			get_path(returning=True)
+            asciiart.returning()
+            client.publish("ascii_art_robot", "delivering")
+            get_path(returning=True)
 			STATE = movement_loop() # same function as above
 			if PROFILING:
 				sys.exit()
@@ -368,7 +372,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 def panic_loop():
 	with next_node_lock:
         speech_lib.panicking()
-		CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
+        CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
 	with final_cmd_lock:
 		global FINAL_CMD
 		FINAL_CMD = []
