@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+from os import chdir, getcwd
+
+if 'spam' not in getcwd():
+    chdir('./spam')
+
 # Allows router to be imported outside of flask
 try:
     from spam.graph import Edge, Graph
