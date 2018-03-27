@@ -57,61 +57,61 @@ FromDesk = namedtuple('FromDesk', 'is_left angle tolerance')
 CLIENT = mqtt.Client()
 
 with open('ip.conf') as f:
-    IP = imp.load_source('ip', '', f).ip
+	IP = imp.load_source('ip', '', f).ip
 
 def setup_procedure():
-    speech_lib.set_volume(100)
-    CLIENT.on_connect = on_connect
-    CLIENT.on_message = on_message
-    # TODO do IO exceptions
-    CLIENT.connect(IP, 1883, 60)
-    instruction_thread()
-    while True:
-        with second_brick_alive_lock:
-            if SECOND_BRICK_ALIVE == True:
-                break
-        #print("spin")
-        time.sleep(2)
-    battery_alive_thread()
-    CLIENT.publish("delivery_status", str(State.LOADING))
+	speech_lib.set_volume(100)
+	CLIENT.on_connect = on_connect
+	CLIENT.on_message = on_message
+	# TODO do IO exceptions
+	CLIENT.connect(IP, 1883, 60)
+	instruction_thread()
+	while True:
+		with second_brick_alive_lock:
+			if SECOND_BRICK_ALIVE == True:
+				break
+		#print("spin")
+		time.sleep(2)
+	battery_alive_thread()
+	CLIENT.publish("delivery_status", str(State.LOADING))
 
 def on_connect(client, userdata, flags, rc):
-    print(asciiart.spam())
-    client.subscribe("path_direction")
-    client.subscribe("emergency_command")
-    client.subscribe("dump_confirmation")
-    client.subscribe("battery_info_volts_2")
-    client.subscribe("ascii_art_slave")
+	print(asciiart.spam())
+	client.subscribe("path_direction")
+	client.subscribe("emergency_command")
+	client.subscribe("dump_confirmation")
+	client.subscribe("battery_info_volts_2")
+	client.subscribe("ascii_art_slave")
 
 def on_message(client, userdata, msg):
-    global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
-    if msg.topic == "path_direction":
-        with chosen_path_lock:
-            CHOSEN_PATH = generate_named_tuples(json.loads(msg.payload.decode()))
-    elif msg.topic == "emergency_command":
-        string = msg.payload.decode()
-        if string == "Resume":
-            with state_resumed_lock:
-                STATE_QUEUE.put((2, STATE_RESUMED))
-        elif string == "Stop":
-            STATE_QUEUE.put(T_STOPPING)
-        elif string == "Callback":
-            STATE_QUEUE.put(T_RETURNING)
-    elif msg.topic == "dump_confirmation":
-        #print('Got Confirmation')
-        with dumped_lock:
-            #print('Set Flag')
-            DUMPED = True
-    elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
-        #print("second brick alive")
-        SECOND_BRICK_ALIVE = True
-    elif msg.topic == "ascii_art_slave":
-        if msg.payload.decode() == "full":
-            asciiart.full()
-        elif msg.payload.decode() == "delivered":
-            asciiart.mail_delivered_anim()
-        elif msg.payload.decode() == "delivering":
-            asciiart.delivering_mail()
+	global DUMPED, SECOND_BRICK_ALIVE, CHOSEN_PATH
+	if msg.topic == "path_direction":
+		with chosen_path_lock:
+			CHOSEN_PATH = generate_named_tuples(json.loads(msg.payload.decode()))
+	elif msg.topic == "emergency_command":
+		string = msg.payload.decode()
+		if string == "Resume":
+			with state_resumed_lock:
+				STATE_QUEUE.put((2, STATE_RESUMED))
+		elif string == "Stop":
+			STATE_QUEUE.put(T_STOPPING)
+		elif string == "Callback":
+			STATE_QUEUE.put(T_RETURNING)
+	elif msg.topic == "dump_confirmation":
+		#print('Got Confirmation')
+		with dumped_lock:
+			#print('Set Flag')
+			DUMPED = True
+	elif SECOND_BRICK_ALIVE == False and msg.topic == "battery_info_volts_2":
+		#print("second brick alive")
+		SECOND_BRICK_ALIVE = True
+	elif msg.topic == "ascii_art_slave":
+		if msg.payload.decode() == "full":
+			asciiart.full()
+		elif msg.payload.decode() == "delivered":
+			asciiart.mail_delivered_anim()
+		elif msg.payload.decode() == "delivering":
+			asciiart.delivering_mail()
 
 def generate_named_tuples(lst):
 	new_list = []
@@ -141,9 +141,9 @@ def battery_alive_thread():
 		time.sleep(5)
 
 def get_voltage():
-    with open('/sys/class/power_supply/legoev3-battery/voltage_now') as fin:
-        voltage = fin.readline()
-    return voltage
+	with open('/sys/class/power_supply/legoev3-battery/voltage_now') as fin:
+		voltage = fin.readline()
+	return voltage
 
 def control_loop():
 	global STATE
@@ -154,9 +154,9 @@ def control_loop():
 		elif STATE == State.DELIVERING:
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
-            asciiart.returning()
-            client.publish("ascii_art_robot", "delivering")
-            get_path(returning=True)
+			asciiart.returning()
+			client.publish("ascii_art_robot", "delivering")
+			get_path(returning=True)
 			STATE = movement_loop() # same function as above
 			if PROFILING:
 				sys.exit()
@@ -351,7 +351,7 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 		elif isinstance(instruction, ToDesk):
 			get_odometry(rotating=True)
 			final = [ToDesk(instruction.is_left, instruction.angle - get_odometry(rotating=True)),
-			         chosen_path.pop(0), chosen_path.pop(0)] # atm it dispenses the letter even after recall
+					 chosen_path.pop(0), chosen_path.pop(0)] # atm it dispenses the letter even after recall
 
 		with final_cmd_lock:
 			global FINAL_CMD
@@ -371,8 +371,8 @@ def move_asynch(chosen_path, state): #all global returns will have to be passed 
 
 def panic_loop():
 	with next_node_lock:
-        speech_lib.panicking()
-        CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
+		speech_lib.panicking()
+		CLIENT.publish("problem", "I panicked next to {}. In need of assistance. Sorry.".format(NEXT_NODE))
 	with final_cmd_lock:
 		global FINAL_CMD
 		FINAL_CMD = []
