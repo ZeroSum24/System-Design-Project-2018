@@ -60,7 +60,6 @@ with open('ip.conf') as f:
 	IP = imp.load_source('ip', '', f).ip
 
 def setup_procedure():
-	speech_lib.set_volume(100)
 	CLIENT.on_connect = on_connect
 	CLIENT.on_message = on_message
 	# TODO do IO exceptions

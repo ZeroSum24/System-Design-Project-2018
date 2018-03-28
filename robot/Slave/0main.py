@@ -22,24 +22,12 @@ def run(*cmd):
     stdout, _ = proc.communicate()
     return stdout
 
-
-# def _camera_picture():
-#     #Camera takes a picture using a command_line subprocess
-#     run("fswebcam -r 200x150 --no-banner image_sent.jpg")
-#
-#     imgpath = "./image_sent.jpg"
-#     with open(imgpath,'rb') as img:
-#         data = img.read();
-#     client.publish("image_processing", payload=data)
-#     # client.publish("image_processing", payload=pickle.dumps(img))
-
 def camera_picture():
     os.system('bash ./take_photo.sh')
     imgpath = "./image_sent.jpg"
     with open(imgpath, 'rb') as img:
         data = img.read()
     client.publish("image_processing", payload=data)
-
 
 def on_connect(client, userdata, flags, rc):
     # print("Connected with result code "+str(rc))
@@ -49,8 +37,6 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("go_manual")
     client.subscribe("image_result")
     client.subscribe("ascii_art_robot")
-
-
 
 def on_message(client, userdata, msg):
     global slot_movement, current_slot, loading, in_automatic
