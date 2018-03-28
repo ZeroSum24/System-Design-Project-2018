@@ -7,7 +7,6 @@ from subprocess import Popen, PIPE
 import time
 from thread_decorator import thread
 import os
-from threading import Timer
 import speech_lib as speech_lib
 import asciiart
 
@@ -44,9 +43,6 @@ def on_message(client, userdata, msg):
         for slot in slots:
             dump(slot)
         client.publish("dump_confirmation", "dumped")
-        client.publish("ascii_art_slave", "delivered")
-        asciiart.mail_delivered()
-        asciiart.delivering_mail()
         #timer = Timer(5, lambda: mqtt.publish("ascii_art_slave","delivering"))
         #timer.start()
 

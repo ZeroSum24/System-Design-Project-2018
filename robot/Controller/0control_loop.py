@@ -107,9 +107,6 @@ def on_message(client, userdata, msg):
 	elif msg.topic == "ascii_art_slave":
 		if msg.payload.decode() == "full":
 			asciiart.full()
-		elif msg.payload.decode() == "delivered":
-			asciiart.mail_delivered()
-			asciiart.delivering_mail()
 
 def generate_named_tuples(lst):
 	new_list = []
