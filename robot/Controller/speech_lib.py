@@ -4,6 +4,7 @@ playmp3 = 'mpg123 -2 '  # standard command to play 2:1 downsample on an mp3 file
 all_slots_full_audio = 'slots_full.mp3' # path to audio file
 envelope_scanned_audio = 'envelope_scanned.mp3'
 deliver_mail_to_audio = 'deliver_mail_to.mp3'
+set_volume(100) # sets volume on importing the module
 
 # audio to play when panicking
 def panicking():
@@ -27,12 +28,10 @@ def envelope_scanned():
     #say_mp3('./speech_lib/scanned.mp3')
     say_text('envelope scanned')
 
-
 def please_insert_envelope():
     #say_mp3('./speech_lib/insert.mp3')
     say_text('Please insert envelope')
 
-#
 def deliver_mail_to():
     #say_mp3('./speech_lib/delivered.mp3')
     #os.system(playmp3 + deliver_mail_to_audio)
@@ -44,14 +43,11 @@ def say_mp3(fname):
 def say_text(text_input):  # read text with espeak
     os.system("espeak '" + text_input + "' --stdout | aplay")
 
-
 def set_volume(percentage):
     os.system('amixer set Playback,0 ' + str(percentage) + '%')
 
-
 def get_volume():
     return os.system('amixer get Playback,0')
-
 
 def beep(frequency, length):
     os.system('beep -f ' + str(frequency) + ' -l ' + str(length))
