@@ -48,7 +48,7 @@ def on_message(client, userdata, msg):
             dump(slot)
         client.publish("dump_confirmation", "dumped")
         client.publish("ascii_art_slave", "delivered")
-        asciiart.mail_delivered_anim()
+        asciiart.mail_delivered()
         asciiart.delivering_mail()
         #timer = Timer(5, lambda: mqtt.publish("ascii_art_slave","delivering"))
         #timer.start()

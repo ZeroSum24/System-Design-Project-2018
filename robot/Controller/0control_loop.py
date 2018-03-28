@@ -71,11 +71,11 @@ def setup_procedure():
 				break
 		#print("spin")
 		time.sleep(2)
+	asciiart.spam()
 	battery_alive_thread()
 	CLIENT.publish("delivery_status", str(State.LOADING))
 
 def on_connect(client, userdata, flags, rc):
-	print(asciiart.spam())
 	client.subscribe("path_direction")
 	client.subscribe("emergency_command")
 	client.subscribe("dump_confirmation")
@@ -108,7 +108,8 @@ def on_message(client, userdata, msg):
 		if msg.payload.decode() == "full":
 			asciiart.full()
 		elif msg.payload.decode() == "delivered":
-			asciiart.mail_delivered_anim()
+	        asciiart.mail_delivered()
+	        asciiart.delivering_mail()
 		elif msg.payload.decode() == "delivering":
 			asciiart.delivering_mail()
 
