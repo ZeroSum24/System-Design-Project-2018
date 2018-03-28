@@ -108,9 +108,7 @@ def on_message(client, userdata, msg):
 		if msg.payload.decode() == "full":
 			asciiart.full()
 		elif msg.payload.decode() == "delivered":
-	        asciiart.mail_delivered()
-	        asciiart.delivering_mail()
-		elif msg.payload.decode() == "delivering":
+			asciiart.mail_delivered()
 			asciiart.delivering_mail()
 
 def generate_named_tuples(lst):
@@ -150,12 +148,13 @@ def control_loop():
 	while True:
 		#print(STATE)
 		if STATE == State.LOADING:
+			asciiart.spam()
 			STATE = loading_loop() # these are going to be blocking
 		elif STATE == State.DELIVERING:
+			asciiart.delivering_mail()
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
 			asciiart.returning()
-			CLIENT.publish("ascii_art_robot", "delivering")
 			get_path(returning=True)
 			STATE = movement_loop() # same function as above
 			if PROFILING:

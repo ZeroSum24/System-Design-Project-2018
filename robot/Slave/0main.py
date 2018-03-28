@@ -8,7 +8,6 @@ import time
 from thread_decorator import thread
 import os
 from threading import Timer
-
 import speech_lib as speech_lib
 import asciiart
 
@@ -31,12 +30,10 @@ def camera_picture():
 
 def on_connect(client, userdata, flags, rc):
     # print("Connected with result code "+str(rc))
-    print(asciiart.spam())
     client.subscribe("dump")
     client.subscribe("delivery_status")
     client.subscribe("go_manual")
     client.subscribe("image_result")
-    client.subscribe("ascii_art_robot")
 
 def on_message(client, userdata, msg):
     global slot_movement, current_slot, loading, in_automatic
@@ -62,6 +59,7 @@ def on_message(client, userdata, msg):
             slot_movement = stop(current_slot)
             # print("done setting up on loading")
             camera_picture()
+            asciiart.spam()
         elif msg.payload.decode() == "State.DELIVERING":
             loading = False
             # print("going back on delivering")
@@ -69,7 +67,8 @@ def on_message(client, userdata, msg):
             # print("done going back on delivering")
             slot_movement = None
             asciiart.delivering_mail()
-            client.publish("ascii_art_slave", "delivering")
+        elif msg.payload.decode() == "State.RETURNING":
+            asciiart.returning()
 
     elif msg.topic == "image_result" and in_automatic == True:
         if msg.payload.decode() == "False":  # test to check if its an int
@@ -108,9 +107,6 @@ def on_message(client, userdata, msg):
             slot_movement = stop(current_slot)
             camera_picture()
 
-    elif msg.topic == "ascii_art_robot":
-        asciiart.returning()
-
 def slot_go_back(wait=True):
     global slot_movement
     try:
@@ -144,6 +140,7 @@ client.on_message = on_message
 client.connect("34.242.137.167", 1883, 60)
 
 reset_dumper()
+asciiart.spam()
 battery_alive_thread()
 # Loop forever.
 client.loop_forever()
