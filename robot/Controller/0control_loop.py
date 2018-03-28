@@ -71,9 +71,9 @@ def setup_procedure():
 				break
 		#print("spin")
 		time.sleep(2)
-	asciiart.spam()
 	battery_alive_thread()
 	CLIENT.publish("delivery_status", str(State.LOADING))
+	asciiart.spam()
 
 def on_connect(client, userdata, flags, rc):
 	client.subscribe("path_direction")

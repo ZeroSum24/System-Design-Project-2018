@@ -5,6 +5,10 @@ all_slots_full_audio = 'slots_full.mp3' # path to audio file
 envelope_scanned_audio = 'envelope_scanned.mp3'
 deliver_mail_to_audio = 'deliver_mail_to.mp3'
 
+def ready_for_loading():
+    #say_mp3('./speech_lib/insert.mp3')
+    say_text('Ready for loading')
+
 # audio to play when panicking
 def panicking():
     #say_mp3('./speech_lib/error.mp3')
