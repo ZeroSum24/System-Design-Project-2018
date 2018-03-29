@@ -112,6 +112,7 @@ def _run_to_stop(pos):
 
 def _motor_setup(motor, pos, speed = 500):
     # solving a wierd bug, where the motor doesn't move w/o this line
+    motor.reset()
     motor.run_timed(speed_sp=500, time_sp=500)
     _run_to_rel_pos(motor, pos, speed, precise = True)
 

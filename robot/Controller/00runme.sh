@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
 {
-exec python3 ./0control_loop.py
+exec python3 -B ./0control_loop.py
 } 2>err.txt

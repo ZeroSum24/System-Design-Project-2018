@@ -54,9 +54,9 @@ def on_message(client, userdata, msg):
             # print("setting up on loading")
             slot_movement = stop(current_slot)
             # print("done setting up on loading")
+            speech_lib.ready_for_loading()
             camera_picture()
             asciiart.spam()
-            #speech_lib.ready_for_loading()
         elif msg.payload.decode() == "State.DELIVERING":
             loading = False
             # print("going back on delivering")
