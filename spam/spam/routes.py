@@ -672,7 +672,7 @@ def state_chat():
     return tell(speech)
 
 @assist.action('User Query')
-def desk_chat(desk):
+def user_chat(desk):
     print (desk)
     speech = ""
     try:
