@@ -23,7 +23,7 @@ class BasicTests(unittest.TestCase):
 
     def logout(self):
         return self.app.get('/logout', follow_redirects=True)
-    
+
     def test_correct_login(self):
         rv = self.login('admin@admin.com', 'default')
         self.assertTrue('Mail Delivery - Automatic Mode' in rv.data.decode())
