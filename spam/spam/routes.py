@@ -164,7 +164,7 @@ def automatic_mode():
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         manual_button_pressed = False
         with start_time_lock:
-            wait_time = 7 - (time() - start_time)
+            wait_time = 14 - (time() - start_time)
         if wait_time < 0:
             wait_time = 0
         timer = Timer(wait_time, lambda: mqtt.publish("go_manual","False"))
