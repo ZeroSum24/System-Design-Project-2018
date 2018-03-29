@@ -7,7 +7,6 @@ from subprocess import Popen, PIPE
 import time
 from thread_decorator import thread
 import os
-from threading import Timer
 
 import speech_lib as speech_lib
 import asciiart
