@@ -44,18 +44,20 @@ routes = [router.build_route(target) for target in targets]
 import paho.mqtt.client as mqtt
 route = []
 
-def on_connect(client, *args):
-    client.subscribe('request_route')
-
+def on_connect(client):
+    client.subscribe("request_route")
+   
 def on_message(client, userdata, msg):
-    if msg.topic == 'request_route':
+    if msg.topic == "request_route":
+        print('Here')
         publish_path_planning(router.return_from(*(msg.payload.decode().split('-'))))
 
 client = mqtt.Client()
-client.on_connect = on_connect
 client.on_message = on_message
+client.on_connect = on_connect
 client.connect('34.242.137.167', 1883, 60)
-client.loop_start()
+if len(sys.argv) > 1:
+    routes = routes[sys.argv[1]:]
 l = len(routes)
 for i, route in enumerate(routes):
     print('Sending route {} of {}'.format(i+1, l))
