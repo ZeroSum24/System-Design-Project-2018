@@ -3,10 +3,7 @@
 import sys
 import itertools as it
 import json
-import paho.mqtt.client as mqtt
-
-client = mqtt.Client()
-client.connect('34.242.137.167', 1883, 60)
+import router
 
 def flatten(gen):
     for seq in gen:
@@ -37,24 +34,33 @@ def publish_path_planning(path_direction):
     path_direction = json.dumps(path_direction)
     client.publish("path_direction", path_direction)
 
-def gen():
-    """Generates the routes (Must be run in the same directory as router.py)"""
-    import router
-    combinations = flatten(it.combinations(names, count)
+combinations = flatten(it.combinations(names, count)
                            for count in range(1, 6))
-    targets = tuple(dict(normalise_nodes(enumerate(nodes))) for nodes in combinations)
-    print(len(targets))
-    print(json.dumps([router.build_route(target) for target in targets]))
+targets = tuple(dict(normalise_nodes(enumerate(nodes))) for nodes in combinations)
+print(len(targets))
+routes = [router.build_route(target) for target in targets]))
 
-def run():
-    with open('routes.txt') as f:
-        routes = json.loads(f.read())
-    l = len(routes)
-    for i, route in enumerate(routes):
-        print('Sending route {} of {}'.format(i+1, l))
-        print('Points visited: {}'.format(extract_points(route)))
-        publish_path_planning(route)
-        input('Press enter to continue')
+
+import paho.mqtt.client as mqtt
+route = []
+
+def on_connect(client):
+    client.subscribe('request_route')
+   
+def on_message(client, userdata, msg):
+    if msg.topic == 'request_route':
+        publish_path_planning(router.return_from(*(msg.payload.decode().split('-'))))
+
+client = mqtt.Client()
+client.on_message = on_message
+client.on_connect = on_connect
+client.connect('34.242.137.167', 1883, 60)
+l = len(routes)
+for i, route in enumerate(routes):
+    print('Sending route {} of {}'.format(i+1, l))
+    print('Points visited: {}'.format(extract_points(route)))
+    publish_path_planning(route)
+    input('Press enter to continue')
 
 if __name__ == '__main__':
     #gen()
