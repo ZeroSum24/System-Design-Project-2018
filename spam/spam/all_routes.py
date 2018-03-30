@@ -56,6 +56,7 @@ client = mqtt.Client()
 client.on_message = on_message
 client.on_connect = on_connect
 client.connect('34.242.137.167', 1883, 60)
+client.loop_start()
 if len(sys.argv) > 1:
     routes = routes[int(sys.argv[1]):]
 l = len(routes)
