@@ -5,6 +5,9 @@ import itertools as it
 import json
 import paho.mqtt.client as mqtt
 
+client = mqtt.Client()
+client.connect('34.242.137.167', 1883, 60)
+
 def flatten(gen):
     for seq in gen:
         if iter(seq):
@@ -32,7 +35,7 @@ def extract_points(route):
 
 def publish_path_planning(path_direction):
     path_direction = json.dumps(path_direction)
-    mqtt.publish("path_direction", path_direction)
+    client.publish("path_direction", path_direction)
 
 def gen():
     """Generates the routes (Must be run in the same directory as router.py)"""
