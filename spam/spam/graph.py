@@ -13,7 +13,6 @@ for _ in range(2):
         chdir("./spam")
     except FileNotFoundError:
         pass
-print(__import__('os').getcwd())
 _COBJ = cdll.LoadLibrary('./libgraph.so')
 
 class Edge:
