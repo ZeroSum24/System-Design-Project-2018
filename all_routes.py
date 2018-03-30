@@ -38,7 +38,7 @@ combinations = flatten(it.combinations(names, count)
                            for count in range(1, 6))
 targets = tuple(dict(normalise_nodes(enumerate(nodes))) for nodes in combinations)
 print(len(targets))
-routes = [router.build_route(target) for target in targets]))
+routes = [router.build_route(target) for target in targets]
 
 
 import paho.mqtt.client as mqtt
@@ -49,6 +49,7 @@ def on_connect(client):
    
 def on_message(client, userdata, msg):
     if msg.topic == 'request_route':
+        print('Here')
         publish_path_planning(router.return_from(*(msg.payload.decode().split('-'))))
 
 client = mqtt.Client()
