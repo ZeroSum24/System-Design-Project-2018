@@ -11,3 +11,11 @@ docs.spamrobot.ml {
 mail.spamrobot.ml {
 	redir https://box.spamrobot.ml/mail
 }
+
+video.spamrobot.ml {
+	redir https://youtu.be/sAY5aTNjrt8
+}
+
+admin.spamrobot.ml {
+	redir https://box.spamrobot.ml/admin
+}
