@@ -556,7 +556,7 @@ def connection_chat():
         speech = "Brick 30 is connected, however brick 10 is disconnected."
 
     elif connection_status_2 and not connection_status:
-        speech = "Brick 10 is connectedm however brick 30 is disconnected."
+        speech = "Brick 10 is connected, however brick 30 is disconnected."
     else:
         speech = "Both bricks are disconnected."
 
