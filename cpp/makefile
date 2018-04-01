@@ -13,7 +13,6 @@ CFLAGS = -Wall -std=c++11 -fPIC
 # Travis needs different includes
 INCLUDES = -I./include/
 ifeq ($(MAKECMDGOALS),travis-build)
-$(shell echo "Here")
 INCLUDES += -I/usr/include/python3.4m/
 else
 INCLUDES += -I/usr/include/python3.5m/
