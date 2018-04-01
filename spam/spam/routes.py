@@ -579,7 +579,7 @@ def deliver_yes_chat(user):
                 if user:
                     desk = None
                     try:
-                        desk = Staff.query.filter(Staff.name == user).one().staff.map_node
+                        desk = Staff.query.filter(user in Staff.name).one().staff.map_node
                     except:
                         speech = "I couldn't find user {} in the system.".format(user)
                         return tell(speech)
@@ -616,7 +616,7 @@ def desk_chat(user):
     print (user)
     speech = ""
     try:
-        desk = Staff.query.filter(Staff.name == user).one().staff.location_name
+        desk = Staff.query.filter(user in Staff.name).one().staff.location_name
         speech = "{} works in {}.".format(user, desk)
         return tell(speech)
     except:
