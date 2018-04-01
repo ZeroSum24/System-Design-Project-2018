@@ -39,7 +39,7 @@ travis-test: test
 
 # Generic python target, $@ becomes filename
 .PHONY: $(PY_TEST_FILES)
-$(PY_TEST_FILES):
+$(PY_TEST_FILES): ubuntu
 	python3 $@
 
 # Dispatch to source specific cleaners

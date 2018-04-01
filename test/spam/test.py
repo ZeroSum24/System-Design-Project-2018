@@ -2,13 +2,27 @@ import unittest
 
 import sys
 from pathlib import Path
-from itertools import chain
-sys.path.extend(tuple(chain(map(str, Path.cwd().glob('spam')), map(str, Path.cwd().glob('spam/spam')))))
+import os
+import shutil as sh
+start_dir = Path.cwd()
+test_db_dir = next(start_dir.glob('**/test/Databases'))
+spam_dirs = tuple(start_dir.glob('**/spam'))
+sys.path.extend(tuple(map(str, spam_dirs)))
 import spam
 
 class BasicTests(unittest.TestCase):
 
+    @staticmethod
+    def setUpClass():
+        orig_db = str(spam_dirs[0]/'spam.db')
+        if os.path.isfile(orig_db):
+            saved_db = str(test_db_dir/'spam.db.orig')
+            os.rename(orig_db, saved_db)
+    
     def setUp(self):
+        live_db = str(spam_dirs[0]/'spam.db')
+        test_db = str(test_db_dir/'test.db')
+        sh.copy(test_db, live_db)
         spam.spam.testing = True
         self.app = spam.spam.test_client()
 
