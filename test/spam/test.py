@@ -61,6 +61,30 @@ class BasicTests(unittest.TestCase):
     def test_logout_without_login(self):
         rv = self.logout()
         self.assertTrue('Login - Spam' in rv.data.decode())
+        
+    def test_access_automode(self):
+        rv = self.app.get('/auto_view')
+        self.assertTrue('Mail Delivery - Automatic Mode' in rv.data.decode())
+        
+    def test_access_manualmode(self):
+        rv = self.app.get('/view')
+        self.assertTrue('Mail Delivery - Manual Mode' in rv.data.decode())
+        
+    def test_access_notifications(self):
+        rv = self.app.get('/notifications')
+        self.assertTrue('You have no notifications to solve!' in rv.data.decode())
+        
+    def test_access_settings(self):
+        rv = self.app.get('/settings', follow_redirects=True)
+        self.assertTrue(' Welcome to the Administration Page! ' in rv.data.decode())
+        
+    def test_access_report(self):
+        rv = self.app.get('/report')
+        self.assertTrue('Report Problem' in rv.data.decode())
+        
+    def test_access_status(self):
+        rv = self.app.get('/status')
+        self.assertTrue('Status -- Information' in rv.data.decode())
 
 if __name__ == '__main__':
     unittest.main()
