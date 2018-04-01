@@ -18,6 +18,13 @@ class BasicTests(unittest.TestCase):
         if os.path.isfile(orig_db):
             saved_db = str(test_db_dir/'spam.db.orig')
             os.rename(orig_db, saved_db)
+
+    @staticmethod
+    def tearDownClass():
+        orig_db = str(spam_dirs[0]/'spam.db')
+        saved_db = str(test_db_dir/'spam.db.orig')
+        if os.path.isfile(saved_db):
+            os.rename(saved_db, orig_db)
     
     def setUp(self):
         live_db = str(spam_dirs[0]/'spam.db')
