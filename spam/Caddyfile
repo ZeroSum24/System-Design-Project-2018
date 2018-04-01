@@ -12,7 +12,7 @@ mail.spamrobot.ml {
 	redir https://box.spamrobot.ml/mail
 }
 
-video.spamrobot.ml {
+video.spamrobot.ml, movie.spamrobot.ml, film.spamrobot.ml {
 	redir https://youtu.be/sAY5aTNjrt8
 }
 
