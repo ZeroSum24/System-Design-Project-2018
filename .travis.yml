@@ -3,4 +3,4 @@ python:
   - "3.5"
 script:
   - make clean
-  - make travis-test
+  - make test
