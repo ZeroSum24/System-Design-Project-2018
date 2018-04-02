@@ -108,6 +108,10 @@ def return_from(start, direction):
 def build_route(points):
     # Avoid mutating the argument
     points = dict(points)
+    if 'X' in points or 'Y' in points:
+        tol = 0
+    else:
+        tol = 30
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
@@ -135,14 +139,14 @@ def build_route(points):
             # Rotate to the correct angle to exit relative to where we are
             # currently facing
             route.append(Report('{}-{}'.format(src, facing)))
-            route.append(Rotate((src_ang-facing)%360, 30))
+            route.append(Rotate((src_ang-facing)%360, tol))
             # Report reaching the source node
             route.append(Report('{}-{}'.format(src, src_ang)))
             # Calculate the direction we will be facing upon reaching the next
             # node
             facing = (dest_ang + 180) % 360
             # Move move the required distance down the line
-            route.append(Move(dist, 30))
+            route.append(Move(dist, tol))
             route.append(Report('{}-{}'.format(dest, facing)))
         dist, src_ang, dest_ang = _get_edge_stats(start, desk)
         # Will be 90 for right and 270 for left
