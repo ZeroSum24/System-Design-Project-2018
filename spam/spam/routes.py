@@ -164,7 +164,7 @@ def automatic_mode():
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
         manual_button_pressed = False
         with start_time_lock:
-            wait_time = 7 - (time() - start_time)
+            wait_time = 14 - (time() - start_time)
         if wait_time < 0:
             wait_time = 0
         timer = Timer(wait_time, lambda: mqtt.publish("go_manual","False"))
@@ -556,7 +556,7 @@ def connection_chat():
         speech = "Brick 30 is connected, however brick 10 is disconnected."
 
     elif connection_status_2 and not connection_status:
-        speech = "Brick 10 is connectedm however brick 30 is disconnected."
+        speech = "Brick 10 is connected, however brick 30 is disconnected."
     else:
         speech = "Both bricks are disconnected."
 
@@ -579,7 +579,7 @@ def deliver_yes_chat(user):
                 if user:
                     desk = None
                     try:
-                        desk = Staff.query.filter(Staff.name == user).one().staff.map_node
+                        desk = Staff.query.filter(Staff.name.ilike(user)).one().staff.map_node
                     except:
                         speech = "I couldn't find user {} in the system.".format(user)
                         return tell(speech)
@@ -616,7 +616,7 @@ def desk_chat(user):
     print (user)
     speech = ""
     try:
-        desk = Staff.query.filter(Staff.name == user).one().staff.location_name
+        desk = Staff.query.filter(Staff.name.ilike(user)).one().staff.location_name
         speech = "{} works in {}.".format(user, desk)
         return tell(speech)
     except:
@@ -672,7 +672,7 @@ def state_chat():
     return tell(speech)
 
 @assist.action('User Query')
-def desk_chat(desk):
+def user_chat(desk):
     print (desk)
     speech = ""
     try:

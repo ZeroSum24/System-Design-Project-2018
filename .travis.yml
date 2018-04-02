@@ -1,6 +1,11 @@
 language: python
 python:
   - "3.5"
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y mosquitto libzbar-dev libdmtx0a
+
 script:
   - make clean
-  - make travis-test
+  - make test

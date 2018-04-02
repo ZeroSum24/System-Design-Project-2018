@@ -74,21 +74,24 @@ def _to_tuple(instruction):
         return ('Dump', instruction.slots)
 
 def return_from(start, direction):
+    if start == 'Z' or start == 'Y':
+        print('Here')
+        tol = 0
+    else:
+        tol = 30
+    print(tol)
     nodes = _GRAPH.route(start, 'S')
     route = []
     facing = int(direction)
     for src, dest in _pairwise(nodes):
         dist, src_ang, dest_ang = _get_edge_stats(src, dest)
         route.append(Report('{}-{}'.format(src, facing)))
-        print(facing)
-        print(src_ang)
-        print('')
-        route.append(Rotate((src_ang-facing)%360, 30))
+        route.append(Rotate((src_ang-facing)%360, tol))
         route.append(Report('{}-{}'.format(src, src_ang)))
         facing = (dest_ang + 180) % 360
-        route.append(Move(dist, 30))
+        route.append(Move(dist, tol))
         route.append(Report('{}-{}'.format(dest, facing)))
-    route.append((Rotate(facing, 30)))
+    route.append((Rotate(facing, tol)))
     route.append(Report('S-0'))
     to_remove = set()
     for instruction in route:
@@ -111,6 +114,7 @@ def return_from(start, direction):
 def build_route(points):
     # Avoid mutating the argument
     points = dict(points)
+    tol = 30
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
@@ -118,14 +122,17 @@ def build_route(points):
     # Always start facing 0 degrees
     facing = 0
     while points:
+        print(points)
         # Pair start with every point (Zip on a dict uses the keys)
         pairs = zip(start * len(points), points)
         # Plot the route for each pair and select the minimum path using
         # _path_dist as a metric
         nodes = min((_GRAPH.route(*pair) for pair in pairs), key=_path_dist)
+        print(nodes)
         # This path will end at a desk, the node before that is the point on the
         # line that the robot will end up at after it's finished dumping
         start = nodes[-2]
+        print('Here')
         desk = nodes[-1]
         route = []
         # For each edge in the route (Not counting the desk)
@@ -135,14 +142,14 @@ def build_route(points):
             # Rotate to the correct angle to exit relative to where we are
             # currently facing
             route.append(Report('{}-{}'.format(src, facing)))
-            route.append(Rotate((src_ang-facing)%360, 30))
+            route.append(Rotate((src_ang-facing)%360, tol))
             # Report reaching the source node
             route.append(Report('{}-{}'.format(src, src_ang)))
             # Calculate the direction we will be facing upon reaching the next
             # node
             facing = (dest_ang + 180) % 360
             # Move move the required distance down the line
-            route.append(Move(dist, 30))
+            route.append(Move(dist, tol))
             route.append(Report('{}-{}'.format(dest, facing)))
         dist, src_ang, dest_ang = _get_edge_stats(start, desk)
         # Will be 90 for right and 270 for left
