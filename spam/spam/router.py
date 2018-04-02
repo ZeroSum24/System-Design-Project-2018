@@ -74,18 +74,24 @@ def _to_tuple(instruction):
         return ('Dump', instruction.slots)
 
 def return_from(start, direction):
+    if start == 'Z' or start == 'Y':
+        print('Here')
+        tol = 0
+    else:
+        tol = 30
+    print(tol)
     nodes = _GRAPH.route(start, 'S')
     route = []
     facing = int(direction)
     for src, dest in _pairwise(nodes):
         dist, src_ang, dest_ang = _get_edge_stats(src, dest)
         route.append(Report('{}-{}'.format(src, facing)))
-        route.append(Rotate((src_ang-facing)%360, 30))
+        route.append(Rotate((src_ang-facing)%360, tol))
         route.append(Report('{}-{}'.format(src, src_ang)))
         facing = (dest_ang + 180) % 360
-        route.append(Move(dist, 30))
+        route.append(Move(dist, tol))
         route.append(Report('{}-{}'.format(dest, facing)))
-    route.append((Rotate(facing, 30)))
+    route.append((Rotate(facing, tol)))
     route.append(Report('S-0'))
     to_remove = set()
     for instruction in route:
@@ -108,10 +114,7 @@ def return_from(start, direction):
 def build_route(points):
     # Avoid mutating the argument
     points = dict(points)
-    if 'X' in points or 'Y' in points:
-        tol = 0
-    else:
-        tol = 30
+    tol = 30
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
