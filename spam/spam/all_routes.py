@@ -44,7 +44,7 @@ routes = [router.build_route(target) for target in targets]
 import paho.mqtt.client as mqtt
 route = []
 
-def on_connect(client):
+def on_connect(client, *args):
     client.subscribe("request_route")
    
 def on_message(client, userdata, msg):
