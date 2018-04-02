@@ -174,7 +174,7 @@ def _parse_to_omega(left_motor, right_motor):
     result = abs(_omega(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER) * 180 / pi)
     return result
 
-def _detect_color(color=Colors.BLACK):
+def _detect_color(color=Colors.GREEN):
     return read_color() is color
 
 def get_odometry(rotating=False):
@@ -282,7 +282,7 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
     motors -- The motors available for use, intended for dependency injection.
     """
 
-    global _last_error
+    #global _last_error
     global _integral
 
     try:
@@ -292,16 +292,15 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
         raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
 
     error = _TARGET - (100 * (ref_read - _MINREF) / (_MAXREF - _MINREF))
-    derivative = (error - _last_error) / delta_time
-    _last_error = error
+    #derivative = (error - _last_error) / delta_time
+    #_last_error = error
     _integral = 0.5 * _integral + error
-    course = _KP * error - _KD * derivative + _KI * _integral * delta_time
+    course = _KP * error + _KI * _integral * delta_time #- _KD * derivative
 
     motors_with_speeds = zip([lefty, righty, front, back],
                              pid_speeds(course, _DEFAULT_RUN_SPEED, _WHEEL_CIRCUM, _ROBOT_DIAMETER))
     for (motor, speed) in motors_with_speeds:
         run_motor(motor, speed)
-    #time.sleep(0.00)
 
 ### End PID ###
 
@@ -376,8 +375,8 @@ def forward(dist, tolerance=50, junction_type=Junctions.DESK, correction=True):
                 stop_motors()
                 raise SonarDisconnectedError('Sonar disconnected')
 
-            if _PID_CALIBRATION:
-                btn.process()
+            #if _PID_CALIBRATION:
+            #    btn.process()
 
             delta_time = time.time() - previous_time
             previous_time = time.time()
@@ -387,7 +386,7 @@ def forward(dist, tolerance=50, junction_type=Junctions.DESK, correction=True):
             traveled = _parse_by_average(odometer_readings)
 
             try:
-                junction_marker = _detect_color(search_color)
+                junction_marker = read_color() is Colors.GREEN #_detect_color(search_color)
             except EXCEPTIONS:
                 stop_motors()
                 raise ColorDisconnectedError('Color sensor disconnected')

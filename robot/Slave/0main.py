@@ -7,7 +7,6 @@ from subprocess import Popen, PIPE
 import time
 from thread_decorator import thread
 import os
-
 import speech_lib as speech_lib
 import asciiart
 
@@ -21,17 +20,6 @@ def run(*cmd):
     stdout, _ = proc.communicate()
     return stdout
 
-
-# def _camera_picture():
-#     #Camera takes a picture using a command_line subprocess
-#     run("fswebcam -r 200x150 --no-banner image_sent.jpg")
-#
-#     imgpath = "./image_sent.jpg"
-#     with open(imgpath,'rb') as img:
-#         data = img.read();
-#     client.publish("image_processing", payload=data)
-#     # client.publish("image_processing", payload=pickle.dumps(img))
-
 def camera_picture():
     os.system('bash ./take_photo.sh')
     imgpath = "./image_sent.jpg"
@@ -39,17 +27,12 @@ def camera_picture():
         data = img.read()
     client.publish("image_processing", payload=data)
 
-
 def on_connect(client, userdata, flags, rc):
     # print("Connected with result code "+str(rc))
-    print(asciiart.spam())
     client.subscribe("dump")
     client.subscribe("delivery_status")
     client.subscribe("go_manual")
     client.subscribe("image_result")
-    client.subscribe("ascii_art_robot")
-
-
 
 def on_message(client, userdata, msg):
     global slot_movement, current_slot, loading, in_automatic
@@ -60,9 +43,6 @@ def on_message(client, userdata, msg):
         for slot in slots:
             dump(slot)
         client.publish("dump_confirmation", "dumped")
-        client.publish("ascii_art_slave", "delivered")
-        asciiart.mail_delivered_anim()
-        asciiart.delivering_mail()
         #timer = Timer(5, lambda: mqtt.publish("ascii_art_slave","delivering"))
         #timer.start()
 
@@ -74,7 +54,9 @@ def on_message(client, userdata, msg):
             # print("setting up on loading")
             slot_movement = stop(current_slot)
             # print("done setting up on loading")
+            speech_lib.ready_for_loading()
             camera_picture()
+            asciiart.spam()
         elif msg.payload.decode() == "State.DELIVERING":
             loading = False
             # print("going back on delivering")
@@ -82,7 +64,8 @@ def on_message(client, userdata, msg):
             # print("done going back on delivering")
             slot_movement = None
             asciiart.delivering_mail()
-            client.publish("ascii_art_slave", "delivering")
+        elif msg.payload.decode() == "State.RETURNING":
+            asciiart.returning()
 
     elif msg.topic == "image_result" and in_automatic == True:
         if msg.payload.decode() == "False":  # test to check if its an int
@@ -120,9 +103,6 @@ def on_message(client, userdata, msg):
             current_slot = 1
             slot_movement = stop(current_slot)
             camera_picture()
-
-    elif msg.topic == "ascii_art_robot":
-        asciiart.returning()
 
 def slot_go_back(wait=True):
     global slot_movement

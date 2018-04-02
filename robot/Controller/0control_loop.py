@@ -60,12 +60,11 @@ with open('ip.conf') as f:
 	IP = imp.load_source('ip', '', f).ip
 
 def setup_procedure():
-	speech_lib.set_volume(100)
 	CLIENT.on_connect = on_connect
 	CLIENT.on_message = on_message
 	# TODO do IO exceptions
 	CLIENT.connect(IP, 1883, 60)
-	instruction_thread()
+	CLIENT.loop_start()#instruction_thread()
 	while True:
 		with second_brick_alive_lock:
 			if SECOND_BRICK_ALIVE == True:
@@ -76,7 +75,6 @@ def setup_procedure():
 	CLIENT.publish("delivery_status", str(State.LOADING))
 
 def on_connect(client, userdata, flags, rc):
-	print(asciiart.spam())
 	client.subscribe("path_direction")
 	client.subscribe("emergency_command")
 	client.subscribe("dump_confirmation")
@@ -108,10 +106,6 @@ def on_message(client, userdata, msg):
 	elif msg.topic == "ascii_art_slave":
 		if msg.payload.decode() == "full":
 			asciiart.full()
-		elif msg.payload.decode() == "delivered":
-			asciiart.mail_delivered_anim()
-		elif msg.payload.decode() == "delivering":
-			asciiart.delivering_mail()
 
 def generate_named_tuples(lst):
 	new_list = []
@@ -130,9 +124,9 @@ def generate_named_tuples(lst):
 			new_list.append(FromDesk(listee[1], listee[2], listee[3]))
 	return new_list
 
-@thread
-def instruction_thread():
-	CLIENT.loop_forever()
+# @thread
+# def instruction_thread():
+# 	CLIENT.loop_forever()
 
 @thread
 def battery_alive_thread():
@@ -150,12 +144,13 @@ def control_loop():
 	while True:
 		#print(STATE)
 		if STATE == State.LOADING:
+			asciiart.spam()
 			STATE = loading_loop() # these are going to be blocking
 		elif STATE == State.DELIVERING:
+			asciiart.delivering_mail()
 			STATE = movement_loop()
 		elif STATE == State.RETURNING:
 			asciiart.returning()
-			CLIENT.publish("ascii_art_robot", "delivering")
 			get_path(returning=True)
 			STATE = movement_loop() # same function as above
 			if PROFILING:
@@ -205,28 +200,24 @@ def check_state(current_state):
 			return None
 
 def movement_loop():
-	moving_flag = False
-	move_thread = None
 	with STATE_QUEUE.mutex:
 		STATE_QUEUE.clear()
+
+	global FINAL_CMD
+	with final_cmd_lock, chosen_path_lock:
+		chosen_path = FINAL_CMD + CHOSEN_PATH
+		FINAL_CMD = []
+	with state_resumed_lock:
+		global STATE_RESUMED
+		STATE_RESUMED = STATE
+	move_thread = move_asynch(chosen_path, STATE)
+
 	while True:
+		time.sleep(0.3)
 		new_state = check_state(STATE)
 		if new_state != None:
-			if move_thread is not None:
-				move_thread.stop()
+			move_thread.stop()
 			return new_state
-
-		if not moving_flag:
-			moving_flag = True
-			global FINAL_CMD
-			with final_cmd_lock, chosen_path_lock:
-				chosen_path = FINAL_CMD + CHOSEN_PATH
-				FINAL_CMD = []
-			with state_resumed_lock:
-				global STATE_RESUMED
-				STATE_RESUMED = STATE
-			move_thread = move_asynch(chosen_path, STATE)
-
 
 @thread
 def move_asynch(chosen_path, state): #all global returns will have to be passed in queues
