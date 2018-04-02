@@ -115,14 +115,17 @@ def build_route(points):
     # Always start facing 0 degrees
     facing = 0
     while points:
+        print(points)
         # Pair start with every point (Zip on a dict uses the keys)
         pairs = zip(start * len(points), points)
         # Plot the route for each pair and select the minimum path using
         # _path_dist as a metric
         nodes = min((_GRAPH.route(*pair) for pair in pairs), key=_path_dist)
+        print(nodes)
         # This path will end at a desk, the node before that is the point on the
         # line that the robot will end up at after it's finished dumping
         start = nodes[-2]
+        print('Here')
         desk = nodes[-1]
         route = []
         # For each edge in the route (Not counting the desk)
