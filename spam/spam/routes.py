@@ -361,6 +361,7 @@ def on_message(client, userdata, msg):
             print("Returning")
         elif delivery_status == "State.LOADING":
             current_slot = 1
+            emit_to_auto_status('Please insert first letter')
             go_button_pressed = False
             print("Loading")
         print("delivery_status updated")
