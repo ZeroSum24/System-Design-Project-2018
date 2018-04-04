@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# This file is probably never used
+
 class Instruction():
     pass
 

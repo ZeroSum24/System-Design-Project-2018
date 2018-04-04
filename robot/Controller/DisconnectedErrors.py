@@ -4,7 +4,7 @@
 EXCEPTIONS = (OSError, FileNotFoundError)
 
 class DisconnectedError(Exception):
-    """Can be raises when a component disconnects"""
+    """Can be raised when a component disconnects"""
 
 class MotorDisconnectedError(DisconnectedError):
     """A Motor has disconnected"""

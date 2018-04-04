@@ -1,5 +1,6 @@
 import os
 
+# Unused?
 playmp3 = 'mpg123 -2 '  # standard command to play 2:1 downsample on an mp3 file
 all_slots_full_audio = 'slots_full.mp3' # path to audio file
 envelope_scanned_audio = 'envelope_scanned.mp3'

@@ -25,17 +25,19 @@ def pid_speeds(course, speed, wheel_circum, robot_diameter):
 
     return [int(speed_left), int(speed_right), int(speed_front), int(speed_back)]
 
-def _d_deg(wheel_circum): # distance traveled per degree by a wheel
+# Distance traveled per degree by a wheel
+def _d_deg(wheel_circum):
     return wheel_circum/360
 
-def _dist(velocity, wheel_circum): # distance traveled by each wheel per second in cm
+# Distance traveled by each wheel per second in cm
+def _dist(velocity, wheel_circum):
     return velocity * _d_deg(wheel_circum)
 
 # The difference in distance traveled by the left and right wheels in cm
 def _diff_in_dist(vel_left, vel_right, wheel_circum):
     return _dist(vel_left, wheel_circum) - _dist(vel_right, wheel_circum)
 
-# angle of base rotation per second in radians
+# Angle of base rotation per second in radians
 def _omega(vel_left, vel_right, wheel_circum, robot_diameter):
     return _diff_in_dist(vel_left, vel_right, wheel_circum)/robot_diameter
 
@@ -43,25 +45,24 @@ def _omega(vel_left, vel_right, wheel_circum, robot_diameter):
 def _IC_dist(vel_left, vel_right, robot_diameter):
     return (robot_diameter/2)*((vel_right + vel_left)/(vel_right - vel_left))
 
+# Result of rotating the vector defined by IC_dist through omega in euclidian
+# space, only the x coordinate is required in cm (robot_diameter/2 is the
+# original y coordinate)
 def _omega_to_axis(vel_left, vel_right, wheel_circum, robot_diameter):
-    # Result of rotating the vector defined by IC_dist through omega
-    # in euclidian space, only the x coordinate is required in cm
-    # (L/2 is the original y coordinate)
     angle = _omega(vel_left, vel_right, wheel_circum, robot_diameter)
     result = _IC_dist(vel_left, vel_right, robot_diameter) * cos(angle)
     result -= robot_diameter/2 * sin(angle)
     return result
 
-# change is x coordinate is how far the front wheel must move perpendicular to
+# Change is x coordinate is how far the front wheel must move perpendicular to
 # the direction of travel (cm)
 def _delta(vel_left, vel_right, wheel_circum, robot_diameter):
     start = _IC_dist(vel_left, vel_right, robot_diameter)
     end = _omega_to_axis(vel_left, vel_right, wheel_circum, robot_diameter)
     return start - end
 
+# The number of degrees the front and back wheels must move through in a second.
 def _delta_deg(vel_left, vel_right, wheel_circum, robot_diameter):
-    """The number of degrees the front and back wheels must move through in a
-    second."""
     if abs(vel_left-vel_right) > 3: # avoiding division by 0 in _IC_dist
         return 360 * _delta(vel_left, vel_right, wheel_circum, robot_diameter)/wheel_circum
     else:
