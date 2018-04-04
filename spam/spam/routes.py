@@ -25,8 +25,8 @@ from flask_mail import Message
 mqtt = Mqtt(spam)
 db = SQLAlchemy(spam)
 
-# First brick is BRICK 30 #TODO check these numbers are correct
-# Second brick (extension _2) is BRICK 10
+# First brick is BRICK 30
+# Second brick is BRICK 10
 
 
 # GLOBAL VARIABLES
@@ -154,8 +154,10 @@ def notifications():
     global battery_info_volts
     global battery_info_volts_2
     zero_unseen_notification()
+
+    # Covers when the receptionist clicks on the notification, setting it to
+    # be solved on a click
     signal_to_solve = request.args.get('solve_id', default = -1, type = int)
-    #TODO figure out/ask what signal_to_solve is doing
     if signal_to_solve != -1:
         problem_to_solve = db.session.query(Problem).filter(Problem.id == signal_to_solve).one()
         problem_to_solve.solved = True
@@ -198,7 +200,7 @@ def automatic_mode():
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
             if connection_status:
-                mqtt.publish("emergency_command",command) #TODO why is this not publish_emergency_commands ?
+                mqtt.publish("emergency_command",command)
 
         return render_template('automode.html', min_battery_level=min_battery_level, people=get_people_list(), active="Mail Delivery", unseen_notifications=get_unseen_notification(), battery_level_2=battery_calculate(battery_info_volts_2), battery_level=battery_calculate(battery_info_volts), connection_status=connection_status, connection_status_2=connection_status_2, delivery_status=delivery_status, last_auto_state=last_auto_state)
     else:
@@ -221,7 +223,8 @@ def automatic_mode():
             # Case where when no parcel  is selected
             pass
 
-        # TODO what is this doing?
+        # Colates the information about which desks the robot will visit for
+        # the confirmation page
         for node in path_planning.keys():
             submit.append(Location.query.filter(Location.map_node == node).one())
 
@@ -311,7 +314,7 @@ def mail_delivery():
         command = request.args.get('emergency_command', default = "", type = str)
         if command != "":
             if connection_status:
-                mqtt.publish("emergency_command",command) #TODO why not publish_emergency_commands ?
+                mqtt.publish("emergency_command",command)
 
         min_battery_level = min(battery_calculate(battery_info_volts), battery_calculate(battery_info_volts_2))
 
@@ -328,7 +331,8 @@ def report():
     if request.method == 'POST':
       # The case where the report form has updated with information and sent
 
-      # #TODO update based on information about try catch block
+      # Checks whether the staff member is part of the office based on their
+      # form added email address
       try:
         origin= Staff.query.filter_by(email = request.form['email_problem']).one()
       except:
@@ -374,7 +378,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("image_processing")
     client.subscribe("battery_info_volts_2")
 
-    # Resets the robot's classifier. #TODO why was this added?
+    # Resets the robot's classifier for when the brick disconnects
     print("Resetting the classifier")
     mqtt.publish("go_manual", "True")
     mqtt.publish("go_manual", "False")
@@ -389,11 +393,15 @@ def on_message(client, userdata, msg):
     global path_planning_result, location_info, path_planning, current_slot, go_button_pressed, manual_button_pressed, recipients
 
     if msg.topic == "location_info":
-        # Updates the #TODO ask for better description
+        # Allows the server to keep up-to-date with the robot's location and
+        # delivery progress
         with location_info_lock:
             global qnt_delivered
             location_info = msg.payload.decode()
             instruction_info = path_planning_result.pop(0)
+            # Updates the known location for the server when the instruction
+            # "Report" has been selected and if the Dump command is called in
+            # that time it updates the amount of letters which have been dumped
             while instruction_info[0] != "Report":
                 if instruction_info[0] == "Dump":
                     qnt_delivered = qnt_delivered + len(instruction_info[1])
@@ -453,8 +461,10 @@ def on_message(client, userdata, msg):
         print("Problem reported by robot.")
 
     elif msg.topic == "request_route":
-        # When the robot requests the route it is to follow the robot publishes
-        # the path planning TODO
+        # When the robot requests the route it feeds the collected path_planning
+        # nodes into the router module to calculate the optimal path plan for robot
+        # which is then published to the robot
+
         print("Requested Route")
         with location_info_lock:
             print("Received Location:")
@@ -527,7 +537,7 @@ def on_message(client, userdata, msg):
                     map_node_of_location = Location.query.filter(Location.id == location_read).one().map_node
 
                     # Adds the user's email for later notification
-                    recipients.append(user_read.email); #TODO ask about how this is handled, exception should also be raised if there is not email
+                    recipients.append(user_read.email);
 
                     # Updates the path planning with users location checking
                     # if their location has been added already or not
@@ -613,8 +623,8 @@ def publish_emergency_commands(emergency_command):
     global path_planning_result
 
     if emergency_command == 'Callback':
-        # if the command is a Callback it locks the location information whilst
-        # it works out the route for the robot to return back to base TODO check this
+        # If the command is a Callback it locks the location information whilst
+        # it works out the route for the robot to return back to base
         with location_info_lock:
             global location_info
             instruction = path_planning_result.pop(0)
@@ -711,20 +721,26 @@ def connection_chat():
 
     return tell(speech)
 
-#TODO: IMPLEMENT  --ask about this
 @assist.action('Deliver Mail - yes')
 def deliver_yes_chat(user):
+    # Function is used to set check the robot has the correct state to begin
+    # delivering after updating the path_planning with the parcel information
     global delivery_status, manual_button_pressed, connection_status
     print (user)
     if not connection_status:
+        # Checks the robot is connected
         speech = "Spam is not connected"
     else:
         if delivery_status != "State.LOADING":
+            # Checks the robot is in a loading state and not already delivering
             speech = "Spam is not in loading mode"
         else:
             if manual_button_pressed:
+                # Checks that the interface is in automatic mode
                 speech = "Spam has to be in automatic mode"
             else:
+                # Adds the parcel information to the path_planning and calls the
+                # path_planning processing
                 if user:
                     desk = None
                     try:
@@ -835,7 +851,7 @@ def state_chat():
         speech = "I couldn't find the robot's state."
     return tell(speech)
 
-@assist.action('User Query') #TODO ask why this is not Desk rather than User query when it handles queries relating to the desk variable and the other handles user variable
+@assist.action('User Query')
 def user_chat(desk):
     # Function which returns information about stored user values in the database
     print (desk)
