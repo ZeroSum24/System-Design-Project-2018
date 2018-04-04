@@ -9,6 +9,7 @@ from flask_socketio import SocketIO
 from flask_assistant import Assistant, ask, tell
 from flask_mail import Mail
 
+# Initiation
 spam = Flask(__name__)
 spam.config.from_object(Config)
 db = SQLAlchemy(spam)
@@ -16,9 +17,11 @@ migrate = Migrate(spam, db)
 admin = Admin(spam, name='Settings', template_mode='bootstrap3')
 socketio = SocketIO(spam)
 from spam.models import Staff, Location, Problem
+# Admin page setup
 admin.add_view(ModelView(Staff, db.session))
 admin.add_view(ModelView(Problem, db.session))
 admin.add_view(ModelView(Location, db.session))
+# Assistant and Email declaration
 assist = Assistant(spam, route='/fulfillment')
 mail = Mail(spam)
 

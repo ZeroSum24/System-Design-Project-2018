@@ -26,6 +26,7 @@ class Staff(db.Model):
     def __repr__(self):
         return '<Staff %r>' % (self.name)
 
+# Locations in the map
 class Location(db.Model):
     __tablename__ = 'location'
     id = db.Column(Integer, primary_key=True)
@@ -46,6 +47,7 @@ class Location(db.Model):
     def __repr__(self):
         return '<Location %r>' % (self.location_name)
 
+# Notifications
 class Problem(db.Model):
     __tablename__ = 'problem'
     id = db.Column(Integer, primary_key=True)
