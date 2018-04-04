@@ -12,6 +12,7 @@ import asciiart
 
 # Used for automatic letter loading, the slot that should be loaded next
 current_slot = 1
+# What to do when the dumper reaches a slot
 slot_movement = None
 # True if the robot is currently loading
 loading = False
