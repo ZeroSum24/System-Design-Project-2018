@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+from os import chdir, getcwd
+
+if 'spam' not in getcwd():
+    chdir('./spam')
+
 # Allows router to be imported outside of flask
 try:
     from spam.graph import Edge, Graph
@@ -9,34 +14,12 @@ except ImportError:
     from Commands import *
 import itertools
 from os import environ
+import imp
 
-_MAP = {'S' : {'A' : (36, 0, 180)},
-        'A' : {'B' : (84, 0, 180),
-               'M' : (71, 90, 270)},
-        'B' : {'O' : (0, 270, 90),
-               'C' : (74, 0, 180)},
-        'C' : {'G' : (71, 90, 270,),
-               'D' : (118, 0, 270)},
-        'D' : {'E' : (69, 90, 270),
-               'U' : (0, 0, 180)},
-        'E' : {'F' : (72, 90, 270),
-               'V' : (0, 0, 180)},
-        'F' : {'X' : (120, 90, 0),
-               'W' : (0, 0, 180)},
-        'G' : {'I' : (52, 180, 0),
-               'H' : (80, 90, 270)},
-        'H' : {'J' : (50, 180, 0),
-               'X' : (81, 90, 270)},
-        'I' : {'Q' : (0, 270, 90),
-               'K' : (65, 180, 0)},
-        'J' : {'R' : (0, 270, 90),
-               'L' : (69, 180, 0)},
-        'K' : {'P' : (0, 270, 90),
-               'M' : (50, 180, 0)},
-        'L' : {'T' : (0, 270, 90),
-               'N' : (51, 180, 0)},
-        'M' : {'N' : (80, 90, 270)},
-        'N' : {'X' : (194, 90, 0)}}
+with open('map.conf') as _CONFIG_FILE:
+    _CONFIG = imp.load_source('config', '', _CONFIG_FILE)
+
+_MAP = _CONFIG.map
 
 def _build_graph():
     edges = []
@@ -91,18 +74,19 @@ def _to_tuple(instruction):
         return ('Dump', instruction.slots)
 
 def return_from(start, direction):
+    tol = 30
     nodes = _GRAPH.route(start, 'S')
     route = []
     facing = int(direction)
     for src, dest in _pairwise(nodes):
         dist, src_ang, dest_ang = _get_edge_stats(src, dest)
         route.append(Report('{}-{}'.format(src, facing)))
-        route.append(Rotate((src_ang-facing)%360, 30))
+        route.append(Rotate((src_ang-facing)%360, tol))
         route.append(Report('{}-{}'.format(src, src_ang)))
         facing = (dest_ang + 180) % 360
-        route.append(Move(dist, 30))
+        route.append(Move(dist, tol))
         route.append(Report('{}-{}'.format(dest, facing)))
-    route.append((Rotate(facing, 30)))
+    route.append((Rotate(facing, tol)))
     route.append(Report('S-0'))
     to_remove = set()
     for instruction in route:
@@ -125,6 +109,10 @@ def return_from(start, direction):
 def build_route(points):
     # Avoid mutating the argument
     points = dict(points)
+    if 'Z' in points or 'Y' in points:
+        tol = 0
+    else:
+        tol = 30
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
@@ -132,11 +120,13 @@ def build_route(points):
     # Always start facing 0 degrees
     facing = 0
     while points:
+        print(points)
         # Pair start with every point (Zip on a dict uses the keys)
         pairs = zip(start * len(points), points)
         # Plot the route for each pair and select the minimum path using
         # _path_dist as a metric
         nodes = min((_GRAPH.route(*pair) for pair in pairs), key=_path_dist)
+        print(nodes)
         # This path will end at a desk, the node before that is the point on the
         # line that the robot will end up at after it's finished dumping
         start = nodes[-2]
@@ -149,14 +139,14 @@ def build_route(points):
             # Rotate to the correct angle to exit relative to where we are
             # currently facing
             route.append(Report('{}-{}'.format(src, facing)))
-            route.append(Rotate((src_ang-facing)%360, 30))
+            route.append(Rotate((src_ang-facing)%360, tol))
             # Report reaching the source node
             route.append(Report('{}-{}'.format(src, src_ang)))
             # Calculate the direction we will be facing upon reaching the next
             # node
             facing = (dest_ang + 180) % 360
             # Move move the required distance down the line
-            route.append(Move(dist, 30))
+            route.append(Move(dist, tol))
             route.append(Report('{}-{}'.format(dest, facing)))
         dist, src_ang, dest_ang = _get_edge_stats(start, desk)
         # Will be 90 for right and 270 for left
@@ -168,7 +158,7 @@ def build_route(points):
         is_left = to_rotate == 270
         route.append(ToDesk(is_left, 90))
         route.append(Dump(points[desk]))
-        route.append(FromDesk(is_left))
+        route.append(FromDesk(is_left, tol))
         # Remove the desk from the set so we don't go back
         del points[desk]
         # Save the route segment

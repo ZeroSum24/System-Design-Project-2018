@@ -17,7 +17,7 @@ class ThreadDying(Exception):
     pass
 
 def acknowledge(exception):
-    """Raises a ThreadDying exception in a thread in responce to a recived
+    """Raises a ThreadDying exception in a thread in responce to a recieved
     ThreadKiller Exception"""
 
     # Only allow ThreadKiller to be acknowleged in this way

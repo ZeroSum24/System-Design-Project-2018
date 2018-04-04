@@ -1,0 +1,21 @@
+spamrobot.ml, www.spamrobot.ml {
+    proxy / localhost:5000 {
+    transparent
+  }
+}
+
+docs.spamrobot.ml {
+    redir https://drive.google.com/drive/folders/1fS8uXfgYV116eglVAICYu7jTvfwSshCA
+}
+
+mail.spamrobot.ml {
+	redir https://box.spamrobot.ml/mail
+}
+
+video.spamrobot.ml, movie.spamrobot.ml, film.spamrobot.ml {
+	redir https://youtu.be/sAY5aTNjrt8
+}
+
+admin.spamrobot.ml {
+	redir https://box.spamrobot.ml/admin
+}

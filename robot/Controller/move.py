@@ -8,6 +8,8 @@ from math import pi, sin, cos
 from collections import namedtuple
 import time
 
+import speech_lib
+
 import ev3dev.ev3 as ev3
 from ev3dev.ev3 import Motor
 from ev3dev.auto import *
@@ -56,6 +58,7 @@ _DEFAULT_MULTIPLIER = None
 # Supplies information expected by the movement functions
 _MOTOR_PARAMS = None
 _SONAR_DIST = None
+_STOP_TIMEOUT = None
 _JUNCTION_MARKERS = None
 # PID calibration flag
 _PID_CALIBRATION = False
@@ -65,7 +68,7 @@ def init():
     global _ODOMETERS, _MOTORS, _WHEEL_CIRCUM, _BASE_ROT_TO_WHEEL_ROT
     global _DEFAULT_RUN_SPEED, _DEFAULT_TURN_SPEED, _SCALERS, _ROBOT_DIAMETER
     global _DEFAULT_MULTIPLIER, _MAXREF, _MINREF, _TARGET, _KP, _KD, _KI
-    global  _MOTOR_PARAMS, _SONAR_DIST, _JUNCTION_MARKERS
+    global  _MOTOR_PARAMS, _SONAR_DIST, _STOP_TIMEOUT,_JUNCTION_MARKERS
 
     # Read config file (In python modules are just objects, the basic import
     # syntax just parses a file as the definition of a module and places the
@@ -146,6 +149,7 @@ def init():
     _KD = config.KD
     _KI = config.KI
     _SONAR_DIST = config.sonar_dist
+    _STOP_TIMEOUT = config.stop_timeout
     _JUNCTION_MARKERS = config.junction_markers
 init()
 
@@ -170,11 +174,12 @@ def _parse_to_omega(left_motor, right_motor):
     result = abs(_omega(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER) * 180 / pi)
     return result
 
-def _detect_color(color=Colors.BLACK):
+def _detect_color(color=Colors.GREEN):
     return read_color() is color
 
 def get_odometry(rotating=False):
     if rotating:
+        # Map is lazy by default, tuple forces strict evaluation
         odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
         return _rev_rotation_odometry(_parse_by_average(odometer_readings))
     else:
@@ -198,12 +203,11 @@ def _rotation_odometry(angle):
     return int(angle * _BASE_ROT_TO_WHEEL_ROT)
 
 def _rev_rotation_odometry(angle):
-    # To convert between the angle the base should move through to the angle the
-    # wheel should move through we multiply by the ratio of the two
-    # circumferences and floor to int
+    # Reverse of _rotation_odometry
     return angle / _BASE_ROT_TO_WHEEL_ROT
 
 def _rev_straight_line_odometry(dist):
+    # Same for straight line
     return (dist * _WHEEL_CIRCUM) // 360
 
 ### End Distance Measures ###
@@ -217,8 +221,7 @@ def run_motor(motor, speed=_DEFAULT_RUN_SPEED, scalers=None, reset=False):
 
     Optional Arguments:
     speed -- Speed to run the motor at.
-    scalers -- Dict containing scalers to influence the motor's speed,
-               intended for dependency injection.
+    scalers -- Dict containing scalers to influence the motor's speed
     reset -- If False, don't reset the motor's odometer on restart
     """
 
@@ -275,10 +278,10 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
     delta_time -- The time elapsed since the last call to _course_correction.
 
     Optional Arguments:
-    motors -- The motors available for use, intended for dependency injection.
+    motors -- The motors available for use.
     """
 
-    global _last_error
+    #global _last_error
     global _integral
 
     try:
@@ -287,33 +290,48 @@ def _course_correction(delta_time, front=_MOTORS.front, back=_MOTORS.back,
         stop_motors()
         raise ReflectivityDisconnectedError('Reflectivity sensor disconnected')
 
+    # Percentage deviation from the target reflectivity
     error = _TARGET - (100 * (ref_read - _MINREF) / (_MAXREF - _MINREF))
-    derivative = (error - _last_error) / delta_time
-    _last_error = error
+    #derivative = (error - _last_error) / delta_time
+    #_last_error = error
+    # _intergral collects every past error with ever decreasing performance
     _integral = 0.5 * _integral + error
-    course = _KP * error - _KD * derivative + _KI * _integral * delta_time
+    # PID calculation without the D
+    course = _KP * error + _KI * _integral * delta_time #- _KD * derivative
 
+    # Pairs up each motor with the speeds required to make the current turn
     motors_with_speeds = zip([lefty, righty, front, back],
-                             pid_speeds(course, _DEFAULT_RUN_SPEED, _WHEEL_CIRCUM, _ROBOT_DIAMETER))
+                             pid_speeds(course, _DEFAULT_RUN_SPEED,
+                                        _WHEEL_CIRCUM, _ROBOT_DIAMETER))
+    # Run each
     for (motor, speed) in motors_with_speeds:
         run_motor(motor, speed)
-    #time.sleep(0.00)
 
 ### End PID ###
 
 ##### Movement #####
 
+# Move a fixed distance in the given direction, only check for obstructions
+# infront of the robot via the sonar (Note: infront is the direction the robot
+# goes when told to go forward, for all other directions the sonar is on the
+# wrong face of the robot, this is as stupid as it sounds, this function is
+# unused however)
 def _move_distance(dist, direction):
+    # Convert the distance to travel into the number of degrees of rotation of
+    # the wheel
     ticks = _straight_line_odometry(dist)
     traveled = 0
 
+    # Decide which motors to use and what direction they should go in
     motors, should_reverse = _MOTOR_PARAMS[direction]
     multiplier = -1 if should_reverse else 1
 
+    # Start running each motor
     for motor in motors:
         run_motor(motor, speed=multiplier*_DEFAULT_RUN_SPEED, reset=True)
 
     while True:
+        # Try to check the sonar and abort if we can't
         try:
             if sonar_poll() < _SONAR_DIST:
                 stop_motors()
@@ -322,9 +340,11 @@ def _move_distance(dist, direction):
             stop_motors()
             raise SonarDisconnectedError('Sonar disconnected')
 
+        # Check how far we have gone
         odometer_readings = tuple(map(_read_odometer, motors))
         traveled = _parse_by_average(odometer_readings)
 
+        # If we've gone too far stop
         if traveled > ticks:
             stop_motors()
             break
@@ -335,55 +355,110 @@ def _move_distance(dist, direction):
 
 # TODO: Disable junction search when there is no correction
 def forward(dist, tolerance=50, junction_type=Junctions.DESK, correction=True):
+    """Go forward a distance with tolerance, stop when a junction is found.
+
+    Required Arguments:
+    dist -- The distance to travel.
+
+    Optional Arguments:
+    tolerance -- Percentage tolerance, the robot will start searching for
+                 junctions at the lower bound and panic if it exceeds the upper
+                 bound without finding any.
+    junction_type -- Legacy parameter. This is ignored.
+    correction -- If False PID correction will be disabled, this has no
+                  practical use.
+    """
+    
     if correction:
+        # This is the only branch used
+
+        # Calculate the search area
         upper = int(_straight_line_odometry(dist + (tolerance/100 * dist)))
         lower = int(_straight_line_odometry(dist - (tolerance/100 * dist)))
 
         traveled = 0
+        # Track time intervals for PID
         previous_time = time.time()
 
+        # Allows the robot to wait before panicking in responce to an
+        # obstruction
+        stopped = False
+        time_of_stoppage = 0
+
+        # Ignored
         search_color = _JUNCTION_MARKERS[junction_type]
 
+        # Start the drive motors
         run_motor(_MOTORS.left, reset=True)
         run_motor(_MOTORS.right, reset=True)
 
         while True:
+            # Attempt to access the sonar, abort if it doesn't exist
             try:
+                # If something is visible in the sonar
                 if sonar_poll() < _SONAR_DIST:
-                    stop_motors()
-                    break
+                    if not stopped:
+                        # If we havent stopped yet then stop
+                        stopped = True
+                        stop_motors()
+                        time_of_stoppage = time.time()
+                        speech_lib.obstacle_detected()
+                        continue
+                    if stopped:
+                        # Otherwise iterate all of the above as fast as possible
+                        # until the timeout is exceeded, at which point fail
+                        if time.time() - time_of_stoppage < _STOP_TIMEOUT:
+                            continue
+                        else:
+                            return False
+                else:
+                    if stopped:
+                        # If at any point the obstruction dissappears keep going
+                        stopped = False
+                        continue
             except EXCEPTIONS:
                 stop_motors()
                 raise SonarDisconnectedError('Sonar disconnected')
 
-            if _PID_CALIBRATION:
-                btn.process()
+            #if _PID_CALIBRATION:
+            #    btn.process()
 
+            # PID correction
             delta_time = time.time() - previous_time
             previous_time = time.time()
             _course_correction(delta_time)
 
+            # Figure out how far we have gone
             odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right]))
             traveled = _parse_by_average(odometer_readings)
 
+            # Try to read the color sensor, abort if it doesn't exist
             try:
-                junction_marker = _detect_color(search_color)
+                junction_marker = read_color() is Colors.GREEN #_detect_color(search_color)
             except EXCEPTIONS:
                 stop_motors()
                 raise ColorDisconnectedError('Color sensor disconnected')
             if junction_marker:
+                # If we found one
                 if traveled <= lower:
+                    # If it's too soon ignore it (This will happen at least once
+                    # as the robot starts each move segment sitting on the old
+                    # junction marker)
                     continue
                 else:
+                    # Otherwise we found the next junction, return success
                     stop_motors()
                     return True
 
+            # If we went too far abort
             if traveled > upper:
                 stop_motors()
                 return False
     else:
+        # This is never used
         _move_distance(dist, Directions.FORWARD)
 
+# These three are never used
 def backward(dist):
     _move_distance(dist, Directions.BACKWARD)
 
@@ -394,6 +469,19 @@ def right(dist):
     _move_distance(dist, Directions.RIGHT)
 
 def rotate(angle, tolerance=50, direction=Directions.ROT_RIGHT):
+    """Go rotate through an angle with tolerance, stop when a line is found.
+
+    Required Arguments:
+    angle -- The angle to rotate through.
+
+    Optional Arguments:
+    tolerance -- Percentage tolerance, the robot will start searching for
+                 lines at the lower bound and panic if it exceeds the upper
+                 bound without finding any.
+    direction -- Direction to rotate in.
+    """
+
+    # Calculate the search area
     upper = int(_rotation_odometry(angle + (tolerance/100 * angle)))
     lower = int(_rotation_odometry(angle - (tolerance/100 * angle)))
 
@@ -401,88 +489,40 @@ def rotate(angle, tolerance=50, direction=Directions.ROT_RIGHT):
 
     multiplier = _MOTOR_PARAMS[direction]
 
+    # Run all the motors
     for motor in _MOTORS:
         run_motor(motor, speed=multiplier[motor]*_DEFAULT_TURN_SPEED, reset=True)
 
     while True:
+        # Figure out how far we've gone
         odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
         traveled = _parse_by_average(odometer_readings)
 
+        # If we've not reached the search area yet go around again
         if traveled < lower:
             continue
 
+        # If we've found a line (Defined as a something lighter than the floor)
+        # stop
         ref = read_reflect()
         if 100 >= ref >= _TARGET:
             stop_motors()
             return True
 
+        # If we exceed the search area abort
         if traveled > upper:
             stop_motors()
             return False
 
-
-def test_angle_accuracy():
-    primary_speed = -_DEFAULT_RUN_SPEED # overshoots when this value is negative,
-                                        # regardless whether turning right or left
-    r = primary_speed                # turning left/right is done by swapping
-    l = primary_speed//2                   # which primary speed is divided
-    non_driver_speed = _delta_deg(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER)
-
-    run_motor(_MOTORS.front, r, reset = True)
-    run_motor(_MOTORS.back, l, reset = True)
-    run_motor(_MOTORS.left, non_driver_speed)
-    run_motor(_MOTORS.right, -non_driver_speed)
-
-    previous_time = time.time()
-    base_angle_so_far = 0.0
-    while base_angle_so_far < 90:
-        delta_time = time.time() - previous_time
-        previous_time = time.time()
-        base_angle_so_far += abs(_omega(l, r, _WHEEL_CIRCUM, _ROBOT_DIAMETER)*delta_time*180/pi)
-        print(str(base_angle_so_far) + "<< time-based")
-        print(str(_parse_to_omega(_MOTORS.back, _MOTORS.front)) + "<< odometry-based")
-        time.sleep(0.05)
-    stop_motors()
-
-def desk_approach():
-    primary_speed = _DEFAULT_RUN_SPEED
-    non_driver_speed = _delta_deg(primary_speed//3, primary_speed, _WHEEL_CIRCUM, _ROBOT_DIAMETER)
-
-    run_motor(_MOTORS.front, -primary_speed, reset = True)
-    run_motor(_MOTORS.back, -primary_speed//3, reset = True)
-    run_motor(_MOTORS.left, non_driver_speed)
-    run_motor(_MOTORS.right, -non_driver_speed)
-
-    while _parse_to_omega(_MOTORS.back, _MOTORS.front) < 45:
-        time.sleep(0.05)
-
-    run_motor(_MOTORS.left, primary_speed//3, reset = True)
-    run_motor(_MOTORS.right, primary_speed, reset = True)
-    run_motor(_MOTORS.front, non_driver_speed)
-    run_motor(_MOTORS.back, -non_driver_speed)
-
-    while _parse_to_omega(_MOTORS.right, _MOTORS.left) < 45:
-        time.sleep(0.05)
-
-    run_motor(_MOTORS.left, -primary_speed//3, reset = True)
-    run_motor(_MOTORS.right, -primary_speed, reset = True)
-    run_motor(_MOTORS.front, -non_driver_speed)
-    run_motor(_MOTORS.back, non_driver_speed)
-
-    while _parse_to_omega(_MOTORS.right, _MOTORS.left) < 45:
-        time.sleep(0.05)
-
-    run_motor(_MOTORS.front, primary_speed, reset = True)
-    run_motor(_MOTORS.back, primary_speed//3, reset = True)
-    run_motor(_MOTORS.left, -non_driver_speed)
-    run_motor(_MOTORS.right, non_driver_speed)
-
-    while _parse_to_omega(_MOTORS.back, _MOTORS.front) < 45:
-        time.sleep(0.05)
-
-    stop_motors()
-
-def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back, lefty=_MOTORS.left, righty=_MOTORS.right):
+# For the approach motion below
+def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back,
+                    lefty=_MOTORS.left, righty=_MOTORS.right):
+    # Diagrams are better here but essentially we start with knowlage of what
+    # angle we want to travel at and how fast we want to do it. Assuming a unit
+    # vector in the direction we want to travel the two calculations below give
+    # the lengths of the two axis vectors that form a triangle with the original
+    # unit vector. These numbers are the fractions of the desired speed required
+    # for each axle to achieve the desired speed and angle.
     primary_speed = speed*cos(angle*pi/180)
     secondary_speed = speed*sin(angle*pi/180)
 
@@ -492,22 +532,23 @@ def diagonal_speeds(angle, speed, front=_MOTORS.front, back=_MOTORS.back, lefty=
             righty : primary_speed}
 
 def approach(angle=90, tolerance=50, direction=Directions.ROT_LEFT, reverse = False):
-    # rotation odometry is enough here, as the diagonal movement
-    # adds speed in the same direction on opposite wheels, making them
-    # cancel out in the _parse_by_average calculation
+    # Rotation odometry is enough here, as the diagonal movement adds speed in
+    # the same direction on opposite wheels, making them cancel out in the
+    # _parse_by_average calculation
     traveled = 0
     ticks = _rotation_odometry(angle)
-    if reverse: # in case the robot is reversing the angle needs to be phase
+    if reverse: # In case the robot is reversing the angle needs to be phase
                 # shifted for the diagonal_speeds calculation; this will result
-                # in mirroring the movement backwards - simple sign change is not
-                # enough
+                # in mirroring the movement backwards - simple sign change is
+                # not enough
 
-        # if returning, the robot will search for the white line within these bounds
+        # If returning, the robot will search for the white line within these
+        # bounds
         upper = int(_rotation_odometry(angle + (tolerance/100 * angle)))
         lower = int(_rotation_odometry(angle - (tolerance/100 * angle)))
 
         angle+=90
-        if direction == Directions.ROT_LEFT: # this ensures that if you do
+        if direction == Directions.ROT_LEFT: # This ensures that if you do
                                              # forward-left followed by reverse
                                              # left, you will end up in the
                                              # original orientation on the line
@@ -517,48 +558,63 @@ def approach(angle=90, tolerance=50, direction=Directions.ROT_LEFT, reverse = Fa
 
 
     multiplier = _MOTOR_PARAMS[direction]
-    turning_speed = _DEFAULT_TURN_SPEED//2 # the turning and driver_speeds are
+    turning_speed = _DEFAULT_TURN_SPEED//2 # The turning and driver_speeds are
                                            # halved, so their sum is capped at
                                            # _DEFAULT_RUN_SPEED
 
 
-    # the angle needs a sign change for diagonal_speeds depending on direction
+    # The angle needs a sign change for diagonal_speeds depending on direction
     if direction == Directions.ROT_LEFT:
         start_angle = -angle
     else:
         start_angle = angle
     driver_speed = diagonal_speeds(start_angle, _DEFAULT_TURN_SPEED-turning_speed)
 
+    # Run all the motors with the correct speeds (The speed for diagonal
+    # movement is added to the speed
     for motor in _MOTORS:
-        run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor], reset=True)
-
+        run_motor(motor,
+                  speed=multiplier[motor]*turning_speed+driver_speed[motor],
+                  reset=True)
     while True:
-        odometer_readings = tuple(map(_read_odometer, [_MOTORS.left, _MOTORS.right, _MOTORS.front, _MOTORS.back]))
+        # Figure out how far we have gone (The diagonal movement is ignored
+        # here, all 'distances' are angles)
+        odometer_readings = tuple(map(_read_odometer,
+                                      [_MOTORS.left, _MOTORS.right,
+                                       _MOTORS.front, _MOTORS.back]))
         traveled = _parse_by_average(odometer_readings)
 
         if traveled < ticks:
+            # Convert angle of wheel rotation into the angle the robot has
+            # rotated
             angle_so_far = _rev_rotation_odometry(traveled)
-            # the angle needs a sign change for diagonal_speeds depending on direction
+            # The angle needs a sign change for diagonal_speeds depending on direction
             if direction == Directions.ROT_RIGHT:
                 angle_so_far = -angle_so_far
-            driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_TURN_SPEED-turning_speed)
 
+            # Adapt to where we are and rerun all the motors with the new speeds
+            driver_speed = diagonal_speeds(angle_so_far + start_angle, _DEFAULT_TURN_SPEED-turning_speed)
             for motor in _MOTORS:
                 run_motor(motor, speed=multiplier[motor]*turning_speed+driver_speed[motor])
 
+        # Search for a line on the way back
         if reverse:
+            # Don't start to search before the lower bound
             if traveled < lower:
                 continue
 
+            # If we see the line stop and return success
             ref = read_reflect()
             if 100 >= ref >= _TARGET:
                 stop_motors()
                 return True
 
+            # If we exceed the upper bound fail
             if traveled > upper:
                 stop_motors()
                 return False
         else:
+            # For the way out, stop when we have gone far enough
             if traveled > ticks:
                 break
 
@@ -568,6 +624,7 @@ def approach(angle=90, tolerance=50, direction=Directions.ROT_LEFT, reverse = Fa
 
 ##### PID Tuning #####
 
+# None of these are used
 def _changeP(state): # pylint: disable=unused-argument
     global _KP
     _KP += .025
@@ -599,8 +656,6 @@ if __name__ == '__main__':
     btn.on_right = _changeD
     btn.on_down = _changeI
     btn.on_up = _reset
-    #desk_approach()
-    #test_angle_accuracy()
     forward(99999, 50)
 
 ### End PID Tuning ###

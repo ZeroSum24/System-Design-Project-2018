@@ -6,7 +6,7 @@
 PYTHON = python3
 # Directory where the tests can be found
 TESTDIR = ./test
-# Search recursivly for python files with test in their name
+# Search recursively for python files with test in their name
 PY_TEST_FILES := $(shell find $(TESTDIR) -type f -name *test*.py 2>/dev/null)
 
 # Directory containing C++ files
@@ -19,27 +19,22 @@ CPP_DIR = ./cpp
 ubuntu:
 	$(MAKE) -C $(CPP_DIR) all
 
+# Build for Travis
+.PHONY: travis-build
+travis-build:
+	$(MAKE) -C $(CPP_DIR) travis-build
+
 ## Test Targets ##
 
-# Run all tests that don't require compilation
 .PHONY: test
 test: $(PY_TEST_FILES)
-
-# Additionally run the tests defined in the cpp makefile
-.PHONY: test-all
-test-all: test
 	$(MAKE) -C $(CPP_DIR) test
-
-# So the cpp makefile knows it's running under travis
-.PHONY: travis-test
-travis-test: test
-	$(MAKE) -C $(CPP_DIR) travis
 
 ## Helpers ##
 
 # Generic python target, $@ becomes filename
 .PHONY: $(PY_TEST_FILES)
-$(PY_TEST_FILES):
+$(PY_TEST_FILES): travis-build
 	python3 $@
 
 # Dispatch to source specific cleaners

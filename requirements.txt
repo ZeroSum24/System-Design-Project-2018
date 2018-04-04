@@ -12,3 +12,6 @@ pylibdmtx
 opencv-python
 setuptools
 flask_socketio
+flask-assistant
+flask-mail
+Flask-Testing
