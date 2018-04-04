@@ -74,12 +74,7 @@ def _to_tuple(instruction):
         return ('Dump', instruction.slots)
 
 def return_from(start, direction):
-    if start == 'Z' or start == 'Y':
-        print('Here')
-        tol = 0
-    else:
-        tol = 30
-    print(tol)
+    tol = 30
     nodes = _GRAPH.route(start, 'S')
     route = []
     facing = int(direction)
@@ -114,7 +109,10 @@ def return_from(start, direction):
 def build_route(points):
     # Avoid mutating the argument
     points = dict(points)
-    tol = 30
+    if 'Z' in points or 'Y' in points:
+        tol = 0
+    else:
+        tol = 30
     # Algorithm generates several subroutes that must then be unified
     routes = []
     # Start symbol
@@ -132,7 +130,6 @@ def build_route(points):
         # This path will end at a desk, the node before that is the point on the
         # line that the robot will end up at after it's finished dumping
         start = nodes[-2]
-        print('Here')
         desk = nodes[-1]
         route = []
         # For each edge in the route (Not counting the desk)
@@ -161,7 +158,7 @@ def build_route(points):
         is_left = to_rotate == 270
         route.append(ToDesk(is_left, 90))
         route.append(Dump(points[desk]))
-        route.append(FromDesk(is_left))
+        route.append(FromDesk(is_left, tol))
         # Remove the desk from the set so we don't go back
         del points[desk]
         # Save the route segment
