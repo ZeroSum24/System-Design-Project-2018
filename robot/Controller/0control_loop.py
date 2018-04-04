@@ -407,8 +407,8 @@ def move_asynch(chosen_path, state):
             # for next time. (If it is too small search for the junction
             # anywhere between 0 and 20)
             dist = instruction.dist - get_odometry()
-            if dist <= 10:
-                final = [Move(10, 100)]
+            if dist <= 20:
+                final = [Move(20, 100)]
             else:
                 final = [Move(dist, 50)]
             # If there is a rotate next also take that
@@ -431,14 +431,14 @@ def move_asynch(chosen_path, state):
             # whether we were turning left or right
             if instruction.angle <= 180:
                 angle = instruction.angle - get_odometry(rotating=True)
-                if angle <= 10:
-                    final = [Rotate(10, 100)]
+                if angle <= 20:
+                    final = [Rotate(20, 100)]
                 else:
                     final = [Rotate(angle, 50)]
             else:
                 angle = instruction.angle + get_odometry(rotating=True)
-                if angle >= 350:
-                    final = [Rotate(350, 100)]
+                if angle >= 340:
+                    final = [Rotate(340, 100)]
                 else:
                     final = [Rotate(angle, 50)]
 

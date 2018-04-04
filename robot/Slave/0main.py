@@ -10,23 +10,35 @@ import os
 import speech_lib as speech_lib
 import asciiart
 
+# Used for automatic letter loading, the slot that should be loaded next
 current_slot = 1
 slot_movement = None
+# True if the robot is currently loading
 loading = False
+# True if the robot is loading in automatic mode (value undefined when loading
+# is false)
 in_automatic = True
 
+# Run an arbitary shell command with arguments (Unused)
 def run(*cmd):
-    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True).wait()
+    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, universal_newlines=True,
+                 shell=True).wait()
     stdout, _ = proc.communicate()
     return stdout
 
+# Take a picture through the webcam
 def camera_picture():
+    # Picture taking is done by an external script
     os.system('bash ./take_photo.sh')
+    # Where the previous script saves the image
     imgpath = "./image_sent.jpg"
+    # Read the image into a variable as a binary stream
     with open(imgpath, 'rb') as img:
         data = img.read()
+    # And send it to the server via MQTT
     client.publish("image_processing", payload=data)
 
+# Setup MQTT
 def on_connect(client, userdata, flags, rc):
     # print("Connected with result code "+str(rc))
     client.subscribe("dump")
@@ -38,16 +50,22 @@ def on_message(client, userdata, msg):
     global slot_movement, current_slot, loading, in_automatic
     # print("Received on topic " + msg.topic +": "+str(msg.payload.decode()))
     if msg.topic == "dump":
+        # Sent by the Control brick, contains a json list of slots to dump
         slots = json.loads(msg.payload.decode())
         # print(slots)
+        # Dump each slot
         for slot in slots:
             dump(slot)
+        # Let the Control brick know the operation was finished
         client.publish("dump_confirmation", "dumped")
         #timer = Timer(5, lambda: mqtt.publish("ascii_art_slave","delivering"))
         #timer.start()
 
     elif msg.topic == "delivery_status":
+        # Sent by the Control brick or the server on state change
         if msg.payload.decode() == "State.LOADING" and loading == False:
+            # If we recieve the loading state and aren't already loading switch
+            # into loading mode
             # print("first picture")
             loading = True
             current_slot = 1
