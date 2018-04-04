@@ -1,5 +1,7 @@
 """Junction types"""
 
+# This is probably never used
+
 import sys
 from enum import Enum
 

@@ -3,7 +3,9 @@
 import ev3dev.ev3 as ev3
 import Colors
 
+# The reflectivity sensor
 _LEFT = ev3.ColorSensor('in2')
+# The color sensor
 _RIGHT = ev3.ColorSensor('in4')
 _ULTRA_SONIC = ev3.UltrasonicSensor('in1')
 if not _LEFT.connected:

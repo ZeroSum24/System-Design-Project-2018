@@ -1,9 +1,9 @@
 """Subclass of dict, maintain both forward and reverse mappings. Both keys and
-   values must be hashable"""
+   values must be hashable."""
 
 class DoubleMap(dict):
     """Subclass of dict, maintain both forward and reverse mappings. Both keys
-       and values must be hashable"""
+       and values must be hashable."""
     def __init__(self, d):
         """Constructor"""
         # Initalise the backing dict with the input dict
