@@ -91,4 +91,6 @@ Thanks for purchasing <b> <i> !spam </i> </b> and checking out our code. Further
 
 If you have any problems, need support, or need help to install/troubleshoot, contact  <b> <i> !spam </i> </b> at ```support@spamrobot.ml```.
 
+<br/>
+
 <i> Credit to Group 10: Alex Shand, Stephen Waddell, Campbell Scott, Grzegorz Wilk, João Catarino, Katie Worton, Rosina Paige </i>
