@@ -90,3 +90,5 @@ In case there is a problem with connection, refer to the OS instructions at http
 Thanks for purchasing <b> <i> !spam </i> </b> and checking out our code. Further user information can be be found in the <a href ="docs/group-10-userguide.pdf"> User Guide </a>.
 
 If you have any problems, need support, or need help to install/troubleshoot, contact  <b> <i> !spam </i> </b> at ```support@spamrobot.ml```.
+
+<i> Credit to Group 10: Alex Shand, Stephen Waddell, Campbell Scott, Grzegorz Wilk, João Catarino, Katie Worton, Rosina Paige </i>
