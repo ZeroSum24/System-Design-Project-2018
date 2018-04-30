@@ -93,4 +93,6 @@ If you have any problems, need support, or need help to install/troubleshoot, co
 
 <br/>
 
-<i> Credit to Group 10: Alex Shand, Stephen Waddell, Campbell Scott, Grzegorz Wilk, João Catarino, Katie Worton, Rosina Paige </i>
+<i> Credit to Group 10: 
+Alex Shand, Stephen Waddell, Campbell Scott, Grzegorz Wilk, João Catarino, Katie Worton, Rosina Paige 
+</i>
